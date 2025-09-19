@@ -3,3 +3,5 @@ Skoleprosjekt i App2000
  en liten endring
  en endring til
  dette er en enridng
+
+ dette er endring i branch 2
