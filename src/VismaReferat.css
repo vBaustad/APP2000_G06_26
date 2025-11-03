@@ -1,0 +1,57 @@
+.referat-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: left;
+}
+
+.referat-container h1 {
+  text-align: center;
+  color: #646cff;
+  margin-bottom: 2rem;
+  font-size: 2.5em;
+}
+
+.referat-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.referat-section h2 {
+  color: #535bf2;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.8em;
+}
+
+.referat-section p {
+  line-height: 1.6;
+  margin-bottom: 0.8rem;
+}
+
+.referat-section ul {
+  line-height: 1.8;
+  padding-left: 1.5rem;
+}
+
+.referat-section li {
+  margin-bottom: 0.5rem;
+}
+
+@media (prefers-color-scheme: light) {
+  .referat-section {
+    background-color: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .referat-container h1 {
+    color: #646cff;
+  }
+  
+  .referat-section h2 {
+    color: #535bf2;
+  }
+}
