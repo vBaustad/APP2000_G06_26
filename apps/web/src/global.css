@@ -1,0 +1,8 @@
+/* global.css */
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+}
+
+
