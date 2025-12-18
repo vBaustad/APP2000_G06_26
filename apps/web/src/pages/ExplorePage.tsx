@@ -1,3 +1,9 @@
+/**
+ * Fil: 
+ * Utvikler(e): 
+ * Beskrivelse: 
+ */
+
 export default function ExplorePage(){
     return (
         <div>
