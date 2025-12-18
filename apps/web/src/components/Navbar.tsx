@@ -1,3 +1,10 @@
+/**
+ * Fil: Navbar.tsx
+ * Utvikler(e): Vebjørn Baustad
+ * Beskrivelse: Navigasjonskomponent som viser hovedmenyen og tilpasser
+ * utseende basert på side (transparent eller solid bakgrunn).
+ */
+
 import { NavLink } from "react-router-dom";
 
 type NavbarVariant = "transparent" | "solid";

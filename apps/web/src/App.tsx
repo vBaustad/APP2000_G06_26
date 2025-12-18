@@ -1,3 +1,10 @@
+/**
+ * Fil: App.tsx
+ * Utvikler(e): Vebjørn Baustad
+ * Beskrivelse: Hovedkomponenten for applikasjonen som håndterer ruting og
+ * hvilke sider som vises basert på URL.
+ */
+
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 import NotFoundPage from "./pages/NotFoundPage"
 import LandingPage from "./pages/LandingPage"

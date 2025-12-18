@@ -1,3 +1,10 @@
+/**
+ * Fil: Layout.tsx
+ * Utvikler(e): Vebjørn Baustad
+ * Beskrivelse: Rammedokument som definerer felles sidestruktur
+ * og navigasjon for hele applikasjonen.
+ */
+
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 
