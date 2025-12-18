@@ -1,4 +1,8 @@
-/* global.css */
+/**
+ * Fil: global.css
+ * Utvikler(e): Vebjørn Baustad
+ * Beskrivelse: Globale stilregler og Tailwind-oppsett for applikasjonen.
+ */
 @import "tailwindcss";
 
 * {

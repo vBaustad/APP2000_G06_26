@@ -1,3 +1,9 @@
+/**
+ * Fil: LandingHero.tsx
+ * Utvikler(e): Vebjørn Baustad
+ * Beskrivelse: Hero-komponent for forsiden med bakgrunnsbilde, overskrift og søkefelt.
+ */
+
 export default function LandingHero() {
     return(
         <section className="relative h-[70vh] w-full">      
