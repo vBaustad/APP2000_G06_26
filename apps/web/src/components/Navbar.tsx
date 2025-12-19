@@ -35,16 +35,17 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
                 <nav className="mx-auto max-w-7xl px-6 py-5 flex items-center justify-between">
                     {/* Logo */}
                     <div className="flex items-center gap-2">
-                        <div className="h-12 w-16 rounded-md bg-emerald-600 text-white flex items-center justify-center font-semibold">
-                            UTOPIA
+                        <div className="h-8 w-8 rounded-md bg-emerald-600 text-white flex items-center justify-center font-semibold">
+                            TUR
                         </div>
                     </div>
                     <ul className="hidden md:flex items-center gap-8 font-medium">
-                        <li><NavLink to="/" className={linkClass}>Home</NavLink></li>
+                        <li><NavLink to="/" className={linkClass}>Hjem</NavLink></li>
                         <li><NavLink to="/map" className={linkClass}>Kart</NavLink></li>
                         <li><NavLink to="/explore" className={linkClass}>Utforsker</NavLink></li>
                         <li><NavLink to="/me" className={linkClass}>Mine turer</NavLink></li>
                         <li><NavLink to="/login" className={linkClass}>Logg inn</NavLink></li>
+                        <li><NavLink to="/signup" className={linkClass}>Registrer</NavLink></li>
                     </ul>
                 </nav>
             </header>            
