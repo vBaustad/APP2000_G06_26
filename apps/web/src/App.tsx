@@ -13,6 +13,7 @@ import Layout from "./components/Layout"
 import ExplorePage from "./pages/ExplorePage"
 import MapPage from "./pages/MapPage"
 import MyPage from "./pages/MyPage"
+import SignupPage from "./pages/SignupPage"
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
             <Route path="/explore" element={<ExplorePage />} />
             <Route path="/map" element={<MapPage />} />
             <Route path="/me" element={<MyPage />} />
