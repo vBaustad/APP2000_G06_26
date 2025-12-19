@@ -20,7 +20,7 @@ export default function LandingHero() {
             {/* Content */}
             <div className="relative z-10 flex flex-col h-full items-center justify-center px-4">
                 <h1 className="text-white text-5xl md:text-7xl lg:text-8xl font-semibold text-center max-w-5xl leading-tight">
-                    Finn din neste tur
+                    Finn ditt neste eventyr
                 </h1>
                 <h2 className="mt-6 text-white/90 text-xl md:text-2xl lg:text-3xl font-medium text-center max-w-3xl">
                     Utforsk turforslag, kart og aktiviteter i Utopia
