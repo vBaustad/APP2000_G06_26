@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "leaflet": "^1.9.4",
+    "lucide-react": "^0.462.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-leaflet": "^5.0.0",
