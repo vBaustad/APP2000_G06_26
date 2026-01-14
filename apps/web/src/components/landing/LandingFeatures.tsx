@@ -13,7 +13,6 @@ export default function LandingFeatures() {
         Brukes til å presentere hva løsningen gir.
       */}
       <section className="py-16">
-
     
         <h2 className="text-3xl font-semibold text-center mb-10">
           Hva tilbyr Utopia?

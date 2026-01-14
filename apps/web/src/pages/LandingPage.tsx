@@ -10,6 +10,7 @@
 
 import LandingHero from "../components/LandingHero";
 import LandingFeatures from "../components/landing/LandingFeatures";
+import LandingActivities from "../components/landing/LandingActivities";
 
 
 export default function LandingPage() {
@@ -18,6 +19,7 @@ export default function LandingPage() {
       <LandingHero />
       <main className="mx-auto max-w-5xl px-4 py-10">
         <LandingFeatures />
+        <LandingActivities />
       </main>
     </>
   );
