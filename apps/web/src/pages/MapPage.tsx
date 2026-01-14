@@ -1,3 +1,10 @@
+/**
+ * Fil: MapPage.tsx
+ * Utvikler(e): Vebjørn Baustad
+ * Beskrivelse: Oversikt over turer og hytter med kart som viser lokasjoner 
+ */
+
+
 import { useEffect, useMemo, useState } from 'react';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import L, { LatLngExpression } from 'leaflet';
