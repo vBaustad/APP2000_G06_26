@@ -3,8 +3,9 @@
   "private": true,
   "workspaces": [
     "apps/*"
-  ],
+  ],  
   "scripts": {
+    "start": "npm run start:api",
     "dev:web": "npm --workspace @app2000/web run dev",
     "dev:api": "npm --workspace @app2000/api run dev",
     "dev": "concurrently \"npm run dev:web\" \"npm run dev:api\"",

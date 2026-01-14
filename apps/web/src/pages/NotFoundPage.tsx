@@ -1,6 +1,6 @@
 /**
  * Fil: NotFoundPage.tsx
- * Utvikler(e): Ramona Cretulescu
+ * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu
  * Beskrivelse: Enkel 404-side når brukeren går til en rute som ikke finnes.
  */
 export default function NotFoundPage() {
