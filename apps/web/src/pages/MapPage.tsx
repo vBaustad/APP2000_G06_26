@@ -3,13 +3,21 @@
  * Utvikler(e): Vebjørn Baustad
  * Beskrivelse: Oversikt over turer og hytter med kart som viser lokasjoner 
  */
-
+/*
+ * Videreutviklet av: Ramona Cretulescu
+ * Endringer:
+ * Leser valgt aktivitet fra URL-en (f.eks. /map?activity=skitur) Filterer hver turliste på aktivitet i tilegg til eksisterende tekstsøk.
+ * f.eks.("/map?activity=skytur") viser kun skyturer.
+ * Filteret kombineres med eksisterende søk. Hvis ingen aktivitet er valgt i URL-en, vises alle turer som før.
+ * Viser aktivt filter øverst i sidemenyen med mulighet for å fjerne det.
+ */
 
 import { useEffect, useMemo, useState } from 'react';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import L, { LatLngExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { tripStops, TripStop } from '../data/tripStops';
+import { useSearchParams } from "react-router-dom"; // Leser query-parametre fra URL --
 
 const defaultIcon = L.icon({
   iconUrl: new URL('leaflet/dist/images/marker-icon.png', import.meta.url).toString(),
@@ -31,16 +39,29 @@ function MapViewportUpdater({ coords }: { coords: LatLngExpression }) {
 }
 
 export default function MapPage() {
+  const [searchParams, setSearchParams] = useSearchParams(); // --- Henter query-parametre fra URL --
+  const activeActivity = searchParams.get("activity"); // f.eks. "skitur"
+  
+  // Henter og setter valgt tur basert på filter og søk.
   const [selectedTrip, setSelectedTrip] = useState<TripStop | null>(tripStops[0] ?? null);
   const [query, setQuery] = useState('');
 
   const normalizedQuery = query.trim().toLowerCase();
-  const filteredTrips = useMemo(() => {
-    if (!normalizedQuery) return tripStops;
-    return tripStops.filter((trip) =>
-      `${trip.name} ${trip.city} ${trip.country}`.toLowerCase().includes(normalizedQuery)
-    );
-  }, [normalizedQuery]);
+
+  const filteredTrips = useMemo(() => {  // Filtrerer turer basert på tekstsøk og eventuell aktivitet fra Url-en.
+    return tripStops.filter((trip) => {
+      const matchesQuery =
+        !normalizedQuery ||
+        `${trip.name} ${trip.city} ${trip.country}`
+        .toLowerCase()
+        .includes(normalizedQuery);
+
+      const matchesActivity = 
+      !activeActivity || trip.activity === activeActivity; // Sjekker om turens aktivitetstype matcher den valgte aktiviteten i URL-en.
+
+      return matchesQuery && matchesActivity;
+    });
+  }, [normalizedQuery, activeActivity]);
 
   useEffect(() => {
     if (filteredTrips.length === 0) {
@@ -65,6 +86,22 @@ export default function MapPage() {
         <p className="text-sm text-slate-500 mb-6">
           Utforsk hytter, ruter og turer. Filtrer listen for a finne rett opplevelse.
         </p>
+
+      {/* Aktivt aktivitetsfilter fra URL (valgfritt) */}
+      {activeActivity && (
+    <div className="mb-6 flex items-center gap-3">
+    <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+      Filter: {activeActivity}
+    </span>
+
+    <button
+      onClick={() => setSearchParams({})}
+      className="text-sm font-medium text-slate-500 underline hover:text-slate-800"> 
+      Fjern filter
+    </button>
+  </div>
+  )}
+
 
         <div className="mb-6 space-y-2">
           <label htmlFor="trip-search" className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -137,12 +174,7 @@ export default function MapPage() {
       </aside>
 
       <section className="flex-1 min-h-80 lg:flex-[1.4]">
-        <MapContainer
-          center={mapCenter}
-          zoom={5}
-          className="h-full min-h-80 overflow-hidden"
-          scrollWheelZoom
-        >
+        <MapContainer center={mapCenter} zoom={5} className="h-full min-h-80 overflow-hidden" scrollWheelZoom>
           <TileLayer
             attribution='&copy; OpenStreetMap-bidragsytere'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
