@@ -1,14 +1,11 @@
 /**
  * Fil: LandingPage.tsx
- * Utvikler(e): Vebjørn Baustad
- * Beskrivelse: Selve landingssiden som inneholder flere komponenter som bygger opp hele siden. LandingHero, 
+ * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu, Synne Oppberget
+ * Beskrivelse: Selve landingssiden som inneholder flere komponenter som bygger opp hele siden. LandingHero, Strukturert landingside for videre utvidelse med egne seksjoner, flere landing-komponenter ( hero, features. )  
  */
 
-import { useState } from "react";
-/* Vidreutviklet av : Ramona Cretulescu 
- * Endringer: 
- * - Strukturert landingside for videre utvidelse med egne seksjoner, flere landing-komponenter ( hero, features. )  */
 
+import { useState } from "react";
 import LandingHero from "../components/LandingHero";
 import LandingFeatures from "../components/landing/LandingFeatures";
 import LandingActivities from "../components/landing/LandingActivities";
