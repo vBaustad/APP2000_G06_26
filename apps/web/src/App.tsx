@@ -30,7 +30,8 @@ export default function App() {
           </Route>
           <Route path="/*" element={<NotFoundPage />} />
         </Routes>
-      </div>
+
+       </div>
     </BrowserRouter>
   )
 }

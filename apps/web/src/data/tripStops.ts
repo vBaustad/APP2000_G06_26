@@ -9,6 +9,7 @@ export type TripStop = {
   description: string;
   coords: LatLngExpression;
   highlights: string[];
+  activity: 'fottur' | 'hyttetur' | 'padletur' | 'skitur' | 'topptur' | 'sykkeltur';
 };
 
 export const tripStops: TripStop[] = [
@@ -20,7 +21,8 @@ export const tripStops: TripStop[] = [
     dateRange: 'Juni-september',
     description: 'Klassisk fjelltur over Besseggen med bat til Memurubu og retur til Gjendesheim.',
     coords: [61.5049, 8.8143],
-    highlights: ['Memurubu', 'Gjendesheim', 'Blaa Gjende']
+    highlights: ['Memurubu', 'Gjendesheim', 'Blaa Gjende'],
+    activity: 'fottur'
   },
   {
     id: 'lofoten-hut-hop',
@@ -30,7 +32,8 @@ export const tripStops: TripStop[] = [
     dateRange: 'Mai-oktober',
     description: 'Tindebestigning og rorbuer fra Svolvaer til Reine med utsikt over Vestfjorden.',
     coords: [68.2349, 14.5683],
-    highlights: ['Djevelporten', 'Reinebringen', 'Rorbuer']
+    highlights: ['Djevelporten', 'Reinebringen', 'Rorbuer'],
+    activity: 'hyttetur'
   },
   {
     id: 'hardangervidda-cabin',
@@ -40,7 +43,8 @@ export const tripStops: TripStop[] = [
     dateRange: 'Juli-september',
     description: 'Rolig vandring mellom DNT-hytter som Finsehytta, Kraekkja og Tuva.',
     coords: [60.6014, 7.5045],
-    highlights: ['Finsehytta', 'Kraekkja', 'Tuva turisthytte']
+    highlights: ['Finsehytta', 'Kraekkja', 'Tuva turisthytte'],
+    activity: 'hyttetur'
   },
   {
     id: 'rondane-hiking',
@@ -50,7 +54,8 @@ export const tripStops: TripStop[] = [
     dateRange: 'Juli-september',
     description: 'Toppturer til Rondslottet og kvelder ved Rondvassbu med kano og balpanne.',
     coords: [61.873, 9.7703],
-    highlights: ['Rondslottet', 'Rondvassbu', 'Vinjeronden']
+    highlights: ['Rondslottet', 'Rondvassbu', 'Vinjeronden'],
+    activity: 'topptur'
   },
   {
     id: 'trollheimen-cabins',
@@ -60,7 +65,8 @@ export const tripStops: TripStop[] = [
     dateRange: 'Juli-august',
     description: 'Hytteuke mellom Gjevilvasshytta, Trollheimshytta og Joldalshytta.',
     coords: [62.742, 9.143],
-    highlights: ['Gjevilvasshytta', 'Trollheimshytta', 'Joldalshytta']
+    highlights: ['Gjevilvasshytta', 'Trollheimshytta', 'Joldalshytta'],
+    activity: 'hyttetur'
   },
   {
     id: 'femundsmarka-canoe',
@@ -70,6 +76,7 @@ export const tripStops: TripStop[] = [
     dateRange: 'Juni-august',
     description: 'Padling langs Femunden kombinert med korte vandringer inn til koier og teltplasser.',
     coords: [62.2864, 12.1133],
-    highlights: ['Femund II', 'Svukuriset', 'Rovollen koie']
+    highlights: ['Femund II', 'Svukuriset', 'Rovollen koie'],
+    activity: 'padletur'
   }
 ];
