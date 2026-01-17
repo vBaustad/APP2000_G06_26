@@ -7,6 +7,7 @@
 
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
+import Footer from "./layout/Footer";
 
 export default function Layout() {
     const location = useLocation();
@@ -17,7 +18,8 @@ export default function Layout() {
     return(
         <div className="min-h-screen bg-gray-100 text-gray-900">            
             <Navbar variant={isTransparent ? "transparent" : "solid"} />
-            <Outlet />            
+            <Outlet />
+            <Footer /> 
         </div>
     );
 }
