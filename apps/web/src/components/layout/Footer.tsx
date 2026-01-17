@@ -10,9 +10,6 @@
 import { Link } from "react-router-dom";
 import { Facebook, Instagram, Youtube, Mail, Phone, MapPin } from "lucide-react";
 
-// Næverende fila kan hentes i: apps/web/src/assets/logos/utopia-footer-logo.png
-import utopiaLogo from "../../assets/logos/utopia-footer-logo.png";
-
 export default function Footer() {
   return (
     /** Bakgrunnsfarge: #17331C (grønn) og ikoner: hvitt for kontrast */
@@ -25,7 +22,7 @@ export default function Footer() {
           <div className="space-y-4">
 
             {/* Logo-bilde) */}
-            <img src={utopiaLogo}
+            <img src={"/logos/utopia-footer-logo.png"}
               alt="Utopia - Turistforeningen i Utopia"
               className="h-12 w-auto object-contain"/>
 
