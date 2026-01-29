@@ -33,12 +33,16 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
         <>        
             <header className={headerClass}>
                 <nav className="mx-auto max-w-7xl px-6 py-5 flex items-center justify-between">
-                    {/* Logo */}
-                    <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-md bg-emerald-600 text-white flex items-center justify-center font-semibold">
-                            TUR
-                        </div>
-                    </div>
+{/* Logo */}
+<NavLink
+  to="/"
+  className="flex items-center gap-2 transition-transform duration-200 hover:scale-105">
+  <div className="h-8 w-8 rounded-md bg-emerald-600 text-white flex items-center justify-center font-semibold cursor-pointer transition-colors duration-200 hover:bg-emerald-500">
+    TUR
+  </div>
+</NavLink>
+
+
                     <ul className="hidden md:flex items-center gap-8 font-medium">
                         <li><NavLink to="/" className={linkClass}>Hjem</NavLink></li>
                         <li><NavLink to="/map" className={linkClass}>Kart</NavLink></li>
