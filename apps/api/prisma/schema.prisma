@@ -1,0 +1,231 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model bruker {
+  id               Int                @id @default(autoincrement())
+  epost            String             @unique(map: "epost") @db.VarChar(255)
+  passord_hash     String             @db.VarChar(255)
+  fornavn          String?            @db.VarChar(100)
+  etternavn        String?            @db.VarChar(100)
+  created_at       DateTime           @default(now()) @db.DateTime(0)
+  bruker_rolle     bruker_rolle[]
+  chat_medlem      chat_medlem[]
+  favoritt         favoritt[]
+  hytte            hytte[]
+  hytte_booking    hytte_booking[]
+  melding          melding[]
+  tur              tur[]
+  tur_pamelding    tur_pamelding[]
+  tursti_kommentar tursti_kommentar[]
+  tursti_rating    tursti_rating[]
+}
+
+model bruker_rolle {
+  bruker_id Int
+  rolle_id  Int
+  bruker    bruker @relation(fields: [bruker_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_bruker_rolle_bruker")
+  rolle     rolle  @relation(fields: [rolle_id], references: [id], onUpdate: Restrict, map: "fk_bruker_rolle_rolle")
+
+  @@id([bruker_id, rolle_id])
+  @@index([rolle_id], map: "fk_bruker_rolle_rolle")
+}
+
+model chat {
+  id          Int           @id @default(autoincrement())
+  type        String        @default("group") @db.VarChar(50)
+  tittel      String?       @db.VarChar(255)
+  chat_medlem chat_medlem[]
+  melding     melding[]
+}
+
+model chat_medlem {
+  chat_id   Int
+  bruker_id Int
+  bruker    bruker @relation(fields: [bruker_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_chat_medlem_bruker")
+  chat      chat   @relation(fields: [chat_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_chat_medlem_chat")
+
+  @@id([chat_id, bruker_id])
+  @@index([bruker_id], map: "fk_chat_medlem_bruker")
+}
+
+model favoritt {
+  bruker_id  Int
+  tursti_id  Int
+  created_at DateTime @default(now()) @db.DateTime(0)
+  bruker     bruker   @relation(fields: [bruker_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_favoritt_bruker")
+  tursti     tursti   @relation(fields: [tursti_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_favoritt_tursti")
+
+  @@id([bruker_id, tursti_id])
+  @@index([tursti_id], map: "fk_favoritt_tursti")
+}
+
+model hytte {
+  id               Int               @id @default(autoincrement())
+  eier_bruker_id   Int
+  navn             String            @db.VarChar(255)
+  beskrivelse      String?           @db.Text
+  omrade           String?           @db.VarChar(255)
+  adresse          String?           @db.VarChar(255)
+  kapasitet_senger Int               @default(1)
+  maks_gjester     Int?
+  pris_per_natt    Decimal           @default(0.00) @db.Decimal(10, 2)
+  regler           String?           @db.Text
+  created_at       DateTime          @default(now()) @db.DateTime(0)
+  bruker           bruker            @relation(fields: [eier_bruker_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_hytte_eier")
+  hytte_booking    hytte_booking[]
+  hytte_fasilitet  hytte_fasilitet[]
+  tur_dato_hytte   tur_dato_hytte[]
+
+  @@index([eier_bruker_id], map: "fk_hytte_eier")
+}
+
+model hytte_booking {
+  id             Int              @id @default(autoincrement())
+  hytte_id       Int
+  bruker_id      Int
+  start_dato     DateTime         @db.Date
+  slutt_dato     DateTime         @db.Date
+  status         String           @default("pending") @db.VarChar(50)
+  antall_gjester Int?
+  total_pris     Decimal?         @db.Decimal(10, 2)
+  created_at     DateTime         @default(now()) @db.DateTime(0)
+  bruker         bruker           @relation(fields: [bruker_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_hytte_booking_bruker")
+  hytte          hytte            @relation(fields: [hytte_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_hytte_booking_hytte")
+  tur_dato_hytte tur_dato_hytte[]
+
+  @@index([bruker_id], map: "fk_hytte_booking_bruker")
+  @@index([hytte_id], map: "idx_hytte_booking_hytte")
+  @@index([start_dato, slutt_dato], map: "idx_hytte_booking_period")
+}
+
+model hytte_fasilitet {
+  id       Int     @id @default(autoincrement())
+  hytte_id Int
+  kode     String  @db.VarChar(50)
+  verdi    String? @db.VarChar(255)
+  hytte    hytte   @relation(fields: [hytte_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_hytte_fasilitet_hytte")
+
+  @@unique([hytte_id, kode], map: "uq_hytte_fasilitet")
+}
+
+model melding {
+  id         Int      @id @default(autoincrement())
+  chat_id    Int
+  sender_id  Int
+  body       String   @db.Text
+  created_at DateTime @default(now()) @db.DateTime(0)
+  chat       chat     @relation(fields: [chat_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_melding_chat")
+  bruker     bruker   @relation(fields: [sender_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_melding_sender")
+
+  @@index([chat_id], map: "fk_melding_chat")
+  @@index([sender_id], map: "fk_melding_sender")
+}
+
+model rolle {
+  id           Int            @id @default(autoincrement())
+  kode         String         @unique(map: "kode") @db.VarChar(50)
+  navn         String         @db.VarChar(100)
+  beskrivelse  String?        @db.Text
+  bruker_rolle bruker_rolle[]
+}
+
+model tur {
+  id                Int        @id @default(autoincrement())
+  tittel            String     @db.VarChar(255)
+  beskrivelse       String?    @db.Text
+  vanskelighetsgrad String?    @db.VarChar(50)
+  min_deltakere     Int?
+  max_deltakere     Int?
+  status            String     @default("draft") @db.VarChar(50)
+  leder_bruker_id   Int?
+  created_at        DateTime   @default(now()) @db.DateTime(0)
+  bruker            bruker?    @relation(fields: [leder_bruker_id], references: [id], onUpdate: Restrict, map: "fk_tur_leder")
+  tur_dato          tur_dato[]
+
+  @@index([leder_bruker_id], map: "fk_tur_leder")
+}
+
+model tur_dato {
+  id             Int              @id @default(autoincrement())
+  tur_id         Int
+  tittel         String?          @db.VarChar(255)
+  start_at       DateTime         @db.DateTime(0)
+  end_at         DateTime         @db.DateTime(0)
+  status         String           @default("planned") @db.VarChar(50)
+  tur            tur              @relation(fields: [tur_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_tur_dato_tur")
+  tur_dato_hytte tur_dato_hytte[]
+  tur_pamelding  tur_pamelding[]
+
+  @@index([tur_id], map: "fk_tur_dato_tur")
+}
+
+model tur_dato_hytte {
+  tur_dato_id   Int
+  hytte_id      Int
+  booking_id    Int?
+  hytte_booking hytte_booking? @relation(fields: [booking_id], references: [id], onUpdate: Restrict, map: "fk_tdh_booking")
+  hytte         hytte          @relation(fields: [hytte_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_tdh_hytte")
+  tur_dato      tur_dato       @relation(fields: [tur_dato_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_tdh_tur_dato")
+
+  @@id([tur_dato_id, hytte_id])
+  @@index([booking_id], map: "fk_tdh_booking")
+  @@index([hytte_id], map: "fk_tdh_hytte")
+}
+
+model tur_pamelding {
+  id          Int      @id @default(autoincrement())
+  tur_dato_id Int
+  bruker_id   Int
+  status      String   @default("pending") @db.VarChar(50)
+  created_at  DateTime @default(now()) @db.DateTime(0)
+  bruker      bruker   @relation(fields: [bruker_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_tur_pamelding_bruker")
+  tur_dato    tur_dato @relation(fields: [tur_dato_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_tur_pamelding_tur_dato")
+
+  @@unique([tur_dato_id, bruker_id], map: "uq_tur_dato_bruker")
+  @@index([bruker_id], map: "fk_tur_pamelding_bruker")
+}
+
+model tursti {
+  id                Int                @id @default(autoincrement())
+  navn              String             @db.VarChar(255)
+  beskrivelse       String?            @db.Text
+  vanskelighetsgrad String?            @db.VarChar(50)
+  hoydemeter        Int?
+  lengde_km         Decimal?           @db.Decimal(6, 2)
+  omrade            String?            @db.VarChar(255)
+  created_at        DateTime           @default(now()) @db.DateTime(0)
+  favoritt          favoritt[]
+  tursti_kommentar  tursti_kommentar[]
+  tursti_rating     tursti_rating[]
+}
+
+model tursti_kommentar {
+  id         Int      @id @default(autoincrement())
+  tursti_id  Int
+  bruker_id  Int
+  body       String?  @db.Text
+  created_at DateTime @default(now()) @db.DateTime(0)
+  bruker     bruker   @relation(fields: [bruker_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_tursti_kommentar_bruker")
+  tursti     tursti   @relation(fields: [tursti_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_tursti_kommentar_tursti")
+
+  @@index([bruker_id], map: "fk_tursti_kommentar_bruker")
+  @@index([tursti_id], map: "fk_tursti_kommentar_tursti")
+}
+
+model tursti_rating {
+  bruker_id  Int
+  tursti_id  Int
+  rating     Int      @db.TinyInt
+  created_at DateTime @default(now()) @db.DateTime(0)
+  bruker     bruker   @relation(fields: [bruker_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_tursti_rating_bruker")
+  tursti     tursti   @relation(fields: [tursti_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_tursti_rating_tursti")
+
+  @@id([bruker_id, tursti_id])
+  @@index([tursti_id], map: "fk_tursti_rating_tursti")
+}
