@@ -1,6 +1,6 @@
 /**
  * Fil: Navbar.tsx
- * Utvikler(e): Vebjørn Baustad
+ * Utvikler(e): Vebjørn Baustad, Alex
  * Beskrivelse: Navigasjonskomponent som viser hovedmenyen og tilpasser
  * utseende basert på side (transparent eller solid bakgrunn). Viser forskjellige navbar meny items basert på om bruker er logget inn og hvilken rolle de har.
  */
@@ -49,6 +49,7 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
                         TUR
                     </div>
                     </NavLink>
+                    <p>Dette er et skoleprosjekt ved USN og ikke en ekte nettside</p>
                     <ul className="hidden md:flex items-center gap-8 font-medium">
                         <li><NavLink to="/" className={linkClass}>Hjem</NavLink></li>
                         <li><NavLink to="/map" className={linkClass}>Kart</NavLink></li>

@@ -1,3 +1,9 @@
+/**
+ * Fil: MyCabinsPage.tsx
+ * Utvikler(e): Vebjørn Baustad
+ * Beskrivelse: CRUD for oppretting, redigering og sletting av hytter for brukere med rolle hytteeier
+ */
+
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 

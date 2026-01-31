@@ -1,5 +1,6 @@
 /**
  * Fil: PartnersSection.tsx
+ * Utvikler(e): Alex
  * Beskrivelse: Viser samarbeidspartnere nederst på landingssiden.
  */
 

@@ -1,3 +1,10 @@
+/**
+ * Fil: Jwt.ts
+ * Utvikler(e): Vebjørn Baustad
+ * Beskrivelse: Ansvarlig for opprettelse og validering av JWT-token brukt til innlogging
+ * og tilgangskontroll i applikasjonen.
+ */
+
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET!;

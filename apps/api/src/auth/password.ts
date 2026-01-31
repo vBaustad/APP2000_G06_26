@@ -1,3 +1,9 @@
+/**
+ * Fil: password.ts
+ * Utvikler(e): Vebjørn Baustad
+ * Beskrivelse: Håndterer hashing og verifisering av passord for sikker innlogging.
+ */
+
 import bcrypt from "bcrypt";
 
 export async function hashPassword(password: string) {
