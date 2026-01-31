@@ -3,7 +3,7 @@
   "private": true,
   "workspaces": [
     "apps/*"
-  ],  
+  ],
   "scripts": {
     "start": "npm run start:api",
     "dev:web": "npm --workspace @app2000/web run dev",
@@ -16,6 +16,7 @@
     "start:api": "npm --workspace @app2000/api run start"
   },
   "devDependencies": {
+    "@rollup/rollup-win32-x64-msvc": "^4.57.0",
     "@tailwindcss/vite": "^4.1.18",
     "autoprefixer": "^10.4.23",
     "concurrently": "^9.0.0",
