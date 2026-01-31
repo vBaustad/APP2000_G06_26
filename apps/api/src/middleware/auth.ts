@@ -1,3 +1,9 @@
+/**
+ * Fil: auth.ts
+ * Utvikler(e): Vebjørn Baustad
+ * Beskrivelse: Håndterer autentisering og rollebasert tilgang i API-et.
+ */
+
 import { Request, Response, NextFunction } from "express";
 import { verifyToken } from "../auth/jwt";
 import { prisma } from "../prisma"

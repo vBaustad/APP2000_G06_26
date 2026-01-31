@@ -1,3 +1,11 @@
+/**
+ * Fil: hytteRoutes.ts
+ * Utvikler(e): Vebjørn Baustad
+ * Beskrivelse: Implementerer CRUD-operasjoner for hytter ved bruk av Express og Prisma,
+ * med støtte for autentisering og rollebasert tilgang.
+ */
+
+
 import { Router } from "express";
 import { prisma } from "../prisma";
 import { requireAuth, requireRole } from "../middleware/auth";

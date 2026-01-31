@@ -1,3 +1,9 @@
+/**
+ * Fil: AuthContext.tsx
+ * Utvikler(e): Vebjørn Baustad
+ * Beskrivelse: Håndterer innloggingsstatus og brukerdata i frontend ved hjelp av Context API.
+ */
+
 import { createContext, useContext, useMemo, useState } from "react";
 
 export type User = {

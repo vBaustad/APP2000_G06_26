@@ -1,3 +1,9 @@
+/**
+ * Fil: authRoutes.ts
+ * Utvikler(e): Vebjørn Baustad
+ * Beskrivelse: API-ruter for innlogging og autentisering av brukere.
+ */
+
 import { Router } from "express";
 import { prisma } from "../prisma";
 import { signToken } from "../auth/jwt";

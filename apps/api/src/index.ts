@@ -1,3 +1,10 @@
+/**
+ * Fil: Index.ts
+ * Utvikler(e): Vebjørn Baustad
+ * Beskrivelse: Starter backend-serveren og definerer hovedrutene for autentisering
+ * og hytte-API. Inkluderer grunnleggende middleware og en enkel helsesjekk.
+ */
+
 import "dotenv/config";
 import express from 'express';
 import cors from 'cors';
