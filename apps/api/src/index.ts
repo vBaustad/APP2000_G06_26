@@ -1,6 +1,8 @@
+import "dotenv/config";
 import express from 'express';
 import cors from 'cors';
-import { userRouter } from './routes/userRoutes';
+import { authRouter } from './routes/authRoutes';
+import { hytteRouter } from "./routes/hytteRoutes";
 
 const app = express();
 
@@ -8,7 +10,9 @@ app.use(cors());
 app.use(express.json());
 
 // Define routes
-app.use('/api/users', userRouter);
+app.use('/api/auth', authRouter);
+
+app.use("/api/hytter", hytteRouter);
 
 // Basic health check route
 app.get('/', (req, res) => {
