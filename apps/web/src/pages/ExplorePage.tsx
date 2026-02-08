@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import TourForm from "../components/TourForm";
 import { getTours } from "../services/toursApi";
 import type { Tour, Region } from "../utils/mockTours";
+import { Pencil, Trash2, MapPin, Mountain, Clock, Route } from "lucide-react";
 
 type SortKey = "newest" | "distanceAsc" | "durationAsc";
 
@@ -33,10 +34,10 @@ function toggleInList<T>(list: T[], value: T) {
   return list.includes(value) ? list.filter((x) => x !== value) : [...list, value];
 }
 
-/** Regionvalg (som du ba om) */
+/** Regionvalg */
 const REGIONS: Region[] = ["Nord-Norge", "Trøndelag", "Østlandet", "Sørlandet", "Vestlandet"];
 
-// Bildene du faktisk har i /public/images/tours (etter rename)
+// Bildene du faktisk har i /public/images/tours
 const TOUR_IMAGES = [
   "/images/tours/floibanen.jpg",
   "/images/tours/oslofjord.jpg",
@@ -65,7 +66,7 @@ export default function ExplorePage() {
   const [allTours, setAllTours] = useState<Tour[]>([]);
   const [query, setQuery] = useState("");
 
-  // ut.no-ish filter state (flervalg)
+  // Filter state (flervalg)
   const [diffs, setDiffs] = useState<Tour["difficulty"][]>([]);
   const [lengths, setLengths] = useState<LengthBucket[]>([]);
   const [durations, setDurations] = useState<DurationBucket[]>([]);
@@ -92,29 +93,23 @@ export default function ExplorePage() {
     const q = query.trim().toLowerCase();
 
     let next = allTours.filter((t) => {
-      // søk
       const matchesQuery =
         !q ||
         `${t.title} ${t.location} ${t.difficulty} ${t.region}`.toLowerCase().includes(q);
 
-      // flervalg difficulty
       const matchesDiff = diffs.length === 0 || diffs.includes(t.difficulty);
 
-      // flervalg lengde
       const matchesLen =
         lengths.length === 0 || lengths.some((b) => inLengthBucket(t.distanceKm, b));
 
-      // flervalg varighet
       const matchesDur =
         durations.length === 0 || durations.some((b) => inDurationBucket(t.durationHours, b));
 
-      // flervalg region
       const matchesRegion = regions.length === 0 || regions.includes(t.region);
 
       return matchesQuery && matchesDiff && matchesLen && matchesDur && matchesRegion;
     });
 
-    // Sortering
     if (sort === "distanceAsc") next = [...next].sort((a, b) => a.distanceKm - b.distanceKm);
     if (sort === "durationAsc") next = [...next].sort((a, b) => a.durationHours - b.durationHours);
     if (sort === "newest") next = [...next].sort((a, b) => (a.id < b.id ? 1 : -1)); // ok for mock
@@ -286,7 +281,6 @@ export default function ExplorePage() {
                   )}
                 </button>
 
-                {/* Behold "Legg til tur" */}
                 <button
                   type="button"
                   onClick={() => {
@@ -305,7 +299,6 @@ export default function ExplorePage() {
             {filtersOpen && (
               <div className="mt-5 rounded-2xl bg-gray-50 p-4 md:p-6 border border-gray-100">
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                  {/* Vanskelighetsgrad */}
                   <div>
                     <h3 className="text-lg font-semibold mb-3">Vanskelighetsgrad</h3>
                     {(["Lett", "Middels", "Krevende", "Ekspert"] as Tour["difficulty"][]).map(
@@ -323,7 +316,6 @@ export default function ExplorePage() {
                     )}
                   </div>
 
-                  {/* Lengde */}
                   <div>
                     <h3 className="text-lg font-semibold mb-3">Lengde</h3>
                     {([
@@ -344,7 +336,6 @@ export default function ExplorePage() {
                     ))}
                   </div>
 
-                  {/* Varighet */}
                   <div>
                     <h3 className="text-lg font-semibold mb-3">Varighet</h3>
                     {([
@@ -365,7 +356,6 @@ export default function ExplorePage() {
                     ))}
                   </div>
 
-                  {/* Region */}
                   <div>
                     <h3 className="text-lg font-semibold mb-3">Region</h3>
                     {REGIONS.map((r) => (
@@ -439,48 +429,94 @@ export default function ExplorePage() {
               {visibleTours.map((t) => (
                 <article
                   key={t.id}
-                  className="rounded-2xl overflow-hidden bg-white shadow hover:shadow-lg transition"
+                  className="group relative overflow-hidden rounded-2xl bg-white shadow hover:shadow-lg transition"
                 >
-                  <img
-                    src={t.imageUrl || "/images/trip-card-placeholder.jpg"}
-                    alt={t.title}
-                    className="h-44 w-full object-cover"
-                    loading="lazy"
-                  />
+                  {/* Image */}
+                  <div className="relative">
+                    <img
+                      src={t.imageUrl || "/images/trip-card-placeholder.jpg"}
+                      alt={t.title}
+                      className="h-56 w-full object-cover"
+                      loading="lazy"
+                    />
 
-                  <div className="p-4 space-y-2">
-                    <div className="flex items-start justify-between gap-3">
-                      <h3 className="text-lg font-semibold leading-snug">{t.title}</h3>
-                      <span className="shrink-0 inline-block rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
-                        {t.difficulty}
-                      </span>
-                    </div>
+                    {/* Difficulty badge (top-left) */}
+                    <span className="absolute left-4 top-4 rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 shadow-sm">
+                      {t.difficulty}
+                    </span>
 
-                    <p className="text-sm text-gray-600">
-                      {t.location} • <span className="font-medium">{t.region}</span>
-                    </p>
-
-                    <p className="text-sm text-gray-600">
-                      {t.distanceKm} km • {t.elevationM} hm • ca. {t.durationHours} t
-                    </p>
-
-                    <p className="text-sm text-gray-600">Utstyr: {t.gear.join(", ")}</p>
-
-                    <div className="pt-3 flex items-center justify-end gap-2">
+                    {/* Action icons (top-right) */}
+                    <div className="absolute right-4 top-4 flex gap-2">
                       <button
                         type="button"
                         onClick={() => handleStartEdit(t)}
-                        className="rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        className="grid h-10 w-10 place-items-center rounded-xl bg-white/95 shadow-sm hover:bg-white"
+                        title="Rediger"
+                        aria-label="Rediger"
                       >
-                        Rediger
+                        <Pencil className="h-5 w-5" />
                       </button>
+
                       <button
                         type="button"
-                        onClick={() => handleDelete(t.id)}
-                        className="rounded-xl bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+                        onClick={() => {
+                          if (window.confirm(`Slette "${t.title}"?`)) handleDelete(t.id);
+                        }}
+                        className="grid h-10 w-10 place-items-center rounded-xl bg-white/95 shadow-sm hover:bg-white"
+                        title="Slett"
+                        aria-label="Slett"
                       >
-                        Slett
+                        <Trash2 className="h-5 w-5 text-red-600" />
                       </button>
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-5">
+                    <h3 className="text-2xl font-semibold tracking-tight text-gray-900">
+                      {t.title}
+                    </h3>
+
+                    <div className="mt-2 flex items-center gap-2 text-gray-600">
+                      <MapPin className="h-4 w-4" />
+                      <p className="text-sm">
+                        {t.location}
+                        <span className="mx-2">•</span>
+                        {t.region}
+                      </p>
+                    </div>
+
+                    {/* Meta row */}
+                    <div className="mt-5 grid grid-cols-3 gap-4 border-t border-gray-100 pt-4">
+                      <div className="text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <Route className="h-4 w-4" />
+                          <span>Distanse</span>
+                        </div>
+                        <div className="mt-1 text-lg font-semibold text-gray-900">
+                          {t.distanceKm} km
+                        </div>
+                      </div>
+
+                      <div className="text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <Mountain className="h-4 w-4" />
+                          <span>Høydemeter</span>
+                        </div>
+                        <div className="mt-1 text-lg font-semibold text-gray-900">
+                          {t.elevationM} m
+                        </div>
+                      </div>
+
+                      <div className="text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          <span>Tid</span>
+                        </div>
+                        <div className="mt-1 text-lg font-semibold text-gray-900">
+                          {t.durationHours} t
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </article>
