@@ -1,6 +1,6 @@
 /**
  * Fil: mockTours.ts
- * Utvikler(e): Vebjørn Baustad
+ * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu
  * Beskrivelse: Mock-data for turer brukt til visning av turkort
  * på Utforsk-siden (placeholder uten backend).
  */
