@@ -1,7 +1,7 @@
 /**
  * Fil: TourDetailsPage.tsx
  * Utvikler(e): Ramona Cretulescu
- * Beskrivelse: Detaljside for én tur (åpnes fra Utforsk via "Se mer").
+ * Beskrivelse: Detaljside for én tur (åpnes "Se mer").
  */
 
 import { useEffect, useMemo, useState } from "react";

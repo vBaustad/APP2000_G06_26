@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import TourForm from "../components/TourForm";
 import { getTours } from "../services/toursApi";
 import type { Tour, Region } from "../utils/mockTours";
@@ -94,13 +95,11 @@ export default function ExplorePage() {
 
     let next = allTours.filter((t) => {
       const matchesQuery =
-        !q ||
-        `${t.title} ${t.location} ${t.difficulty} ${t.region}`.toLowerCase().includes(q);
+        !q || `${t.title} ${t.location} ${t.difficulty} ${t.region}`.toLowerCase().includes(q);
 
       const matchesDiff = diffs.length === 0 || diffs.includes(t.difficulty);
 
-      const matchesLen =
-        lengths.length === 0 || lengths.some((b) => inLengthBucket(t.distanceKm, b));
+      const matchesLen = lengths.length === 0 || lengths.some((b) => inLengthBucket(t.distanceKm, b));
 
       const matchesDur =
         durations.length === 0 || durations.some((b) => inDurationBucket(t.durationHours, b));
@@ -191,11 +190,7 @@ export default function ExplorePage() {
     <main>
       {/* HERO */}
       <section className="relative h-[38vh] min-h-[320px]">
-        <img
-          src="/images/explore-hero.jpg"
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        <img src="/images/explore-hero.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-black/45" />
 
         <div className="relative z-10 h-full">
@@ -301,29 +296,29 @@ export default function ExplorePage() {
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                   <div>
                     <h3 className="text-lg font-semibold mb-3">Vanskelighetsgrad</h3>
-                    {(["Lett", "Middels", "Krevende", "Ekspert"] as Tour["difficulty"][]).map(
-                      (d) => (
-                        <label key={d} className="flex items-center gap-3 py-2 text-base">
-                          <input
-                            type="checkbox"
-                            checked={diffs.includes(d)}
-                            onChange={() => setDiffs((prev) => toggleInList(prev, d))}
-                            className="h-5 w-5"
-                          />
-                          <span>{d}</span>
-                        </label>
-                      )
-                    )}
+                    {(["Lett", "Middels", "Krevende", "Ekspert"] as Tour["difficulty"][]).map((d) => (
+                      <label key={d} className="flex items-center gap-3 py-2 text-base">
+                        <input
+                          type="checkbox"
+                          checked={diffs.includes(d)}
+                          onChange={() => setDiffs((prev) => toggleInList(prev, d))}
+                          className="h-5 w-5"
+                        />
+                        <span>{d}</span>
+                      </label>
+                    ))}
                   </div>
 
                   <div>
                     <h3 className="text-lg font-semibold mb-3">Lengde</h3>
-                    {([
-                      { k: "lt5", label: "Under 5 km" },
-                      { k: "5to10", label: "5–10 km" },
-                      { k: "10to20", label: "10–20 km" },
-                      { k: "gt20", label: "Over 20 km" },
-                    ] as { k: LengthBucket; label: string }[]).map((o) => (
+                    {(
+                      [
+                        { k: "lt5", label: "Under 5 km" },
+                        { k: "5to10", label: "5–10 km" },
+                        { k: "10to20", label: "10–20 km" },
+                        { k: "gt20", label: "Over 20 km" },
+                      ] as { k: LengthBucket; label: string }[]
+                    ).map((o) => (
                       <label key={o.k} className="flex items-center gap-3 py-2 text-base">
                         <input
                           type="checkbox"
@@ -338,12 +333,14 @@ export default function ExplorePage() {
 
                   <div>
                     <h3 className="text-lg font-semibold mb-3">Varighet</h3>
-                    {([
-                      { k: "lt2", label: "Under 2 timer" },
-                      { k: "2to4", label: "2–4 timer" },
-                      { k: "4to6", label: "4–6 timer" },
-                      { k: "gt6", label: "Over 6 timer" },
-                    ] as { k: DurationBucket; label: string }[]).map((o) => (
+                    {(
+                      [
+                        { k: "lt2", label: "Under 2 timer" },
+                        { k: "2to4", label: "2–4 timer" },
+                        { k: "4to6", label: "4–6 timer" },
+                        { k: "gt6", label: "Over 6 timer" },
+                      ] as { k: DurationBucket; label: string }[]
+                    ).map((o) => (
                       <label key={o.k} className="flex items-center gap-3 py-2 text-base">
                         <input
                           type="checkbox"
@@ -373,11 +370,7 @@ export default function ExplorePage() {
                 </div>
 
                 <div className="mt-6 flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={clearAllFilters}
-                    className="text-sm font-semibold text-red-600 hover:underline"
-                  >
+                  <button type="button" onClick={clearAllFilters} className="text-sm font-semibold text-red-600 hover:underline">
                     Fjern alle
                   </button>
 
@@ -471,8 +464,8 @@ export default function ExplorePage() {
                     </div>
                   </div>
 
-                  {/* Content */}
-                  <div className="p-5">
+                  {/* Content (VIKTIG: flex-col + riktig rekkefølge) */}
+                  <div className="p-5 flex flex-col">
                     <h3 className="text-2xl font-semibold tracking-tight text-gray-900">
                       {t.title}
                     </h3>
@@ -486,7 +479,7 @@ export default function ExplorePage() {
                       </p>
                     </div>
 
-                    {/* Meta row */}
+                    {/* Meta row (OPP) */}
                     <div className="mt-5 grid grid-cols-3 gap-4 border-t border-gray-100 pt-4">
                       <div className="text-sm text-gray-600">
                         <div className="flex items-center gap-2">
@@ -517,6 +510,18 @@ export default function ExplorePage() {
                           {t.durationHours} t
                         </div>
                       </div>
+                    </div>
+
+                    {/* Footer (NEDERST – Se mer kommer sist) */}
+                    <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4">
+                      <div className="text-sm text-gray-500">
+                        Utstyr: {t.gear.slice(0, 2).join(", ")}
+                        {t.gear.length > 2 ? "…" : ""}
+                      </div>
+
+                      <Link to={`/tours/${t.id}`} className="text-sm font-semibold text-emerald-700 hover:underline">
+                        Se mer
+                      </Link>
                     </div>
                   </div>
                 </article>
