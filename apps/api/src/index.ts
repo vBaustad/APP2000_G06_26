@@ -10,6 +10,7 @@ import express from 'express';
 import cors from 'cors';
 import { authRouter } from './routes/authRoutes';
 import { hytteRouter } from "./routes/hytteRoutes";
+import { turRouter } from "./routes/turRoutes";
 
 const app = express();
 
@@ -20,6 +21,8 @@ app.use(express.json());
 app.use('/api/auth', authRouter);
 
 app.use("/api/hytter", hytteRouter);
+
+app.use("/api/turer", turRouter);
 
 // Basic health check route
 app.get('/', (req, res) => {
