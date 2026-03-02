@@ -1,5 +1,3 @@
-
-
 import { NavLink } from "react-router-dom";
 
 export default function MyPage() {
@@ -65,9 +63,12 @@ export default function MyPage() {
               {myTrips.filter(t => t.status === "Påmeldt").length} turer påmeldt.
             </p>
           </div>
-          <button className="mt-4 md:mt-0 bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white px-4 py-2 rounded-lg font-medium transition">
+          <NavLink 
+            to="/editprofile" 
+            className="mt-4 md:mt-0 bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white px-4 py-2 rounded-lg font-medium transition text-center"
+          >
             Rediger profil
-          </button>
+          </NavLink>
         </div>
 
         {/* Favoritter */}

@@ -17,6 +17,7 @@ import MyPage from "./pages/MyPage";
 import SignupPage from "./pages/SignupPage";
 import MyCabinsPage from "./pages/MyCabinsPage";
 import TourDetailsPage from "./pages/TourDetailsPage";
+import EditProfile from "./pages/EditProfile";
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="/map" element={<MapPage />} />
           <Route path="/me" element={<MyPage />} />
           <Route path="/mycabins" element={<MyCabinsPage />} />
+          <Route path="/editprofile" element={<EditProfile />} />
 
           {/* Detaljside for tur */}
           <Route path="/tours/:id" element={<TourDetailsPage />} />
