@@ -1,3 +1,11 @@
+/**
+ * Fil: MyPage.tsx
+ * Utvikler: Parasto Jamshidi
+ * Beskrivelse: Denne siden viser brukerens personlige informasjon, inkludert profil,
+ * favoritter og turer. Innholdet vises kun dersom brukeren er logget inn.
+ * Hvis ikke, blir brukeren sendt til innloggingssiden.
+ */
+
 import { NavLink } from "react-router-dom";
 
 export default function MyPage() {
