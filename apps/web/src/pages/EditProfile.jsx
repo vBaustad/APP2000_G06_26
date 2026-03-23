@@ -1,3 +1,13 @@
+/**
+ * Fil: EditProfile.jsx
+ * Utvikler: Parasto Jamshidi
+ * Beskrivelse: Denne siden lar brukeren redigere sin profilinformasjon som navn,
+ * e-post, telefonnummer og favoritter. Data lagres midlertidig i state og kan senere
+ * kobles til backend for å oppdatere informasjon i databasen.
+ * Siden er kun tilgjengelig for innloggede brukere.
+ */
+
+
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
