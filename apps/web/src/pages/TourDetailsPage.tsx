@@ -1,7 +1,7 @@
 /**
  * Fil: TourDetailsPage.tsx
  * Utvikler(e): Ramona Cretulescu
- * Beskrivelse: Detaljside for én tur (åpnes "Se mer").
+ * Beskrivelse: Detaljside for en tur (åpnes "Se mer").
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -50,27 +50,27 @@ function ensureTourImage(t: Tour): Tour {
 
 /**
  * Demo geo-db (kart). Keys må matche tour.id
- * Legg gjerne inn flere id’er etter hvert.
+ * Legg gjerne inn flere id-er etter hvert.
  */
 const TOUR_GEO: Record<
   string,
   { center: LatLng; season: string; roundTrip: string; typeText: string; protectedArea: boolean }
 > = {
-  "1": {
+  t1: {
     center: [60.39299, 5.32415],
     season: "Hele året (best vår–høst)",
     roundTrip: "Tur/retur samme vei",
     typeText: "Fottur (fjell/utsikt)",
     protectedArea: false,
   },
-  "2": {
+  t2: {
     center: [59.9139, 10.7522],
     season: "Vår–høst (fin også på vinter med brodder)",
     roundTrip: "Rundtur (sløyfe)",
     typeText: "By-nær skogstur",
     protectedArea: false,
   },
-  "3": {
+  t3: {
     center: [62.1015, 7.205],
     season: "Sommer–tidlig høst",
     roundTrip: "Tur/retur samme vei",
@@ -82,9 +82,9 @@ const TOUR_GEO: Record<
 type Review = {
   id: string;
   name: string;
-  rating: number; // 1-5
+  rating: number;
   text: string;
-  createdAt: string; // ISO
+  createdAt: string;
 };
 
 function clamp(n: number, min: number, max: number) {
@@ -118,6 +118,7 @@ function safeGet(key: string) {
     return null;
   }
 }
+
 function safeSet(key: string, value: string) {
   try {
     localStorage.setItem(key, value);
@@ -129,6 +130,7 @@ function safeSet(key: string, value: string) {
 function keyReviews(tourId: string) {
   return `tour_reviews_${tourId}`;
 }
+
 function keySaved(tourId: string) {
   return `tour_saved_${tourId}`;
 }
@@ -140,12 +142,9 @@ function storyForTour(tour: Tour) {
     "Dette er en tur som føles som klassisk Norge: tydelig sti, frisk luft og en utsikt som belønner deg for å gå rolig, jevnt og fornuftig. Ta pauser, drikk vann – og la fjellet få siste ordet.";
 
   const byId: Record<string, string> = {
-    "1":
-      "Fløibanen-området er som et gammelt, godt friluftsråd i praksis: du får høyde, skog og utsikt – uten at det blir sirkus. Hold et jevnt tempo, og du blir belønnet med by og fjord under deg. Dette er turen du kan gå mange ganger og likevel finne en ny liten detalj hver gang.",
-    "2":
-      "Oslofjorden gjør det lett å være ute: lufta er mild, stiene er tydelige, og du kan gå med den deilige følelsen av at naturen ligger rett ved siden av hverdagen. Dette er en tur for deg som vil ha ro i hodet og fremdrift i beina – uten å måtte ‘prestere’ noe annet enn å møte opp.",
-    "3":
-      "Geiranger og fjellene rundt er Norge på sitt mest dramatiske: bratte sider, dype daler, og utsikt som får folk til å bli stille. Her lønner det seg å være tradisjonell: gode sko, litt ekstra klær og respekt for været. Gjør du det enkelt og riktig, får du en tur som sitter i kroppen lenge etterpå.",
+    t1: "Fløibanen-området er som et gammelt, godt friluftsråd i praksis: du får høyde, skog og utsikt – uten at det blir sirkus. Hold et jevnt tempo, og du blir belønnet med by og fjord under deg. Dette er turen du kan gå mange ganger og likevel finne en ny liten detalj hver gang.",
+    t2: "Oslofjorden gjør det lett å være ute: lufta er mild, stiene er tydelige, og du kan gå med den deilige følelsen av at naturen ligger rett ved siden av hverdagen. Dette er en tur for deg som vil ha ro i hodet og fremdrift i beina – uten å måtte ‘prestere’ noe annet enn å møte opp.",
+    t3: "Geiranger og fjellene rundt er Norge på sitt mest dramatiske: bratte sider, dype daler, og utsikt som får folk til å bli stille. Her lønner det seg å være tradisjonell: gode sko, litt ekstra klær og respekt for været. Gjør du det enkelt og riktig, får du en tur som sitter i kroppen lenge etterpå.",
   };
 
   const diff = (tour as any).difficulty;
@@ -199,9 +198,8 @@ export default function TourDetailsPage() {
     return TOUR_GEO[String((tour as any).id)];
   }, [tour]);
 
-  // Kart: alltid ha et senter, selv om TOUR_GEO mangler (som id=9)
   const mapCenter = useMemo<LatLng>(() => {
-    if (!tour) return [60.472, 8.468]; // Norge-ish fallback
+    if (!tour) return [60.472, 8.468];
     const fromTour = pickLatLngFromTour(tour as any);
     if (fromTour) return fromTour;
     if (geo?.center) return geo.center;
@@ -214,16 +212,13 @@ export default function TourDetailsPage() {
     return Array.isArray(g) ? g : [];
   }, [tour]);
 
-  // Saved
   const [saved, setSaved] = useState(false);
 
-  // Reviews
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewName, setReviewName] = useState("");
   const [reviewText, setReviewText] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
 
-  //  “Logg inn for å poste” (enkelt). Tilpass nøkkel etter deres auth senere.
   const isLoggedIn = useMemo(() => {
     const token = safeGet("token") || safeGet("auth_token");
     const user = safeGet("user") || safeGet("auth_user");
@@ -232,6 +227,7 @@ export default function TourDetailsPage() {
 
   useEffect(() => {
     if (!tour) return;
+
     setSaved(safeGet(keySaved(tid)) === "1");
 
     const raw = safeGet(keyReviews(tid));
@@ -251,16 +247,23 @@ export default function TourDetailsPage() {
 
   if (!tour) {
     return (
-      <main className="bg-gray-50 min-h-[70vh]">
+      <main className="min-h-[70vh] bg-gray-50">
         <section className="mx-auto max-w-7xl px-6 py-10">
           <Link to="/explore" className="text-sm font-semibold text-emerald-700 hover:underline">
             ← Tilbake til Utforsk
           </Link>
 
-          <div className="mt-6 rounded-2xl bg-white border border-gray-100 shadow p-6">
+          <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow">
             <h1 className="text-2xl font-semibold">Fant ikke tur</h1>
             <p className="mt-2 text-gray-600">
-              Vi fant ingen tur{ id ? <> med id: <span className="font-mono">{id}</span></> : <> (mangler id i URL)</> }
+              Vi fant ingen tur{" "}
+              {id ? (
+                <>
+                  med id: <span className="font-mono">{id}</span>
+                </>
+              ) : (
+                <> (mangler id i URL)</>
+              )}
             </p>
           </div>
         </section>
@@ -280,6 +283,7 @@ export default function TourDetailsPage() {
     } catch {
       // ignore
     }
+
     try {
       await navigator.clipboard.writeText(url);
       alert("Lenke kopiert!");
@@ -358,8 +362,11 @@ export default function TourDetailsPage() {
         <div className="absolute inset-0 bg-black/45" />
 
         <div className="relative z-10 h-full">
-          <div className="mx-auto max-w-7xl h-full px-6 flex flex-col justify-end pb-10">
-            <Link to="/explore" className="mb-5 inline-flex w-fit text-sm font-semibold text-white/90 hover:underline">
+          <div className="mx-auto flex h-full max-w-7xl flex-col justify-end px-6 pb-10">
+            <Link
+              to="/explore"
+              className="mb-5 inline-flex w-fit text-sm font-semibold text-white/90 hover:underline"
+            >
               ← Tilbake til Utforsk
             </Link>
 
@@ -367,17 +374,19 @@ export default function TourDetailsPage() {
               <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 shadow-sm">
                 {(tour as any).difficulty}
               </span>
+
               <span className="rounded-full bg-white/90 px-3 py-1 text-sm font-medium text-gray-900">
                 {(tour as any).region}
               </span>
+
               {avgRating !== null && (
-                <span className="rounded-full bg-white/90 px-3 py-1 text-sm font-semibold text-gray-900 inline-flex items-center gap-1">
+                <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-sm font-semibold text-gray-900">
                   <Star className="h-4 w-4" /> {avgRating}
                 </span>
               )}
             </div>
 
-            <h1 className="mt-3 text-white text-4xl md:text-5xl font-semibold">{(tour as any).title}</h1>
+            <h1 className="mt-3 text-4xl font-semibold text-white md:text-5xl">{(tour as any).title}</h1>
 
             <div className="mt-2 flex items-center gap-2 text-white/85">
               <MapPin className="h-4 w-4" />
@@ -390,10 +399,10 @@ export default function TourDetailsPage() {
       {/* CONTENT */}
       <section className="mx-auto max-w-7xl px-6 py-10">
         {/* TOP STATS */}
-        <div className="rounded-2xl bg-white border border-gray-100 shadow p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
             <div>
-              <div className="flex items-center gap-2 text-gray-600 text-sm">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Route className="h-4 w-4 text-emerald-700" />
                 <span>Distanse</span>
               </div>
@@ -401,7 +410,7 @@ export default function TourDetailsPage() {
             </div>
 
             <div>
-              <div className="flex items-center gap-2 text-gray-600 text-sm">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Clock className="h-4 w-4 text-emerald-700" />
                 <span>Varighet</span>
               </div>
@@ -409,7 +418,7 @@ export default function TourDetailsPage() {
             </div>
 
             <div>
-              <div className="flex items-center gap-2 text-gray-600 text-sm">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Mountain className="h-4 w-4 text-emerald-700" />
                 <span>Stigning</span>
               </div>
@@ -417,7 +426,7 @@ export default function TourDetailsPage() {
             </div>
 
             <div>
-              <div className="flex items-center gap-2 text-gray-600 text-sm">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Star className="h-4 w-4 text-emerald-700" />
                 <span>Vurdering</span>
               </div>
@@ -427,11 +436,11 @@ export default function TourDetailsPage() {
         </div>
 
         {/* Om turen + kart */}
-        <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Left */}
           <div className="lg:col-span-2">
-            <div className="rounded-2xl bg-white border border-gray-100 shadow p-6">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
+            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow">
+              <h2 className="flex items-center gap-2 text-xl font-semibold">
                 <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-emerald-200 text-emerald-700">
                   i
                 </span>
@@ -440,7 +449,7 @@ export default function TourDetailsPage() {
 
               <div className="mt-5 space-y-3 text-gray-700">
                 <div className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-emerald-700 mt-0.5" />
+                  <MapPin className="mt-0.5 h-5 w-5 text-emerald-700" />
                   <div>
                     <div className="font-semibold">{(tour as any).location}</div>
                     <div className="text-sm text-gray-500">{(tour as any).region}</div>
@@ -472,7 +481,7 @@ export default function TourDetailsPage() {
                 </div>
               </div>
 
-              <p className="mt-6 text-gray-700 leading-relaxed">{storyForTour(tour)}</p>
+              <p className="mt-6 leading-relaxed text-gray-700">{storyForTour(tour)}</p>
 
               <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
                 <div className="text-sm font-semibold text-emerald-900">
@@ -506,8 +515,8 @@ export default function TourDetailsPage() {
           </div>
 
           {/* Right (Kart) */}
-          <div className="rounded-2xl bg-white border border-gray-100 shadow p-4">
-            <div className="flex items-center justify-between mb-3">
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow">
+            <div className="mb-3 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-gray-900">Kart</h3>
               <div className="flex gap-2">
                 <button
@@ -531,19 +540,20 @@ export default function TourDetailsPage() {
               </div>
             </div>
 
-            {/* ALLTID kart */}
             <TurMap center={mapCenter} title={(tour as any).title} />
 
             {!geo && (
               <div className="mt-3 text-xs text-gray-500">
-                Tips: Legg inn turens id (<span className="font-mono">{tid}</span>) i <span className="font-mono">TOUR_GEO</span> for riktig sesong/rute-tekst.
+                Demo: Denne turen bruker foreløpig standard kartinnstillinger. Legg inn turens id{" "}
+                (<span className="font-mono">{tid}</span>) i <span className="font-mono">TOUR_GEO</span> for mer
+                presis sesong-, rute- og typeinformasjon.
               </div>
             )}
           </div>
         </div>
 
         {/* Reviews */}
-        <div className="mt-10 rounded-2xl bg-white border border-gray-100 shadow p-6">
+        <div className="mt-10 rounded-2xl border border-gray-100 bg-white p-6 shadow">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <Star className="h-5 w-5 text-emerald-700" />
@@ -557,17 +567,20 @@ export default function TourDetailsPage() {
             <div className="text-sm font-semibold text-gray-900">Skriv en anmeldelse</div>
 
             {!isLoggedIn ? (
-              <div className="mt-3 rounded-2xl border border-dashed border-gray-300 p-6 text-center text-gray-600 bg-gray-50">
+              <div className="mt-3 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-gray-600">
                 Logg inn for å legge igjen en anmeldelse.
                 <div className="mt-3">
-                  <Link to="/login" className="inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+                  <Link
+                    to="/login"
+                    className="inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                  >
                     Logg inn
                   </Link>
                 </div>
               </div>
             ) : (
               <>
-                <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
                   <input
                     value={reviewName}
                     onChange={(e) => setReviewName(e.target.value)}
@@ -575,11 +588,17 @@ export default function TourDetailsPage() {
                     className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
                   />
 
-                  <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm flex items-center justify-between">
+                  <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm">
                     <span className="text-gray-600">Rating</span>
                     <div className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map((n) => (
-                        <button key={n} type="button" onClick={() => setReviewRating(n)} title={`${n} stjerner`} className="p-1">
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setReviewRating(n)}
+                          title={`${n} stjerner`}
+                          className="p-1"
+                        >
                           <Star className={`h-4 w-4 ${n <= reviewRating ? "text-amber-500" : "text-gray-300"}`} />
                         </button>
                       ))}
@@ -599,7 +618,7 @@ export default function TourDetailsPage() {
                   value={reviewText}
                   onChange={(e) => setReviewText(e.target.value)}
                   placeholder="Skriv kort om opplevelsen din… (minst 10 tegn)"
-                  className="mt-3 w-full min-h-[110px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="mt-3 min-h-[110px] w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </>
             )}
@@ -610,7 +629,7 @@ export default function TourDetailsPage() {
             <div className="text-sm font-semibold text-gray-900">Hva andre sier</div>
 
             {reviews.length === 0 ? (
-              <div className="mt-3 rounded-2xl border border-dashed border-gray-300 p-8 text-center text-gray-600 bg-gray-50">
+              <div className="mt-3 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-gray-600">
                 Ingen anmeldelser ennå. Bli den første til å dele din opplevelse!
               </div>
             ) : (
@@ -630,15 +649,15 @@ export default function TourDetailsPage() {
                       </div>
                     </div>
 
-                    <p className="mt-3 text-sm text-gray-700 leading-relaxed">{r.text}</p>
+                    <p className="mt-3 text-sm leading-relaxed text-gray-700">{r.text}</p>
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Flyttet actions: kommer ETTER "Hva andre sier" */}
-          <div className="mt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-gray-100 pt-5">
+          {/* Actions */}
+          <div className="mt-8 flex flex-col gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-xs text-gray-500">Lagret lokalt (demo) • Tur-ID: {tid}</div>
 
             <div className="inline-flex items-center gap-2">
@@ -646,7 +665,9 @@ export default function TourDetailsPage() {
                 type="button"
                 onClick={handleToggleSave}
                 className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold hover:bg-gray-50 ${
-                  saved ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700" : "bg-white border-gray-200"
+                  saved
+                    ? "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700"
+                    : "border-gray-200 bg-white"
                 }`}
               >
                 <Heart className="h-4 w-4" />

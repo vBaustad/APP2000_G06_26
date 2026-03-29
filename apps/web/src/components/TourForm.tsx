@@ -4,15 +4,17 @@
  * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu.
  * Beskrivelse: Skjema for å opprette og redigere turer.
  */
-import { useMemo, useState } from "react";
-import type { Tour } from "../utils/mockTours";
+
+import { useMemo, useState, type FormEvent } from "react";
+import type { Tour, Region } from "../utils/mockTours";
 
 type Props =
   | { mode: "create"; onCreate: (tour: Tour) => void }
   | { mode: "edit"; initialTour: Tour; onUpdate: (tour: Tour) => void };
 
 function toNumber(v: string, fallback = 0) {
-  const n = Number(v);
+  const normalized = v.replace(",", ".").trim();
+  const n = Number(normalized);
   return Number.isFinite(n) ? n : fallback;
 }
 
@@ -26,6 +28,22 @@ function stringToGear(v: string) {
     .map((s) => s.trim())
     .filter(Boolean);
 }
+
+function makeId() {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `tour_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  }
+}
+
+const REGIONS: Region[] = [
+  "Nord-Norge",
+  "Trøndelag",
+  "Østlandet",
+  "Sørlandet",
+  "Vestlandet",
+];
 
 // Samme filer som du har i /public/images/tours
 const TOUR_IMAGES = [
@@ -46,9 +64,10 @@ export default function TourForm(props: Props) {
     if (props.mode === "edit") return props.initialTour;
 
     return {
-      id: crypto.randomUUID(),
+      id: makeId(),
       title: "",
       location: "",
+      region: "Østlandet",
       distanceKm: 0,
       elevationM: 0,
       durationHours: 0,
@@ -61,6 +80,7 @@ export default function TourForm(props: Props) {
 
   const [title, setTitle] = useState(initial.title);
   const [location, setLocation] = useState(initial.location);
+  const [region, setRegion] = useState<Region>(initial.region);
   const [distanceKm, setDistanceKm] = useState(String(initial.distanceKm || ""));
   const [elevationM, setElevationM] = useState(String(initial.elevationM || ""));
   const [durationHours, setDurationHours] = useState(String(initial.durationHours || ""));
@@ -69,34 +89,82 @@ export default function TourForm(props: Props) {
   const [imageUrl, setImageUrl] = useState(initial.imageUrl ?? "");
   const [error, setError] = useState<string | null>(null);
 
-  function submit(e: React.FormEvent) {
+  function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
 
-    if (!title.trim()) return setError("Tittel må fylles ut.");
-    if (!location.trim()) return setError("Sted må fylles ut.");
+    const cleanTitle = title.trim();
+    const cleanLocation = location.trim();
+
+    if (!cleanTitle) {
+      setError("Tittel må fylles ut.");
+      return;
+    }
+
+    if (!cleanLocation) {
+      setError("Sted må fylles ut.");
+      return;
+    }
+
+    const parsedDistanceKm = toNumber(distanceKm, NaN);
+    const parsedElevationM = toNumber(elevationM, NaN);
+    const parsedDurationHours = toNumber(durationHours, NaN);
+
+    if (!Number.isFinite(parsedDistanceKm)) {
+      setError("Distanse må være et gyldig tall.");
+      return;
+    }
+
+    if (!Number.isFinite(parsedElevationM)) {
+      setError("Høydemeter må være et gyldig tall.");
+      return;
+    }
+
+    if (!Number.isFinite(parsedDurationHours)) {
+      setError("Varighet må være et gyldig tall.");
+      return;
+    }
+
+    if (parsedDistanceKm <= 0) {
+      setError("Distanse må være større enn 0 km.");
+      return;
+    }
+
+    if (parsedElevationM < 0) {
+      setError("Høydemeter kan ikke være negativt.");
+      return;
+    }
+
+    if (parsedDurationHours <= 0) {
+      setError("Varighet må være større enn 0 timer.");
+      return;
+    }
 
     const next: Tour = {
       id: initial.id,
-      title: title.trim(),
-      location: location.trim(),
-      distanceKm: toNumber(distanceKm, 0),
-      elevationM: toNumber(elevationM, 0),
-      durationHours: toNumber(durationHours, 0),
+      title: cleanTitle,
+      location: cleanLocation,
+      region,
+      distanceKm: parsedDistanceKm,
+      elevationM: parsedElevationM,
+      durationHours: parsedDurationHours,
       difficulty,
       gear: stringToGear(gear),
       imageUrl: imageUrl || undefined,
       imageLabel: initial.imageLabel,
     };
 
-    if (props.mode === "create") props.onCreate(next);
-    else props.onUpdate(next);
+    if (props.mode === "create") {
+      props.onCreate(next);
+    } else {
+      props.onUpdate(next);
+    }
   }
 
   return (
     <form onSubmit={submit} className="grid gap-3">
       {error && (
-        <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
@@ -123,6 +191,37 @@ export default function TourForm(props: Props) {
         </label>
       </div>
 
+      <div className="grid gap-3 md:grid-cols-2">
+        <label className="grid gap-1 text-sm">
+          <span className="font-medium text-gray-700">Region</span>
+          <select
+            value={region}
+            onChange={(e) => setRegion(e.target.value as Region)}
+            className="rounded-xl border border-gray-200 px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500"
+          >
+            {REGIONS.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="grid gap-1 text-sm">
+          <span className="font-medium text-gray-700">Vanskelighetsgrad</span>
+          <select
+            value={difficulty}
+            onChange={(e) => setDifficulty(e.target.value as Tour["difficulty"])}
+            className="rounded-xl border border-gray-200 px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500"
+          >
+            <option value="Lett">Lett</option>
+            <option value="Middels">Middels</option>
+            <option value="Krevende">Krevende</option>
+            <option value="Ekspert">Ekspert</option>
+          </select>
+        </label>
+      </div>
+
       <div className="grid gap-3 md:grid-cols-3">
         <label className="grid gap-1 text-sm">
           <span className="font-medium text-gray-700">Distanse (km)</span>
@@ -136,7 +235,7 @@ export default function TourForm(props: Props) {
         </label>
 
         <label className="grid gap-1 text-sm">
-          <span className="font-medium text-gray-700">Høydemeter (hm)</span>
+          <span className="font-medium text-gray-700">Høydemeter (m)</span>
           <input
             inputMode="numeric"
             value={elevationM}
@@ -158,31 +257,15 @@ export default function TourForm(props: Props) {
         </label>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
-        <label className="grid gap-1 text-sm">
-          <span className="font-medium text-gray-700">Vanskelighetsgrad</span>
-          <select
-            value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value as Tour["difficulty"])}
-            className="rounded-xl border border-gray-200 px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500"
-          >
-            <option value="Lett">Lett</option>
-            <option value="Middels">Middels</option>
-            <option value="Krevende">Krevende</option>
-            <option value="Ekspert">Ekspert</option>
-          </select>
-        </label>
-
-        <label className="grid gap-1 text-sm">
-          <span className="font-medium text-gray-700">Utstyr (komma-separert)</span>
-          <input
-            value={gear}
-            onChange={(e) => setGear(e.target.value)}
-            className="rounded-xl border border-gray-200 px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500"
-            placeholder="Fjellsko, Regnjakke, Drikkeflaske"
-          />
-        </label>
-      </div>
+      <label className="grid gap-1 text-sm">
+        <span className="font-medium text-gray-700">Utstyr (komma-separert)</span>
+        <input
+          value={gear}
+          onChange={(e) => setGear(e.target.value)}
+          className="rounded-xl border border-gray-200 px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500"
+          placeholder="Fjellsko, Regnjakke, Drikkeflaske"
+        />
+      </label>
 
       <label className="grid gap-1 text-sm">
         <span className="font-medium text-gray-700">Bilde</span>
