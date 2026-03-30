@@ -4,12 +4,6 @@
  * Beskrivelse: Utforsk-side som viser tilgjengelige turer med søk + filterpanel + CRUD.
  */
 
-/**
- * Fil: ExplorePage.tsx
- * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu.
- * Beskrivelse: Utforsk-side som viser tilgjengelige turer med søk + filterpanel + CRUD.
- */
-
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import TourForm from "../components/TourForm";
