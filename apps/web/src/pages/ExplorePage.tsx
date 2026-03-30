@@ -4,10 +4,17 @@
  * Beskrivelse: Utforsk-side som viser tilgjengelige turer med søk + filterpanel + CRUD.
  */
 
+/**
+ * Fil: ExplorePage.tsx
+ * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu.
+ * Beskrivelse: Utforsk-side som viser tilgjengelige turer med søk + filterpanel + CRUD.
+ */
+
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import TourForm from "../components/TourForm";
 import { getTours } from "../services/toursApi";
+import { mockTours } from "../utils/mockTours";
 import type { Tour, Region } from "../utils/mockTours";
 import { Pencil, Trash2, MapPin, Mountain, Clock, Route } from "lucide-react";
 
@@ -83,9 +90,27 @@ export default function ExplorePage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
-    getTours().then((data) => {
-      setAllTours(data.map(ensureTourImage));
-    });
+    let isMounted = true;
+
+    async function loadTours() {
+      try {
+        const data = await getTours();
+        const source = Array.isArray(data) && data.length > 0 ? data : mockTours;
+        if (isMounted) {
+          setAllTours(source.map(ensureTourImage));
+        }
+      } catch {
+        if (isMounted) {
+          setAllTours(mockTours.map(ensureTourImage));
+        }
+      }
+    }
+
+    loadTours();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const activeFilterCount = diffs.length + lengths.length + durations.length + regions.length;
@@ -95,23 +120,30 @@ export default function ExplorePage() {
 
     let next = allTours.filter((t) => {
       const matchesQuery =
-        !q || `${t.title} ${t.location} ${t.difficulty} ${t.region}`.toLowerCase().includes(q);
+        !q ||
+        `${t.title ?? ""} ${t.location ?? ""} ${t.difficulty ?? ""} ${t.region ?? ""}`
+          .toLowerCase()
+          .includes(q);
 
       const matchesDiff = diffs.length === 0 || diffs.includes(t.difficulty);
-
       const matchesLen = lengths.length === 0 || lengths.some((b) => inLengthBucket(t.distanceKm, b));
-
-      const matchesDur =
-        durations.length === 0 || durations.some((b) => inDurationBucket(t.durationHours, b));
-
+      const matchesDur = durations.length === 0 || durations.some((b) => inDurationBucket(t.durationHours, b));
       const matchesRegion = regions.length === 0 || regions.includes(t.region);
 
       return matchesQuery && matchesDiff && matchesLen && matchesDur && matchesRegion;
     });
 
-    if (sort === "distanceAsc") next = [...next].sort((a, b) => a.distanceKm - b.distanceKm);
-    if (sort === "durationAsc") next = [...next].sort((a, b) => a.durationHours - b.durationHours);
-    if (sort === "newest") next = [...next].sort((a, b) => (a.id < b.id ? 1 : -1)); // ok for mock
+    if (sort === "distanceAsc") {
+      next = [...next].sort((a, b) => a.distanceKm - b.distanceKm);
+    }
+
+    if (sort === "durationAsc") {
+      next = [...next].sort((a, b) => a.durationHours - b.durationHours);
+    }
+
+    if (sort === "newest") {
+      next = [...next].sort((a, b) => String(b.id ?? "").localeCompare(String(a.id ?? "")));
+    }
 
     return next;
   }, [allTours, query, diffs, lengths, durations, regions, sort]);
@@ -190,24 +222,29 @@ export default function ExplorePage() {
     <main>
       {/* HERO */}
       <section className="relative h-[38vh] min-h-[320px]">
-        <img src="/images/explore-hero.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <img
+          src="/images/explore-hero.jpg"
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+        />
         <div className="absolute inset-0 bg-black/45" />
 
         <div className="relative z-10 h-full">
-          <div className="mx-auto max-w-7xl h-full px-6 flex items-end pb-10">
+          <div className="mx-auto flex h-full max-w-7xl items-end px-6 pb-10">
             <div className="w-full max-w-4xl">
-              <h1 className="text-white text-5xl font-semibold">Utforsk turer</h1>
-              <p className="mt-2 text-white/80 text-sm">
+              <h1 className="text-5xl font-semibold text-white">Utforsk turer</h1>
+              <p className="mt-2 text-sm text-white/80">
                 Finn turer basert på lengde, varighet, vanskelighetsgrad og region
               </p>
 
               <div className="mt-6">
                 <input
                   type="search"
+                  aria-label="Søk etter tur eller sted"
                   placeholder="Søk etter tur eller sted"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  className="w-full rounded-2xl bg-white/95 px-5 py-3 text-gray-900 placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full rounded-2xl bg-white/95 px-5 py-3 text-gray-900 outline-none placeholder:text-gray-500 focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
             </div>
@@ -219,7 +256,7 @@ export default function ExplorePage() {
       <div className="bg-gray-50">
         {/* TOPPLINJE */}
         <section className="mx-auto max-w-7xl px-6 pt-8">
-          <div className="rounded-2xl bg-white border border-gray-100 shadow p-4 md:p-5">
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow md:p-5">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
                 <div className="text-sm text-gray-600">
@@ -266,7 +303,7 @@ export default function ExplorePage() {
                 <button
                   type="button"
                   onClick={() => setFiltersOpen((v) => !v)}
-                  className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-900 hover:bg-gray-50 inline-flex items-center gap-2"
+                  className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-900 hover:bg-gray-50"
                 >
                   Filtrer
                   {activeFilterCount > 0 && (
@@ -292,10 +329,10 @@ export default function ExplorePage() {
 
             {/* FILTERPANEL */}
             {filtersOpen && (
-              <div className="mt-5 rounded-2xl bg-gray-50 p-4 md:p-6 border border-gray-100">
+              <div className="mt-5 rounded-2xl border border-gray-100 bg-gray-50 p-4 md:p-6">
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">Vanskelighetsgrad</h3>
+                    <h3 className="mb-3 text-lg font-semibold">Vanskelighetsgrad</h3>
                     {(["Lett", "Middels", "Krevende", "Ekspert"] as Tour["difficulty"][]).map((d) => (
                       <label key={d} className="flex items-center gap-3 py-2 text-base">
                         <input
@@ -310,7 +347,7 @@ export default function ExplorePage() {
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">Lengde</h3>
+                    <h3 className="mb-3 text-lg font-semibold">Lengde</h3>
                     {(
                       [
                         { k: "lt5", label: "Under 5 km" },
@@ -332,7 +369,7 @@ export default function ExplorePage() {
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">Varighet</h3>
+                    <h3 className="mb-3 text-lg font-semibold">Varighet</h3>
                     {(
                       [
                         { k: "lt2", label: "Under 2 timer" },
@@ -354,7 +391,7 @@ export default function ExplorePage() {
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">Region</h3>
+                    <h3 className="mb-3 text-lg font-semibold">Region</h3>
                     {REGIONS.map((r) => (
                       <label key={r} className="flex items-center gap-3 py-2 text-base">
                         <input
@@ -370,7 +407,11 @@ export default function ExplorePage() {
                 </div>
 
                 <div className="mt-6 flex items-center justify-between">
-                  <button type="button" onClick={clearAllFilters} className="text-sm font-semibold text-red-600 hover:underline">
+                  <button
+                    type="button"
+                    onClick={clearAllFilters}
+                    className="text-sm font-semibold text-red-600 hover:underline"
+                  >
                     Fjern alle
                   </button>
 
@@ -414,15 +455,27 @@ export default function ExplorePage() {
         {/* LISTE */}
         <section className="mx-auto max-w-7xl px-6 pb-16 pt-10">
           {visibleTours.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center text-gray-600 bg-white">
-              Ingen turer matcher søk/filter. Prøv å justere kriteriene.
+            <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center text-gray-600">
+              <p className="text-base font-medium text-gray-800">
+                Ingen turer matcher søket eller filtrene dine.
+              </p>
+              <p className="mt-2 text-sm text-gray-600">
+                Prøv å justere kriteriene eller fjern noen filtre.
+              </p>
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="mt-4 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+              >
+                Fjern filtre
+              </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {visibleTours.map((t) => (
                 <article
                   key={t.id}
-                  className="group relative overflow-hidden rounded-2xl bg-white shadow hover:shadow-lg transition"
+                  className="group relative overflow-hidden rounded-2xl bg-white shadow transition hover:shadow-lg"
                 >
                   {/* Image */}
                   <div className="relative">
@@ -464,11 +517,9 @@ export default function ExplorePage() {
                     </div>
                   </div>
 
-                  {/* Content (VIKTIG: flex-col + riktig rekkefølge) */}
-                  <div className="p-5 flex flex-col">
-                    <h3 className="text-2xl font-semibold tracking-tight text-gray-900">
-                      {t.title}
-                    </h3>
+                  {/* Content */}
+                  <div className="flex flex-col p-5">
+                    <h3 className="text-2xl font-semibold tracking-tight text-gray-900">{t.title}</h3>
 
                     <div className="mt-2 flex items-center gap-2 text-gray-600">
                       <MapPin className="h-4 w-4" />
@@ -479,16 +530,14 @@ export default function ExplorePage() {
                       </p>
                     </div>
 
-                    {/* Meta row (OPP) */}
+                    {/* Meta row */}
                     <div className="mt-5 grid grid-cols-3 gap-4 border-t border-gray-100 pt-4">
                       <div className="text-sm text-gray-600">
                         <div className="flex items-center gap-2">
                           <Route className="h-4 w-4" />
                           <span>Distanse</span>
                         </div>
-                        <div className="mt-1 text-lg font-semibold text-gray-900">
-                          {t.distanceKm} km
-                        </div>
+                        <div className="mt-1 text-lg font-semibold text-gray-900">{t.distanceKm} km</div>
                       </div>
 
                       <div className="text-sm text-gray-600">
@@ -496,9 +545,7 @@ export default function ExplorePage() {
                           <Mountain className="h-4 w-4" />
                           <span>Høydemeter</span>
                         </div>
-                        <div className="mt-1 text-lg font-semibold text-gray-900">
-                          {t.elevationM} m
-                        </div>
+                        <div className="mt-1 text-lg font-semibold text-gray-900">{t.elevationM} m</div>
                       </div>
 
                       <div className="text-sm text-gray-600">
@@ -506,20 +553,21 @@ export default function ExplorePage() {
                           <Clock className="h-4 w-4" />
                           <span>Tid</span>
                         </div>
-                        <div className="mt-1 text-lg font-semibold text-gray-900">
-                          {t.durationHours} t
-                        </div>
+                        <div className="mt-1 text-lg font-semibold text-gray-900">{t.durationHours} t</div>
                       </div>
                     </div>
 
-                    {/* Footer (NEDERST – Se mer kommer sist) */}
-                    <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4">
+                    {/* Footer */}
+                    <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
                       <div className="text-sm text-gray-500">
-                        Utstyr: {t.gear.slice(0, 2).join(", ")}
+                        Utstyr: {t.gear.length > 0 ? t.gear.slice(0, 2).join(", ") : "Ikke spesifisert"}
                         {t.gear.length > 2 ? "…" : ""}
                       </div>
 
-                      <Link to={`/tours/${t.id}`} className="text-sm font-semibold text-emerald-700 hover:underline">
+                      <Link
+                        to={`/tours/${t.id}`}
+                        className="text-sm font-semibold text-emerald-700 hover:underline"
+                      >
                         Se mer
                       </Link>
                     </div>

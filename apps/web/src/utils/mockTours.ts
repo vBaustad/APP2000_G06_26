@@ -14,18 +14,14 @@ export type Tour = {
   id: string;
   title: string;
   location: string;
-  distanceKm: number;     // km
-  elevationM: number;     // høydemeter
-  durationHours: number;  // ca. tid
+  distanceKm: number; // km
+  elevationM: number; // høydemeter
+  durationHours: number; // ca. tid
   difficulty: Difficulty;
-  gear: string[];         // klær/utstyr
-
-  // NYE FELT
+  gear: string[];
   region: Region;
   imageUrl?: string;
-
-  // valgfri/legacy
-  imageLabel?: string;    // til "IMAGE PLACEHOLDER"
+  imageLabel?: string;
 };
 
 export const mockTours: Tour[] = [
@@ -39,7 +35,7 @@ export const mockTours: Tour[] = [
     durationHours: 4.5,
     difficulty: "Middels",
     gear: ["Fjellsko", "Regnjakke", "Drikkeflaske"],
-    imageUrl: "/images/tours/fjelltur-1.jpg",
+    imageUrl: "/images/tours/fjell1.jpg",
     imageLabel: "IMAGE PLACEHOLDER",
   },
   {
@@ -65,7 +61,7 @@ export const mockTours: Tour[] = [
     durationHours: 6.0,
     difficulty: "Krevende",
     gear: ["Fjellsko", "Vindjakke", "Lue", "Kart/Kompass"],
-    imageUrl: "/images/tours/fjell-okt.avif",
+    imageUrl: "/images/tours/fjell6.jpg",
     imageLabel: "IMAGE PLACEHOLDER",
   },
   {
@@ -104,7 +100,7 @@ export const mockTours: Tour[] = [
     durationHours: 3.0,
     difficulty: "Middels",
     gear: ["Broddar", "Varm jakke", "Lue", "Hansker"],
-    imageUrl: "/images/tours/1635176958-noedt-til-aa-loepe.avif",
+    imageUrl: "/images/tours/fjell7.jpg",
     imageLabel: "IMAGE PLACEHOLDER",
   },
   {
@@ -117,7 +113,7 @@ export const mockTours: Tour[] = [
     durationHours: 6.5,
     difficulty: "Krevende",
     gear: ["Fjellsko", "Vindjakke", "Førstehjelp", "Kart/Kompass"],
-    imageUrl: "/images/tours/fjelltur-3.webp",
+    imageUrl: "/images/tours/fjell3.jpg",
     imageLabel: "IMAGE PLACEHOLDER",
   },
   {
@@ -130,7 +126,7 @@ export const mockTours: Tour[] = [
     durationHours: 1.2,
     difficulty: "Lett",
     gear: ["Joggesko", "Snacks", "Drikke"],
-    imageUrl: "/images/tours/floibanen.jpg",
+    imageUrl: "/images/tours/fjell8.jpg",
     imageLabel: "IMAGE PLACEHOLDER",
   },
   {
@@ -143,7 +139,7 @@ export const mockTours: Tour[] = [
     durationHours: 9.0,
     difficulty: "Ekspert",
     gear: ["Fjellsko", "Ekstra klær", "Mat", "Hodelykt", "Kart/Kompass"],
-    imageUrl: "/images/tours/geiranger.jpg",
+    imageUrl: "/images/tours/fjell4.jpg",
     imageLabel: "IMAGE PLACEHOLDER",
   },
   {
@@ -182,7 +178,7 @@ export const mockTours: Tour[] = [
     durationHours: 7.0,
     difficulty: "Krevende",
     gear: ["Fjellsko", "Vindjakke", "Lue", "Kart/Kompass", "Drikke"],
-    imageUrl: "/images/tours/fjell-okt.avif",
+    imageUrl: "/images/tours/fjell2.jpg",
     imageLabel: "IMAGE PLACEHOLDER",
   },
 ];
