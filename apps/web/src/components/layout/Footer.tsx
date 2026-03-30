@@ -12,39 +12,36 @@ import { Facebook, Instagram, Youtube, Mail, Phone, MapPin } from "lucide-react"
 
 export default function Footer() {
   return (
-    /** Bakgrunnsfarge: #17331C (grønn) og ikoner: hvitt for kontrast */
     <footer className="mt-16 bg-[#17331C] text-white">
       <div className="mx-auto max-w-6xl px-6 py-14">
-
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
-
-          {/* Logo + intro + kontaktinfo */}
+          {/* Logo + intro */}
           <div className="space-y-4">
+            <img
+              src="/logos/utopia-footer-logo.png"
+              alt="Utopia"
+              className="h-12 w-auto object-contain"
+            />
 
-            {/* Logo-bilde) */}
-            <img src={"/logos/utopia-footer-logo.png"}
-              alt="Utopia - Turistforeningen i Utopia"
-              className="h-12 w-auto object-contain"/>
-
-            {/* Kort beskrivelse */}
             <p className="text-sm leading-6 text-white/90">
-              Siden 2026 har vi jobbet for at alle skal kunne oppleve norsk natur.
-              Utopia tilbyr turer, kart og overnatting for alle typer friluftsentusiaster.
+              Utopia gjør det enklere å oppleve naturen. Vi samler turer, kart og inspirasjon
+              på ett sted for alle som ønsker å komme seg ut.
             </p>
 
-            {/* Kontaktlinjer med ikoner */}
             <div className="space-y-2 text-sm text-white/90">
               <div className="flex items-center gap-3">
-                <Phone className="h-4 w-4 text-white" />
-                <span> +47 00 000 000 (man - fre 09-17)</span>
+                <Phone className="h-4 w-4" />
+                <span>+47 00 000 000 (man–fre 09–17)</span>
               </div>
+
               <div className="flex items-center gap-3">
-                <Mail className="h-4 w-4 text-white" />
+                <Mail className="h-4 w-4" />
                 <span>post@utopia.com</span>
               </div>
+
               <div className="flex items-center gap-3">
-                <MapPin className="h-4 w-4 text-white" />
-                <span> Utopiaveien 1, 0123 Utopia</span>
+                <MapPin className="h-4 w-4" />
+                <span>Utopiaveien 1, 0123 Utopia</span>
               </div>
             </div>
           </div>
@@ -54,20 +51,23 @@ export default function Footer() {
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider">
               Planlegg tur
             </h3>
+
             <ul className="space-y-3 text-sm text-white/90">
               <li>
-                <Link className="hover:underline" to="/trips">
-                  Finn turrute
+                <Link className="hover:underline" to="/explore">
+                  Finn turer
                 </Link>
               </li>
+
               <li>
                 <Link className="hover:underline" to="/map">
                   Interaktivt kart
                 </Link>
               </li>
+
               <li>
-                <Link className="hover:underline" to="/cabins">
-                  Book hytte
+                <Link className="hover:underline" to="/mycabins">
+                  Hytter
                 </Link>
               </li>
             </ul>
@@ -78,17 +78,20 @@ export default function Footer() {
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider">
               Informasjon
             </h3>
+
             <ul className="space-y-3 text-sm text-white/90">
               <li>
                 <Link className="hover:underline" to="/weather">
-                  Værvarsling
+                  Vær
                 </Link>
               </li>
+
               <li>
                 <Link className="hover:underline" to="/safety">
-                  Sikkerhet på tur
+                  Sikkerhet
                 </Link>
               </li>
+
               <li>
                 <Link className="hover:underline" to="/reports">
                   Turrapporter
@@ -97,17 +100,19 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Om Utopia */}
+          {/* Om oss */}
           <div>
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider">
-              Om Utopia
+              Om oss
             </h3>
+
             <ul className="space-y-3 text-sm text-white/90">
               <li>
                 <Link className="hover:underline" to="/about">
-                  Om organisasjonen
+                  Om oss
                 </Link>
               </li>
+
               <li>
                 <Link className="hover:underline" to="/jobs">
                   Jobb hos oss
@@ -117,42 +122,45 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Skillelinje */}
+        {/* Divider */}
         <div className="my-10 h-px w-full bg-white/20" />
 
-        {/* Sosiale medier: */}
+        {/* Sosiale medier */}
         <div className="flex justify-center gap-4">
           <a
             href="#"
             aria-label="Facebook"
             className="rounded-lg bg-white/10 p-3 hover:bg-white/20"
           >
-            <Facebook className="h-5 w-5 text-white" />
+            <Facebook className="h-5 w-5" />
           </a>
+
           <a
             href="#"
             aria-label="Instagram"
             className="rounded-lg bg-white/10 p-3 hover:bg-white/20"
           >
-            <Instagram className="h-5 w-5 text-white" />
+            <Instagram className="h-5 w-5" />
           </a>
+
           <a
             href="#"
             aria-label="YouTube"
             className="rounded-lg bg-white/10 p-3 hover:bg-white/20"
           >
-            <Youtube className="h-5 w-5 text-white" />
+            <Youtube className="h-5 w-5" />
           </a>
         </div>
 
-        {/* Nederste linje: */}
+        {/* Nederst */}
         <div className="mt-10 flex flex-col gap-4 text-sm text-white/90 md:flex-row md:items-center md:justify-between">
-          <p>© 2026 Turistforeningen i Utopia</p>
+          <p>© 2026 Utopia</p>
 
           <div className="flex gap-6">
             <Link className="hover:underline" to="/privacy">
               Personvern
             </Link>
+
             <Link className="hover:underline" to="/terms">
               Vilkår
             </Link>
