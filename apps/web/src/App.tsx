@@ -19,6 +19,7 @@ import MyCabinsPage from "./pages/MyCabinsPage";
 import TourDetailsPage from "./pages/TourDetailsPage";
 import EditProfile from "./pages/EditProfile";
 import AboutPage from "./pages/AboutPage";
+import ContactPage from "./pages/ContactPage";
 
 
 export default function App() {
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/mycabins" element={<MyCabinsPage />} />
           <Route path="/editprofile" element={<EditProfile />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
           {/* Detaljside for tur */}
           <Route path="/tours/:id" element={<TourDetailsPage />} />
         </Route>
