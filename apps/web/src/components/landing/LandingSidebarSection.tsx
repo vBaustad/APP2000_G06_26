@@ -1,14 +1,11 @@
-import CompetitionCard from "../sections/CompetitionCard";
-import MountainSafetyRulesCard from "../sections/MountainSafetyRulesCard";
-
+import FlexibleTripsCard from "../sections/FlexibleTripsCard";
+import WeatherConditionsCard from "../sections/WeatherConditionsCard";
 
 export default function LandingSidebarSection() {
   return (
-    <section className="mt-10">
-      <div className="grid gap-6 md:grid-cols-2">
-        <MountainSafetyRulesCard />
-        <CompetitionCard />
-      </div>
+    <section className="grid gap-8 lg:grid-cols-2">
+      <WeatherConditionsCard />
+      <FlexibleTripsCard />
     </section>
   );
 }

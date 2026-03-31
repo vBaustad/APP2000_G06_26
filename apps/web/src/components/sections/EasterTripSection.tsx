@@ -1,38 +1,131 @@
 /**
  * Fil: EasterTripsSection.tsx
- * Beskrivelse: Seksjon som viser forslag til påsketurer.
+ * Utvikler(e): Ramona Cretulescu
+ * Beskrivelse:
+ * Seksjon på landingssiden som viser sesongbaserte forslag til påsketurer.
+ * Komponenten fremhever relevante turer for påskeferien og leder brukeren
+ * videre til utforsking av turer i løsningen.
  */
+
+import { Link } from "react-router-dom";
+import { ArrowRight, Clock3, Route as RouteIcon, SunMedium } from "lucide-react";
+
+type EasterTrip = {
+  id: number;
+  title: string;
+  description: string;
+  duration: string;
+  distance: string;
+  difficulty: string;
+  to: string;
+};
+
+const easterTrips: EasterTrip[] = [
+  {
+    id: 1,
+    title: "Rundtur ved Eventyrvannet",
+    description:
+      "En klassiker med flott utsikt. Passer godt for turfolk med vinterutstyr og erfaring fra variert terreng.",
+    duration: "5 timer",
+    distance: "12 km",
+    difficulty: "Middels",
+    to: "/explore",
+  },
+  {
+    id: 2,
+    title: "Fra Solbu til Stormbu",
+    description:
+      "Variert rute med gode muligheter for skitur i påskesol og fine stopp underveis.",
+    duration: "6 timer",
+    distance: "14 km",
+    difficulty: "Middels",
+    to: "/explore",
+  },
+  {
+    id: 3,
+    title: "Solstien ved Rjukan",
+    description:
+      "En lettere tur med panoramautsikt og historiske stoppesteder, egnet for familie og roligere tempo.",
+    duration: "2.5 timer",
+    distance: "6 km",
+    difficulty: "Lett",
+    to: "/explore",
+  },
+];
 
 export default function EasterTripsSection() {
   return (
-    <section className="py-16">
-      <div className="rounded-xl bg-yellow-50 p-6 shadow">
-        <h2 className="text-3xl font-semibold mb-6 text-yellow-900">
-          3 fine påsketurer
-        </h2>
+    <section className="py-4">
+      <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="max-w-3xl">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#8b5a10]">
+            Sesongbaserte forslag
+          </p>
 
-        <ul className="space-y-4 text-yellow-900 text-sm">
-          <li>
-            <h3 className="font-semibold">1. En magisk rundtur ved Eventyrvannet</h3>
-            <p>
-              En klassiker med fantastisk utsikt. Passer godt for erfarne turgåere med vinterutstyr.
-            </p>
-          </li>
+          <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">
+            Fine turer i påsken
+          </h2>
 
-          <li>
-            <h3 className="font-semibold">2. Påskeløp fra Solbu til Stormbu</h3>
-            <p>
-              Flott rundtur med variert terreng og gode muligheter for skitur i påskesol.
-            </p>
-          </li>
+          <p className="mt-3 text-lg leading-8 text-slate-600">
+            Utforsk turforslag som passer godt for påskeferien, med alt fra
+            skiturer i fjellet til roligere familievennlige alternativer.
+          </p>
+        </div>
 
-          <li>
-            <h3 className="font-semibold">3. Solstien ved Rjukan</h3>
-            <p>
-              En lett og familievennlig tur med panoramautsikt og historiske stoppesteder.
-            </p>
-          </li>
-        </ul>
+        <Link
+          to="/explore"
+          className="inline-flex items-center gap-2 font-medium text-[#8b5a10] hover:underline"
+        >
+          Se flere sesongturer
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+
+      <div className="grid gap-8 md:grid-cols-3">
+        {easterTrips.map((trip) => (
+          <article
+            key={trip.id}
+            className="flex h-full flex-col rounded-2xl border border-amber-100 bg-[#fffaf0] p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md"
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <span className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-[#8b5a10]">
+                <SunMedium className="h-4 w-4" />
+                Påsketur
+              </span>
+            </div>
+
+            <h3 className="mb-3 text-2xl font-semibold text-slate-900">
+              {trip.title}
+            </h3>
+
+            <p className="mb-5 leading-7 text-slate-700">{trip.description}</p>
+
+            <div className="mb-6 space-y-2 text-sm text-slate-600">
+              <p className="inline-flex items-center gap-2">
+                <Clock3 className="h-4 w-4 text-[#8b5a10]" />
+                {trip.duration}
+              </p>
+              <p className="inline-flex items-center gap-2">
+                <RouteIcon className="h-4 w-4 text-[#8b5a10]" />
+                {trip.distance}
+              </p>
+              <p>
+                <span className="font-medium text-slate-800">Nivå:</span>{" "}
+                {trip.difficulty}
+              </p>
+            </div>
+
+            <div className="mt-auto border-t border-amber-100 pt-4">
+              <Link
+                to={trip.to}
+                className="inline-flex items-center gap-2 font-semibold text-[#8b5a10] hover:underline"
+              >
+                Se tur
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </article>
+        ))}
       </div>
     </section>
   );

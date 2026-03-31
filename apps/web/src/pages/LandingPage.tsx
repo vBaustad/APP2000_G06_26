@@ -11,10 +11,10 @@
  * forretningslogikk utover sammensetting av visuelle seksjoner.
  */
 
-
-import LandingActivities from "../components/landing/LandingActivities";
-import LandingFeatures from "../components/landing/LandingFeatures";
 import LandingHero from "../components/landing/LandingHero";
+import LandingFeatures from "../components/landing/LandingFeatures";
+import LandingActivities from "../components/landing/LandingActivities";
+import LandingCommunitySection from "../components/landing/LandingCommunitySection";
 import LandingSidebarSection from "../components/landing/LandingSidebarSection";
 import EasterTripsSection from "../components/sections/EasterTripSection";
 import PartnersSection from "../components/sections/PartnerSection";
@@ -23,16 +23,16 @@ export default function LandingPage() {
   return (
     <>
       <LandingHero />
-      <main className="mx-auto max-w-5xl px-4 py-10">
-        <LandingFeatures/>
-        <LandingSidebarSection />
+
+      <main className="mx-auto max-w-6xl px-4 py-16 space-y-20">
+        <LandingFeatures />
         <LandingActivities />
-        <div className="mt-10">
-          <EasterTripsSection />
-        </div>
+        <LandingCommunitySection />
+        <EasterTripsSection />
+        <LandingSidebarSection />
       </main>
 
       <PartnersSection />
     </>
   );
-} 
+}
