@@ -5,7 +5,6 @@
  * hvilke sider som vises basert på URL.
  */
 
-
 import { Routes, Route } from "react-router-dom";
 import NotFoundPage from "./pages/NotFoundPage";
 import LandingPage from "./pages/LandingPage";
@@ -20,7 +19,8 @@ import TourDetailsPage from "./pages/TourDetailsPage";
 import EditProfile from "./pages/EditProfile";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
-
+import CreateTripPage from "./pages/CreateTripPage";
+import FlexibleTripDetailsPage from "./pages/FlexibleTripDetailsPage";
 
 export default function App() {
   return (
@@ -37,8 +37,9 @@ export default function App() {
           <Route path="/editprofile" element={<EditProfile />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
-          {/* Detaljside for tur */}
           <Route path="/tours/:id" element={<TourDetailsPage />} />
+          <Route path="/create-trip" element={<CreateTripPage />} />
+          <Route path="/flexible-trip-demo" element={<FlexibleTripDetailsPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />
