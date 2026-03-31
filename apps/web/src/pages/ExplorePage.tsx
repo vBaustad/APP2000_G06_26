@@ -1,7 +1,9 @@
+
 /**
  * Fil: ExplorePage.tsx
  * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu.
- * Beskrivelse: Utforsk-side som viser tilgjengelige turer med søk + filterpanel + CRUD.
+ * Beskrivelse: Utforsk-side som viser tilgjengelige turer med søk, filterpanel,
+ * CRUD og egne testturer for fellestur/fleksibel startdato.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -14,7 +16,6 @@ import { Pencil, Trash2, MapPin, Mountain, Clock, Route } from "lucide-react";
 
 type SortKey = "newest" | "distanceAsc" | "durationAsc";
 
-// Enkle filter-buckets (som ut.no)
 type LengthBucket = "lt5" | "5to10" | "10to20" | "gt20";
 type DurationBucket = "lt2" | "2to4" | "4to6" | "gt6";
 
@@ -36,10 +37,8 @@ function toggleInList<T>(list: T[], value: T) {
   return list.includes(value) ? list.filter((x) => x !== value) : [...list, value];
 }
 
-/** Regionvalg */
 const REGIONS: Region[] = ["Nord-Norge", "Trøndelag", "Østlandet", "Sørlandet", "Vestlandet"];
 
-// Bildene du faktisk har i /public/images/tours
 const TOUR_IMAGES = [
   "/images/tours/floibanen.jpg",
   "/images/tours/oslofjord.jpg",
@@ -50,6 +49,55 @@ const TOUR_IMAGES = [
   "/images/tours/bergen-fjelloping.avif",
   "/images/tours/fjell-okt.avif",
   "/images/tours/1635176958-noedt-til-aa-loepe.avif",
+];
+
+type DemoTrip = {
+  id: string;
+  title: string;
+  location: string;
+  region: Region;
+  difficulty: Tour["difficulty"];
+  distanceKm: number;
+  elevationM: number;
+  durationHours: number;
+  gear: string[];
+  imageUrl: string;
+  typeLabel: string;
+  statusLabel: string;
+  to: string;
+};
+
+const demoTrips: DemoTrip[] = [
+  {
+    id: "demo-flexible-trip",
+    title: "Hardangervidda på tvers",
+    location: "Finse – Krækkja – Tuva",
+    region: "Vestlandet",
+    difficulty: "Krevende",
+    distanceKm: 34,
+    elevationM: 820,
+    durationHours: 18,
+    gear: ["Fjellsko", "Vindjakke", "Sekk"],
+    imageUrl: "/images/tours/fjelltur-2.jpg",
+    typeLabel: "Fellestur",
+    statusLabel: "Fleksibel startdato",
+    to: "/flexible-trip-demo",
+  },
+  {
+    id: "demo-fixed-trip",
+    title: "Jotunheimen helgetur",
+    location: "Gjendesheim – Memurubu",
+    region: "Østlandet",
+    difficulty: "Middels",
+    distanceKm: 16,
+    elevationM: 540,
+    durationHours: 7,
+    gear: ["Fjellsko", "Matpakke"],
+    imageUrl: "/images/tours/fjelltur-1.jpg",
+    typeLabel: "Fellestur",
+    statusLabel: "Fast dato",
+    to: "/tours/2",
+  },
 ];
 
 function hashStringToIndex(s: string, mod: number) {
@@ -64,11 +112,110 @@ function ensureTourImage(t: Tour): Tour {
   return { ...t, imageUrl: TOUR_IMAGES[idx] };
 }
 
+function demoTripMatches(
+  trip: DemoTrip,
+  query: string,
+  diffs: Tour["difficulty"][],
+  lengths: LengthBucket[],
+  durations: DurationBucket[],
+  regions: Region[]
+) {
+  const q = query.trim().toLowerCase();
+
+  const matchesQuery =
+    !q ||
+    `${trip.title} ${trip.location} ${trip.difficulty} ${trip.region} ${trip.typeLabel} ${trip.statusLabel}`
+      .toLowerCase()
+      .includes(q);
+
+  const matchesDiff = diffs.length === 0 || diffs.includes(trip.difficulty);
+  const matchesLen = lengths.length === 0 || lengths.some((b) => inLengthBucket(trip.distanceKm, b));
+  const matchesDur =
+    durations.length === 0 || durations.some((b) => inDurationBucket(trip.durationHours, b));
+  const matchesRegion = regions.length === 0 || regions.includes(trip.region);
+
+  return matchesQuery && matchesDiff && matchesLen && matchesDur && matchesRegion;
+}
+
+function DemoTripCard({ trip }: { trip: DemoTrip }) {
+  return (
+    <article className="group relative overflow-hidden rounded-2xl border-2 border-emerald-200 bg-white shadow transition hover:shadow-lg">
+      <div className="relative">
+        <img
+          src={trip.imageUrl}
+          alt={trip.title}
+          className="h-56 w-full object-cover"
+          loading="lazy"
+        />
+
+        <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+          <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-900 shadow-sm">
+            {trip.typeLabel}
+          </span>
+          <span className="rounded-full bg-white/95 px-3 py-1 text-sm font-semibold text-slate-900 shadow-sm">
+            {trip.statusLabel}
+          </span>
+        </div>
+
+        <span className="absolute right-4 top-4 rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 shadow-sm">
+          {trip.difficulty}
+        </span>
+      </div>
+
+      <div className="flex flex-col p-5">
+        <h3 className="text-2xl font-semibold tracking-tight text-gray-900">{trip.title}</h3>
+
+        <div className="mt-2 flex items-center gap-2 text-gray-600">
+          <MapPin className="h-4 w-4" />
+          <p className="text-sm">
+            {trip.location}
+            <span className="mx-2">•</span>
+            {trip.region}
+          </p>
+        </div>
+
+        <div className="mt-5 grid grid-cols-3 gap-4 border-t border-gray-100 pt-4">
+          <div className="text-sm text-gray-600">
+            <div className="flex items-center gap-2">
+              <Route className="h-4 w-4" />
+              <span>Distanse</span>
+            </div>
+            <div className="mt-1 text-lg font-semibold text-gray-900">{trip.distanceKm} km</div>
+          </div>
+
+          <div className="text-sm text-gray-600">
+            <div className="flex items-center gap-2">
+              <Mountain className="h-4 w-4" />
+              <span>Høydemeter</span>
+            </div>
+            <div className="mt-1 text-lg font-semibold text-gray-900">{trip.elevationM} m</div>
+          </div>
+
+          <div className="text-sm text-gray-600">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span>Tid</span>
+            </div>
+            <div className="mt-1 text-lg font-semibold text-gray-900">{trip.durationHours} t</div>
+          </div>
+        </div>
+
+        <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm font-medium text-emerald-700">Klar for demo og testing</div>
+
+          <Link to={trip.to} className="text-sm font-semibold text-emerald-700 hover:underline">
+            Se mer
+          </Link>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 export default function ExplorePage() {
   const [allTours, setAllTours] = useState<Tour[]>([]);
   const [query, setQuery] = useState("");
 
-  // Filter state (flervalg)
   const [diffs, setDiffs] = useState<Tour["difficulty"][]>([]);
   const [lengths, setLengths] = useState<LengthBucket[]>([]);
   const [durations, setDurations] = useState<DurationBucket[]>([]);
@@ -76,11 +223,8 @@ export default function ExplorePage() {
 
   const [sort, setSort] = useState<SortKey>("newest");
 
-  // CRUD state
   const [editingTour, setEditingTour] = useState<Tour | null>(null);
   const [showCreate, setShowCreate] = useState(false);
-
-  // UI state
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
@@ -121,7 +265,8 @@ export default function ExplorePage() {
 
       const matchesDiff = diffs.length === 0 || diffs.includes(t.difficulty);
       const matchesLen = lengths.length === 0 || lengths.some((b) => inLengthBucket(t.distanceKm, b));
-      const matchesDur = durations.length === 0 || durations.some((b) => inDurationBucket(t.durationHours, b));
+      const matchesDur =
+        durations.length === 0 || durations.some((b) => inDurationBucket(t.durationHours, b));
       const matchesRegion = regions.length === 0 || regions.includes(t.region);
 
       return matchesQuery && matchesDiff && matchesLen && matchesDur && matchesRegion;
@@ -141,6 +286,12 @@ export default function ExplorePage() {
 
     return next;
   }, [allTours, query, diffs, lengths, durations, regions, sort]);
+
+  const visibleDemoTrips = useMemo(() => {
+    return demoTrips.filter((trip) =>
+      demoTripMatches(trip, query, diffs, lengths, durations, regions)
+    );
+  }, [query, diffs, lengths, durations, regions]);
 
   function handleCreate(newTour: Tour) {
     const safe = ensureTourImage(newTour);
@@ -212,9 +363,11 @@ export default function ExplorePage() {
     })),
   ];
 
+  const totalVisibleCount = visibleDemoTrips.length + visibleTours.length;
+  const totalCount = demoTrips.length + allTours.length;
+
   return (
     <main>
-      {/* HERO */}
       <section className="relative h-[38vh] min-h-[320px]">
         <img
           src="/images/explore-hero.jpg"
@@ -246,16 +399,14 @@ export default function ExplorePage() {
         </div>
       </section>
 
-      {/* CONTENT WRAPPER */}
       <div className="bg-gray-50">
-        {/* TOPPLINJE */}
         <section className="mx-auto max-w-7xl px-6 pt-8">
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow md:p-5">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
                 <div className="text-sm text-gray-600">
-                  Viser <span className="font-semibold">{visibleTours.length}</span> av{" "}
-                  <span className="font-semibold">{allTours.length}</span> turer
+                  Viser <span className="font-semibold">{totalVisibleCount}</span> av{" "}
+                  <span className="font-semibold">{totalCount}</span> turer
                 </div>
 
                 {chips.length > 0 && (
@@ -321,7 +472,6 @@ export default function ExplorePage() {
               </div>
             </div>
 
-            {/* FILTERPANEL */}
             {filtersOpen && (
               <div className="mt-5 rounded-2xl border border-gray-100 bg-gray-50 p-4 md:p-6">
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -420,14 +570,12 @@ export default function ExplorePage() {
               </div>
             )}
 
-            {/* CREATE */}
             {showCreate && (
               <div className="mt-5 border-t border-gray-100 pt-5">
                 <TourForm mode="create" onCreate={handleCreate} />
               </div>
             )}
 
-            {/* UPDATE */}
             {editingTour && (
               <div className="mt-5 border-t border-gray-100 pt-5">
                 <div className="mb-3 flex items-center justify-between">
@@ -446,9 +594,8 @@ export default function ExplorePage() {
           </div>
         </section>
 
-        {/* LISTE */}
         <section className="mx-auto max-w-7xl px-6 pb-16 pt-10">
-          {visibleTours.length === 0 ? (
+          {totalVisibleCount === 0 ? (
             <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center text-gray-600">
               <p className="text-base font-medium text-gray-800">
                 Ingen turer matcher søket eller filtrene dine.
@@ -465,110 +612,145 @@ export default function ExplorePage() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {visibleTours.map((t) => (
-                <article
-                  key={t.id}
-                  className="group relative overflow-hidden rounded-2xl bg-white shadow transition hover:shadow-lg"
-                >
-                  {/* Image */}
-                  <div className="relative">
-                    <img
-                      src={t.imageUrl || "/images/trip-card-placeholder.jpg"}
-                      alt={t.title}
-                      className="h-56 w-full object-cover"
-                      loading="lazy"
-                    />
-
-                    {/* Difficulty badge (top-left) */}
-                    <span className="absolute left-4 top-4 rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 shadow-sm">
-                      {t.difficulty}
-                    </span>
-
-                    {/* Action icons (top-right) */}
-                    <div className="absolute right-4 top-4 flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleStartEdit(t)}
-                        className="grid h-10 w-10 place-items-center rounded-xl bg-white/95 shadow-sm hover:bg-white"
-                        title="Rediger"
-                        aria-label="Rediger"
-                      >
-                        <Pencil className="h-5 w-5" />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (window.confirm(`Slette "${t.title}"?`)) handleDelete(t.id);
-                        }}
-                        className="grid h-10 w-10 place-items-center rounded-xl bg-white/95 shadow-sm hover:bg-white"
-                        title="Slett"
-                        aria-label="Slett"
-                      >
-                        <Trash2 className="h-5 w-5 text-red-600" />
-                      </button>
-                    </div>
+            <>
+              {visibleDemoTrips.length > 0 && (
+                <div className="mb-10">
+                  <div className="mb-5">
+                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                      Testturer
+                    </p>
+                    <h2 className="mt-2 text-2xl font-semibold text-gray-900">
+                      Fellesturer klargjort for demo og sensur
+                    </h2>
+                    <p className="mt-2 text-sm text-gray-600">
+                      Disse turene er lagt inn for å gjøre fleksibel og fast fellestur enkle å finne og teste.
+                    </p>
                   </div>
 
-                  {/* Content */}
-                  <div className="flex flex-col p-5">
-                    <h3 className="text-2xl font-semibold tracking-tight text-gray-900">{t.title}</h3>
-
-                    <div className="mt-2 flex items-center gap-2 text-gray-600">
-                      <MapPin className="h-4 w-4" />
-                      <p className="text-sm">
-                        {t.location}
-                        <span className="mx-2">•</span>
-                        {t.region}
-                      </p>
-                    </div>
-
-                    {/* Meta row */}
-                    <div className="mt-5 grid grid-cols-3 gap-4 border-t border-gray-100 pt-4">
-                      <div className="text-sm text-gray-600">
-                        <div className="flex items-center gap-2">
-                          <Route className="h-4 w-4" />
-                          <span>Distanse</span>
-                        </div>
-                        <div className="mt-1 text-lg font-semibold text-gray-900">{t.distanceKm} km</div>
-                      </div>
-
-                      <div className="text-sm text-gray-600">
-                        <div className="flex items-center gap-2">
-                          <Mountain className="h-4 w-4" />
-                          <span>Høydemeter</span>
-                        </div>
-                        <div className="mt-1 text-lg font-semibold text-gray-900">{t.elevationM} m</div>
-                      </div>
-
-                      <div className="text-sm text-gray-600">
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4" />
-                          <span>Tid</span>
-                        </div>
-                        <div className="mt-1 text-lg font-semibold text-gray-900">{t.durationHours} t</div>
-                      </div>
-                    </div>
-
-                    {/* Footer */}
-                    <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="text-sm text-gray-500">
-                        Utstyr: {t.gear.length > 0 ? t.gear.slice(0, 2).join(", ") : "Ikke spesifisert"}
-                        {t.gear.length > 2 ? "…" : ""}
-                      </div>
-
-                      <Link
-                        to={`/tours/${t.id}`}
-                        className="text-sm font-semibold text-emerald-700 hover:underline"
-                      >
-                        Se mer
-                      </Link>
-                    </div>
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {visibleDemoTrips.map((trip) => (
+                      <DemoTripCard key={trip.id} trip={trip} />
+                    ))}
                   </div>
-                </article>
-              ))}
-            </div>
+                </div>
+              )}
+
+              {visibleTours.length > 0 && (
+                <div>
+                  <div className="mb-5">
+                    <h2 className="text-2xl font-semibold text-gray-900">Alle turer</h2>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {visibleTours.map((t) => (
+                      <article
+                        key={t.id}
+                        className="group relative overflow-hidden rounded-2xl bg-white shadow transition hover:shadow-lg"
+                      >
+                        <div className="relative">
+                          <img
+                            src={t.imageUrl || "/images/trip-card-placeholder.jpg"}
+                            alt={t.title}
+                            className="h-56 w-full object-cover"
+                            loading="lazy"
+                          />
+
+                          <span className="absolute left-4 top-4 rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 shadow-sm">
+                            {t.difficulty}
+                          </span>
+
+                          <div className="absolute right-4 top-4 flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleStartEdit(t)}
+                              className="grid h-10 w-10 place-items-center rounded-xl bg-white/95 shadow-sm hover:bg-white"
+                              title="Rediger"
+                              aria-label="Rediger"
+                            >
+                              <Pencil className="h-5 w-5" />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(`Slette "${t.title}"?`)) handleDelete(t.id);
+                              }}
+                              className="grid h-10 w-10 place-items-center rounded-xl bg-white/95 shadow-sm hover:bg-white"
+                              title="Slett"
+                              aria-label="Slett"
+                            >
+                              <Trash2 className="h-5 w-5 text-red-600" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col p-5">
+                          <h3 className="text-2xl font-semibold tracking-tight text-gray-900">
+                            {t.title}
+                          </h3>
+
+                          <div className="mt-2 flex items-center gap-2 text-gray-600">
+                            <MapPin className="h-4 w-4" />
+                            <p className="text-sm">
+                              {t.location}
+                              <span className="mx-2">•</span>
+                              {t.region}
+                            </p>
+                          </div>
+
+                          <div className="mt-5 grid grid-cols-3 gap-4 border-t border-gray-100 pt-4">
+                            <div className="text-sm text-gray-600">
+                              <div className="flex items-center gap-2">
+                                <Route className="h-4 w-4" />
+                                <span>Distanse</span>
+                              </div>
+                              <div className="mt-1 text-lg font-semibold text-gray-900">
+                                {t.distanceKm} km
+                              </div>
+                            </div>
+
+                            <div className="text-sm text-gray-600">
+                              <div className="flex items-center gap-2">
+                                <Mountain className="h-4 w-4" />
+                                <span>Høydemeter</span>
+                              </div>
+                              <div className="mt-1 text-lg font-semibold text-gray-900">
+                                {t.elevationM} m
+                              </div>
+                            </div>
+
+                            <div className="text-sm text-gray-600">
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-4 w-4" />
+                                <span>Tid</span>
+                              </div>
+                              <div className="mt-1 text-lg font-semibold text-gray-900">
+                                {t.durationHours} t
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="text-sm text-gray-500">
+                              Utstyr:{" "}
+                              {t.gear.length > 0 ? t.gear.slice(0, 2).join(", ") : "Ikke spesifisert"}
+                              {t.gear.length > 2 ? "…" : ""}
+                            </div>
+
+                            <Link
+                              to={`/tours/${t.id}`}
+                              className="text-sm font-semibold text-emerald-700 hover:underline"
+                            >
+                              Se mer
+                            </Link>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </section>
       </div>

@@ -21,6 +21,7 @@ import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import CreateTripPage from "./pages/CreateTripPage";
 import FlexibleTripDetailsPage from "./pages/FlexibleTripDetailsPage";
+import FastGroupTripDetailsPage from "./pages/FastGroupTripDetailsPage";
 
 export default function App() {
   return (
@@ -40,6 +41,7 @@ export default function App() {
           <Route path="/tours/:id" element={<TourDetailsPage />} />
           <Route path="/create-trip" element={<CreateTripPage />} />
           <Route path="/flexible-trip-demo" element={<FlexibleTripDetailsPage />} />
+          <Route path="/fast-group-trip-demo" element={<FastGroupTripDetailsPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />
