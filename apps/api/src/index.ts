@@ -1,5 +1,10 @@
-import express, { Request, Response } from "express";
+import express from "express";
 import cors from "cors";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+
+// LOAD ENV
+dotenv.config();
 
 const app = express();
 const PORT = 4000;
@@ -8,60 +13,21 @@ const PORT = 4000;
 app.use(cors());
 app.use(express.json());
 
-// Demo-data
-const tours = [
-  {
-    id: "t1",
-    title: "Preikestolen",
-    location: "Stavanger",
-    region: "Vestlandet",
-    difficulty: "Middels",
-    distanceKm: 8,
-    durationHours: 4,
-    elevationM: 500,
-    gear: ["Gode sko", "Vannflaske", "Vindjakke"],
-  },
-  {
-    id: "t2",
-    title: "Besseggen",
-    location: "Jotunheimen",
-    region: "Østlandet",
-    difficulty: "Krevende",
-    distanceKm: 14,
-    durationHours: 7,
-    elevationM: 1100,
-    gear: ["Fjellsko", "Matpakke", "Ekstra klær"],
-  },
-  {
-    id: "t3",
-    title: "Geiranger",
-    location: "Møre og Romsdal",
-    region: "Vestlandet",
-    difficulty: "Krevende",
-    distanceKm: 10,
-    durationHours: 5,
-    elevationM: 700,
-    gear: ["Fjellsko", "Regnjakke", "Vannflaske"],
-  },
-];
+// TEST LOG
+console.log("MONGO_URI:", process.env.MONGO_URI);
 
-// Route
-app.get("/tours/:id", (req: Request, res: Response) => {
-  const tour = tours.find((t) => t.id === req.params.id);
+// CONNECT TO MONGODB
+mongoose
+  .connect(process.env.MONGO_URI as string)
+  .then(() => console.log("🔥 Connected to MongoDB"))
+  .catch((error) => console.error("❌ MongoDB error:", error));
 
-  if (!tour) {
-    return res.status(404).json({ message: "Fant ikke tur" });
-  }
-
-  res.json(tour);
-});
-
-// Test route (valgfri men nice)
-app.get("/", (_req: Request, res: Response) => {
+// TEST ROUTE
+app.get("/", (req, res) => {
   res.send("API is running 🚀");
 });
 
-// Start server
+// START SERVER
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
