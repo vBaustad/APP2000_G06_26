@@ -1,40 +1,67 @@
-/**
- * Fil: Index.ts
- * Utvikler(e): Vebjørn Baustad
- * Beskrivelse: Starter backend-serveren og definerer hovedrutene for autentisering
- * og hytte-API. Inkluderer grunnleggende middleware og en enkel helsesjekk.
- */
-
-import "dotenv/config";
-import express from 'express';
-import cors from 'cors';
-import { authRouter } from './routes/authRoutes';
-import { hytteRouter } from "./routes/hytteRoutes";
-import { turRouter } from "./routes/turRoutes";
+import express, { Request, Response } from "express";
+import cors from "cors";
 
 const app = express();
+const PORT = 4000;
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Define routes
-app.use('/api/auth', authRouter);
+// Demo-data
+const tours = [
+  {
+    id: "t1",
+    title: "Preikestolen",
+    location: "Stavanger",
+    region: "Vestlandet",
+    difficulty: "Middels",
+    distanceKm: 8,
+    durationHours: 4,
+    elevationM: 500,
+    gear: ["Gode sko", "Vannflaske", "Vindjakke"],
+  },
+  {
+    id: "t2",
+    title: "Besseggen",
+    location: "Jotunheimen",
+    region: "Østlandet",
+    difficulty: "Krevende",
+    distanceKm: 14,
+    durationHours: 7,
+    elevationM: 1100,
+    gear: ["Fjellsko", "Matpakke", "Ekstra klær"],
+  },
+  {
+    id: "t3",
+    title: "Geiranger",
+    location: "Møre og Romsdal",
+    region: "Vestlandet",
+    difficulty: "Krevende",
+    distanceKm: 10,
+    durationHours: 5,
+    elevationM: 700,
+    gear: ["Fjellsko", "Regnjakke", "Vannflaske"],
+  },
+];
 
-app.use("/api/hytter", hytteRouter);
+// Route
+app.get("/tours/:id", (req: Request, res: Response) => {
+  const tour = tours.find((t) => t.id === req.params.id);
 
-app.use("/api/turer", turRouter);
+  if (!tour) {
+    return res.status(404).json({ message: "Fant ikke tur" });
+  }
 
-// Basic health check route
-app.get('/', (req, res) => {
-  res.send('API is running!');
+  res.json(tour);
 });
-app.get('/health', (req, res) => {
-  res.json({ ok: true, service: 'api' });
+
+// Test route (valgfri men nice)
+app.get("/", (_req: Request, res: Response) => {
+  res.send("API is running 🚀");
 });
 
-
-const port = process.env.PORT ? Number(process.env.PORT) : 4000;
-app.listen(port, () => {
-  console.log(`API server is running at http://localhost:${port}`);
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });
-

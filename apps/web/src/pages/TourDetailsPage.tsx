@@ -6,7 +6,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { mockTours, type Tour } from "../utils/mockTours";
 import {
   MapPin,
   Route,
@@ -21,6 +20,21 @@ import {
   Footprints,
 } from "lucide-react";
 import TurMap from "../components/TurMap";
+
+type Tour = {
+  id: string;
+  title: string;
+  location: string;
+  region: string;
+  difficulty: string;
+  distanceKm: number;
+  durationHours: number;
+  elevationM: number;
+  imageUrl?: string;
+  gear?: string[];
+  lat?: number;
+  lng?: number;
+};
 
 type LatLng = [number, number];
 
@@ -43,9 +57,9 @@ function hashStringToIndex(s: string, mod: number) {
 }
 
 function ensureTourImage(t: Tour): Tour {
-  if ((t as any).imageUrl && String((t as any).imageUrl).trim()) return t;
-  const idx = hashStringToIndex((t as any).id ?? (t as any).title ?? "tour", TOUR_IMAGES.length);
-  return { ...(t as any), imageUrl: TOUR_IMAGES[idx] } as Tour;
+  if (t.imageUrl && String(t.imageUrl).trim()) return t;
+  const idx = hashStringToIndex(t.id ?? t.title ?? "tour", TOUR_IMAGES.length);
+  return { ...t, imageUrl: TOUR_IMAGES[idx] };
 }
 
 /**
@@ -136,7 +150,7 @@ function keySaved(tourId: string) {
 }
 
 function storyForTour(tour: Tour) {
-  const id = String((tour as any).id ?? "");
+  const id = String(tour.id ?? "");
 
   const fallback =
     "Dette er en tur som føles som klassisk Norge: tydelig sti, frisk luft og en utsikt som belønner deg for å gå rolig, jevnt og fornuftig. Ta pauser, drikk vann – og la fjellet få siste ordet.";
@@ -147,8 +161,8 @@ function storyForTour(tour: Tour) {
     t3: "Geiranger og fjellene rundt er Norge på sitt mest dramatiske: bratte sider, dype daler, og utsikt som får folk til å bli stille. Her lønner det seg å være tradisjonell: gode sko, litt ekstra klær og respekt for været. Gjør du det enkelt og riktig, får du en tur som sitter i kroppen lenge etterpå.",
   };
 
-  const diff = (tour as any).difficulty;
-  const region = (tour as any).region;
+  const diff = tour.difficulty;
+  const region = tour.region;
 
   const diffLine =
     diff === "Lett"
@@ -173,10 +187,30 @@ function storyForTour(tour: Tour) {
   return `${byId[id] ?? fallback} ${diffLine} ${regionLine}`;
 }
 
-/** Prøv å hente lat/lng fra tour hvis dere har det i mockTours */
-function pickLatLngFromTour(tour: any): LatLng | null {
-  const lat = tour?.lat ?? tour?.latitude ?? tour?.coords?.lat ?? tour?.coordinates?.lat;
-  const lng = tour?.lng ?? tour?.lon ?? tour?.longitude ?? tour?.coords?.lng ?? tour?.coordinates?.lng;
+function pickLatLngFromTour(tour: Partial<Tour> & Record<string, unknown>): LatLng | null {
+  const lat =
+    typeof tour.lat === "number"
+      ? tour.lat
+      : typeof tour.latitude === "number"
+      ? (tour.latitude as number)
+      : typeof (tour.coords as { lat?: number } | undefined)?.lat === "number"
+      ? (tour.coords as { lat: number }).lat
+      : typeof (tour.coordinates as { lat?: number } | undefined)?.lat === "number"
+      ? (tour.coordinates as { lat: number }).lat
+      : null;
+
+  const lng =
+    typeof tour.lng === "number"
+      ? tour.lng
+      : typeof tour.lon === "number"
+      ? (tour.lon as number)
+      : typeof tour.longitude === "number"
+      ? (tour.longitude as number)
+      : typeof (tour.coords as { lng?: number } | undefined)?.lng === "number"
+      ? (tour.coords as { lng: number }).lng
+      : typeof (tour.coordinates as { lng?: number } | undefined)?.lng === "number"
+      ? (tour.coordinates as { lng: number }).lng
+      : null;
 
   if (typeof lat === "number" && typeof lng === "number") return [lat, lng];
   return null;
@@ -185,39 +219,62 @@ function pickLatLngFromTour(tour: any): LatLng | null {
 export default function TourDetailsPage() {
   const { id } = useParams();
 
-  const tour = useMemo(() => {
-    if (!id) return null;
-    const found = mockTours.find((x) => String((x as any).id) === String(id));
-    return found ? ensureTourImage(found) : null;
-  }, [id]);
-
-  const tid = String((tour as any)?.id ?? id ?? "");
-
-  const geo = useMemo(() => {
-    if (!tour) return undefined;
-    return TOUR_GEO[String((tour as any).id)];
-  }, [tour]);
-
-  const mapCenter = useMemo<LatLng>(() => {
-    if (!tour) return [60.472, 8.468];
-    const fromTour = pickLatLngFromTour(tour as any);
-    if (fromTour) return fromTour;
-    if (geo?.center) return geo.center;
-    return [60.472, 8.468];
-  }, [tour, geo?.center]);
-
-  const gear: string[] = useMemo(() => {
-    if (!tour) return [];
-    const g = (tour as any).gear;
-    return Array.isArray(g) ? g : [];
-  }, [tour]);
-
+  const [tour, setTour] = useState<Tour | null>(null);
+  const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
 
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewName, setReviewName] = useState("");
   const [reviewText, setReviewText] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
+
+  useEffect(() => {
+    async function loadTour() {
+      if (!id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://localhost:4000/tours/${id}`);
+
+        if (!response.ok) {
+          setTour(null);
+          return;
+        }
+
+        const data = await response.json();
+        setTour(ensureTourImage(data));
+      } catch (error) {
+        console.error("Kunne ikke hente tur:", error);
+        setTour(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadTour();
+  }, [id]);
+
+  const tid = String(tour?.id ?? id ?? "");
+
+  const geo = useMemo(() => {
+    if (!tour) return undefined;
+    return TOUR_GEO[String(tour.id)];
+  }, [tour]);
+
+  const mapCenter = useMemo<LatLng>(() => {
+    if (!tour) return [60.472, 8.468];
+    const fromTour = pickLatLngFromTour(tour as Partial<Tour> & Record<string, unknown>);
+    if (fromTour) return fromTour;
+    if (geo?.center) return geo.center;
+    return [60.472, 8.468];
+  }, [tour, geo]);
+
+  const gear: string[] = useMemo(() => {
+    if (!tour) return [];
+    return Array.isArray(tour.gear) ? tour.gear : [];
+  }, [tour]);
 
   const isLoggedIn = useMemo(() => {
     const token = safeGet("token") || safeGet("auth_token");
@@ -245,6 +302,16 @@ export default function TourDetailsPage() {
     return Math.round((sum / reviews.length) * 10) / 10;
   }, [reviews]);
 
+  if (loading) {
+    return (
+      <main className="min-h-[70vh] bg-gray-50">
+        <section className="mx-auto max-w-7xl px-6 py-10">
+          <p className="text-gray-600">Laster tur...</p>
+        </section>
+      </main>
+    );
+  }
+
   if (!tour) {
     return (
       <main className="min-h-[70vh] bg-gray-50">
@@ -271,13 +338,13 @@ export default function TourDetailsPage() {
     );
   }
 
-  const imageUrl = (tour as any).imageUrl || "/images/trip-card-placeholder.jpg";
+  const imageUrl = tour.imageUrl || "/images/trip-card-placeholder.jpg";
 
   async function handleShare() {
     const url = window.location.href;
     try {
       if (navigator.share) {
-        await navigator.share({ title: (tour as any).title, url });
+        await navigator.share({ title: tour.title, url });
         return;
       }
     } catch {
@@ -308,14 +375,14 @@ export default function TourDetailsPage() {
     const gpx = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="Utopia TiU">
   <wpt lat="${lat}" lon="${lon}">
-    <name>${(tour as any).title}</name>
+    <name>${tour.title}</name>
   </wpt>
 </gpx>`;
 
     const blob = new Blob([gpx], { type: "application/gpx+xml" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `${String((tour as any).title).replaceAll(" ", "_")}.gpx`;
+    a.download = `${String(tour.title).replaceAll(" ", "_")}.gpx`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -356,9 +423,8 @@ export default function TourDetailsPage() {
 
   return (
     <main className="bg-gray-50">
-      {/* HERO */}
       <section className="relative h-[38vh] min-h-[320px]">
-        <img src={imageUrl} alt={(tour as any).title} className="absolute inset-0 h-full w-full object-cover" />
+        <img src={imageUrl} alt={tour.title} className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-black/45" />
 
         <div className="relative z-10 h-full">
@@ -372,11 +438,11 @@ export default function TourDetailsPage() {
 
             <div className="flex flex-wrap items-center gap-3">
               <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 shadow-sm">
-                {(tour as any).difficulty}
+                {tour.difficulty}
               </span>
 
               <span className="rounded-full bg-white/90 px-3 py-1 text-sm font-medium text-gray-900">
-                {(tour as any).region}
+                {tour.region}
               </span>
 
               {avgRating !== null && (
@@ -386,19 +452,17 @@ export default function TourDetailsPage() {
               )}
             </div>
 
-            <h1 className="mt-3 text-4xl font-semibold text-white md:text-5xl">{(tour as any).title}</h1>
+            <h1 className="mt-3 text-4xl font-semibold text-white md:text-5xl">{tour.title}</h1>
 
             <div className="mt-2 flex items-center gap-2 text-white/85">
               <MapPin className="h-4 w-4" />
-              <p className="text-sm">{(tour as any).location}</p>
+              <p className="text-sm">{tour.location}</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CONTENT */}
       <section className="mx-auto max-w-7xl px-6 py-10">
-        {/* TOP STATS */}
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
             <div>
@@ -406,7 +470,7 @@ export default function TourDetailsPage() {
                 <Route className="h-4 w-4 text-emerald-700" />
                 <span>Distanse</span>
               </div>
-              <div className="mt-1 text-2xl font-semibold text-gray-900">{(tour as any).distanceKm} km</div>
+              <div className="mt-1 text-2xl font-semibold text-gray-900">{tour.distanceKm} km</div>
             </div>
 
             <div>
@@ -414,7 +478,7 @@ export default function TourDetailsPage() {
                 <Clock className="h-4 w-4 text-emerald-700" />
                 <span>Varighet</span>
               </div>
-              <div className="mt-1 text-2xl font-semibold text-gray-900">{(tour as any).durationHours} t</div>
+              <div className="mt-1 text-2xl font-semibold text-gray-900">{tour.durationHours} t</div>
             </div>
 
             <div>
@@ -422,7 +486,7 @@ export default function TourDetailsPage() {
                 <Mountain className="h-4 w-4 text-emerald-700" />
                 <span>Stigning</span>
               </div>
-              <div className="mt-1 text-2xl font-semibold text-gray-900">{(tour as any).elevationM} m</div>
+              <div className="mt-1 text-2xl font-semibold text-gray-900">{tour.elevationM} m</div>
             </div>
 
             <div>
@@ -435,9 +499,7 @@ export default function TourDetailsPage() {
           </div>
         </div>
 
-        {/* Om turen + kart */}
         <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Left */}
           <div className="lg:col-span-2">
             <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow">
               <h2 className="flex items-center gap-2 text-xl font-semibold">
@@ -451,8 +513,8 @@ export default function TourDetailsPage() {
                 <div className="flex items-start gap-3">
                   <MapPin className="mt-0.5 h-5 w-5 text-emerald-700" />
                   <div>
-                    <div className="font-semibold">{(tour as any).location}</div>
-                    <div className="text-sm text-gray-500">{(tour as any).region}</div>
+                    <div className="font-semibold">{tour.location}</div>
+                    <div className="text-sm text-gray-500">{tour.region}</div>
                   </div>
                 </div>
 
@@ -460,7 +522,7 @@ export default function TourDetailsPage() {
                   <Footprints className="h-5 w-5 text-emerald-700" />
                   <div>
                     <div className="font-semibold">{geo?.typeText ?? "Fottur"}</div>
-                    <div className="text-sm text-gray-500">{(tour as any).difficulty}</div>
+                    <div className="text-sm text-gray-500">{tour.difficulty}</div>
                   </div>
                 </div>
 
@@ -514,7 +576,6 @@ export default function TourDetailsPage() {
             </div>
           </div>
 
-          {/* Right (Kart) */}
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-gray-900">Kart</h3>
@@ -540,7 +601,7 @@ export default function TourDetailsPage() {
               </div>
             </div>
 
-            <TurMap center={mapCenter} title={(tour as any).title} />
+            <TurMap center={mapCenter} title={tour.title} />
 
             {!geo && (
               <div className="mt-3 text-xs text-gray-500">
@@ -552,7 +613,6 @@ export default function TourDetailsPage() {
           </div>
         </div>
 
-        {/* Reviews */}
         <div className="mt-10 rounded-2xl border border-gray-100 bg-white p-6 shadow">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -562,7 +622,6 @@ export default function TourDetailsPage() {
             </div>
           </div>
 
-          {/* Skriv anmeldelse */}
           <div className="mt-6">
             <div className="text-sm font-semibold text-gray-900">Skriv en anmeldelse</div>
 
@@ -624,7 +683,6 @@ export default function TourDetailsPage() {
             )}
           </div>
 
-          {/* Hva andre sier */}
           <div className="mt-6 border-t border-gray-100 pt-6">
             <div className="text-sm font-semibold text-gray-900">Hva andre sier</div>
 
@@ -656,7 +714,6 @@ export default function TourDetailsPage() {
             )}
           </div>
 
-          {/* Actions */}
           <div className="mt-8 flex flex-col gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-xs text-gray-500">Lagret lokalt (demo) • Tur-ID: {tid}</div>
 
