@@ -6,55 +6,82 @@
  * Hvis ikke, blir brukeren sendt til innloggingssiden.
  */
 
-import { NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+
+type User = {
+  _id?: string;
+  id?: string;
+  email: string;
+};
+
+type Trip = {
+  id: number;
+  title: string;
+  date: string;
+  status: string;
+};
 
 export default function MyPage() {
-  const isLoggedIn = true;
+  const navigate = useNavigate();
 
-  const user = {
-    name: "Ola Nordmann",
-    email: "ola@nordmann.no",
-    favorites: ["Besseggen", "Gjendesheim", "Galdhøpiggen"],
-  };
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
 
-  const myTrips = [
+  const favorites = ["Besseggen", "Gjendesheim", "Galdhøpiggen"];
+
+  const myTrips: Trip[] = [
     { id: 1, title: "Besseggen", date: "12.08.2024", status: "Fullført" },
     { id: 2, title: "Galdhøpiggen", date: "20.07.2025", status: "Påmeldt" },
     { id: 3, title: "Rondane", date: "15.09.2025", status: "Avlyst" },
   ];
 
-  if (!isLoggedIn) {
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    async function fetchMe() {
+      try {
+        const res = await fetch("http://localhost:4000/api/auth/me", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          localStorage.removeItem("token");
+          navigate("/login");
+          return;
+        }
+
+        const data = await res.json();
+        setUser(data);
+      } catch (error) {
+        console.error("Feil ved henting av bruker:", error);
+        navigate("/login");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchMe();
+  }, [navigate]);
+
+  if (loading) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center px-4 bg-cover bg-center"
-        style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1470&q=80')",
-        }}
-      >
-        <div className="w-full max-w-md rounded-xl bg-white bg-opacity-90 p-8 shadow-lg text-center">
-          <h1 className="text-3xl font-bold mb-4">Min Side</h1>
-          <p className="text-gray-600 mb-6">
-            Du må være logget inn for å se dine turer, favoritter og profilinformasjon.
-          </p>
-          <NavLink
-            to="/login"
-            className="inline-block rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-700 px-6 py-3 font-medium text-white hover:from-emerald-600 hover:to-emerald-800 transition"
-          >
-            Logg inn
-          </NavLink>
-          <p className="mt-4 text-gray-600">
-            Har du ikke konto?{" "}
-            <NavLink
-              to="/signup"
-              className="text-emerald-700 font-medium hover:underline"
-            >
-              Registrer deg
-            </NavLink>
-          </p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-lg font-medium">Laster profil...</p>
       </div>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   return (
@@ -66,10 +93,9 @@ export default function MyPage() {
       }}
     >
       <div className="max-w-5xl mx-auto bg-white bg-opacity-90 rounded-xl p-6 shadow-lg">
-        {/* Brukerinfo */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold mb-1">Velkommen, {user.name}</h1>
+            <h1 className="text-3xl font-bold mb-1">Velkommen!</h1>
             <p className="text-gray-500">{user.email}</p>
             <p className="text-gray-600 mt-2">
               Du har {myTrips.filter((t) => t.status === "Fullført").length} turer fullført og{" "}
@@ -94,12 +120,11 @@ export default function MyPage() {
           </div>
         </div>
 
-        {/* Favoritter */}
         <div className="mb-6">
           <h2 className="text-2xl font-semibold mb-4">Favoritter</h2>
-          {user.favorites.length > 0 ? (
+          {favorites.length > 0 ? (
             <ul className="flex flex-wrap gap-2">
-              {user.favorites.map((fav, index) => (
+              {favorites.map((fav, index) => (
                 <li
                   key={index}
                   className="bg-emerald-100 text-emerald-800 px-4 py-2 rounded-full font-medium hover:bg-emerald-200 cursor-pointer transition"
@@ -113,7 +138,6 @@ export default function MyPage() {
           )}
         </div>
 
-        {/* Mine turer */}
         <div>
           <h2 className="text-2xl font-semibold mb-4">Mine turer</h2>
           <ul className="space-y-3">

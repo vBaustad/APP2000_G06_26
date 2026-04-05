@@ -11,9 +11,8 @@ import { useAuth } from "../context/AuthContext";
 type LoginResponse = {
   token: string;
   user: {
-    id: number;
-    epost: string;
-    roller: string[];
+    id: string;
+    email: string;
   };
 };
 
@@ -32,19 +31,21 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+      const res = await fetch("http://localhost:4000/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ epost: email, passord: password }),
+        body: JSON.stringify({
+          email,
+          password,
+        }),
       });
 
+      const data = (await res.json()) as LoginResponse & { message?: string };
+
       if (!res.ok) {
-        const msg = await res.json().catch(() => null);
-        setError(msg?.error ?? "Feil e-post eller passord");
+        setError(data.message ?? "Feil e-post eller passord");
         return;
       }
-
-      const data = (await res.json()) as LoginResponse;
 
       login(data.user, data.token);
       navigate("/me");
@@ -57,6 +58,7 @@ export default function LoginPage() {
 
   const inputClass =
     "w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-emerald-500";
+
   const buttonClass =
     "w-full rounded-lg bg-emerald-600 py-3 font-medium text-white hover:bg-emerald-700 transition disabled:opacity-60";
 
