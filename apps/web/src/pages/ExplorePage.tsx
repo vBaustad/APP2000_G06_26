@@ -12,7 +12,18 @@ import TourForm from "../components/TourForm";
 import { getTours } from "../services/toursApi";
 import { mockTours } from "../utils/mockTours";
 import type { Tour, Region } from "../utils/mockTours";
-import { Pencil, Trash2, MapPin, Mountain, Clock, Route } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  MapPin,
+  Mountain,
+  Clock,
+  Route,
+  CloudSun,
+  Wind,
+  Droplets,
+} from "lucide-react";
+import { getMockWeather } from "../utils/weatherMock";
 
 type SortKey = "newest" | "distanceAsc" | "durationAsc";
 
@@ -137,6 +148,36 @@ function demoTripMatches(
   return matchesQuery && matchesDiff && matchesLen && matchesDur && matchesRegion;
 }
 
+function WeatherSummary({ region }: { region?: string }) {
+  const weather = getMockWeather(region);
+
+  return (
+    <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div className="mb-2 flex items-center gap-2">
+        <CloudSun className="h-4 w-4 text-slate-700" />
+        <span className="text-sm font-semibold text-slate-800">Vær og forhold</span>
+      </div>
+
+      <div className="flex flex-wrap gap-3 text-sm text-slate-700">
+        <span>{weather.condition}</span>
+        <span>{weather.temperature}°C</span>
+
+        <span className="flex items-center gap-1">
+          <Wind className="h-4 w-4" />
+          {weather.wind} m/s
+        </span>
+
+        <span className="flex items-center gap-1">
+          <Droplets className="h-4 w-4" />
+          {weather.precipitation} mm
+        </span>
+      </div>
+
+      <p className="mt-2 text-sm font-medium text-slate-800">{weather.statusText}</p>
+    </div>
+  );
+}
+
 function DemoTripCard({ trip }: { trip: DemoTrip }) {
   return (
     <article className="group relative overflow-hidden rounded-2xl border-2 border-emerald-200 bg-white shadow transition hover:shadow-lg">
@@ -199,6 +240,8 @@ function DemoTripCard({ trip }: { trip: DemoTrip }) {
             <div className="mt-1 text-lg font-semibold text-gray-900">{trip.durationHours} t</div>
           </div>
         </div>
+
+        <WeatherSummary region={trip.region} />
 
         <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm font-medium text-emerald-700">Klar for demo og testing</div>
@@ -642,111 +685,117 @@ export default function ExplorePage() {
                   </div>
 
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {visibleTours.map((t) => (
-                      <article
-                        key={t.id}
-                        className="group relative overflow-hidden rounded-2xl bg-white shadow transition hover:shadow-lg"
-                      >
-                        <div className="relative">
-                          <img
-                            src={t.imageUrl || "/images/trip-card-placeholder.jpg"}
-                            alt={t.title}
-                            className="h-56 w-full object-cover"
-                            loading="lazy"
-                          />
+                    {visibleTours.map((t) => {
+                      const gearList = Array.isArray(t.gear) ? t.gear : [];
 
-                          <span className="absolute left-4 top-4 rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 shadow-sm">
-                            {t.difficulty}
-                          </span>
+                      return (
+                        <article
+                          key={t.id}
+                          className="group relative overflow-hidden rounded-2xl bg-white shadow transition hover:shadow-lg"
+                        >
+                          <div className="relative">
+                            <img
+                              src={t.imageUrl || "/images/trip-card-placeholder.jpg"}
+                              alt={t.title}
+                              className="h-56 w-full object-cover"
+                              loading="lazy"
+                            />
 
-                          <div className="absolute right-4 top-4 flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleStartEdit(t)}
-                              className="grid h-10 w-10 place-items-center rounded-xl bg-white/95 shadow-sm hover:bg-white"
-                              title="Rediger"
-                              aria-label="Rediger"
-                            >
-                              <Pencil className="h-5 w-5" />
-                            </button>
+                            <span className="absolute left-4 top-4 rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 shadow-sm">
+                              {t.difficulty}
+                            </span>
 
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (window.confirm(`Slette "${t.title}"?`)) handleDelete(t.id);
-                              }}
-                              className="grid h-10 w-10 place-items-center rounded-xl bg-white/95 shadow-sm hover:bg-white"
-                              title="Slett"
-                              aria-label="Slett"
-                            >
-                              <Trash2 className="h-5 w-5 text-red-600" />
-                            </button>
-                          </div>
-                        </div>
+                            <div className="absolute right-4 top-4 flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEdit(t)}
+                                className="grid h-10 w-10 place-items-center rounded-xl bg-white/95 shadow-sm hover:bg-white"
+                                title="Rediger"
+                                aria-label="Rediger"
+                              >
+                                <Pencil className="h-5 w-5" />
+                              </button>
 
-                        <div className="flex flex-col p-5">
-                          <h3 className="text-2xl font-semibold tracking-tight text-gray-900">
-                            {t.title}
-                          </h3>
-
-                          <div className="mt-2 flex items-center gap-2 text-gray-600">
-                            <MapPin className="h-4 w-4" />
-                            <p className="text-sm">
-                              {t.location}
-                              <span className="mx-2">•</span>
-                              {t.region}
-                            </p>
-                          </div>
-
-                          <div className="mt-5 grid grid-cols-3 gap-4 border-t border-gray-100 pt-4">
-                            <div className="text-sm text-gray-600">
-                              <div className="flex items-center gap-2">
-                                <Route className="h-4 w-4" />
-                                <span>Distanse</span>
-                              </div>
-                              <div className="mt-1 text-lg font-semibold text-gray-900">
-                                {t.distanceKm} km
-                              </div>
-                            </div>
-
-                            <div className="text-sm text-gray-600">
-                              <div className="flex items-center gap-2">
-                                <Mountain className="h-4 w-4" />
-                                <span>Høydemeter</span>
-                              </div>
-                              <div className="mt-1 text-lg font-semibold text-gray-900">
-                                {t.elevationM} m
-                              </div>
-                            </div>
-
-                            <div className="text-sm text-gray-600">
-                              <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4" />
-                                <span>Tid</span>
-                              </div>
-                              <div className="mt-1 text-lg font-semibold text-gray-900">
-                                {t.durationHours} t
-                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (window.confirm(`Slette "${t.title}"?`)) handleDelete(t.id);
+                                }}
+                                className="grid h-10 w-10 place-items-center rounded-xl bg-white/95 shadow-sm hover:bg-white"
+                                title="Slett"
+                                aria-label="Slett"
+                              >
+                                <Trash2 className="h-5 w-5 text-red-600" />
+                              </button>
                             </div>
                           </div>
 
-                          <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="text-sm text-gray-500">
-                              Utstyr:{" "}
-                              {t.gear.length > 0 ? t.gear.slice(0, 2).join(", ") : "Ikke spesifisert"}
-                              {t.gear.length > 2 ? "…" : ""}
+                          <div className="flex flex-col p-5">
+                            <h3 className="text-2xl font-semibold tracking-tight text-gray-900">
+                              {t.title}
+                            </h3>
+
+                            <div className="mt-2 flex items-center gap-2 text-gray-600">
+                              <MapPin className="h-4 w-4" />
+                              <p className="text-sm">
+                                {t.location}
+                                <span className="mx-2">•</span>
+                                {t.region}
+                              </p>
                             </div>
 
-                            <Link
-                              to={`/tours/${t.id}`}
-                              className="text-sm font-semibold text-emerald-700 hover:underline"
-                            >
-                              Se mer
-                            </Link>
+                            <div className="mt-5 grid grid-cols-3 gap-4 border-t border-gray-100 pt-4">
+                              <div className="text-sm text-gray-600">
+                                <div className="flex items-center gap-2">
+                                  <Route className="h-4 w-4" />
+                                  <span>Distanse</span>
+                                </div>
+                                <div className="mt-1 text-lg font-semibold text-gray-900">
+                                  {t.distanceKm} km
+                                </div>
+                              </div>
+
+                              <div className="text-sm text-gray-600">
+                                <div className="flex items-center gap-2">
+                                  <Mountain className="h-4 w-4" />
+                                  <span>Høydemeter</span>
+                                </div>
+                                <div className="mt-1 text-lg font-semibold text-gray-900">
+                                  {t.elevationM} m
+                                </div>
+                              </div>
+
+                              <div className="text-sm text-gray-600">
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4" />
+                                  <span>Tid</span>
+                                </div>
+                                <div className="mt-1 text-lg font-semibold text-gray-900">
+                                  {t.durationHours} t
+                                </div>
+                              </div>
+                            </div>
+
+                            <WeatherSummary region={t.region} />
+
+                            <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                              <div className="text-sm text-gray-500">
+                                Utstyr:{" "}
+                                {gearList.length > 0 ? gearList.slice(0, 2).join(", ") : "Ikke spesifisert"}
+                                {gearList.length > 2 ? "…" : ""}
+                              </div>
+
+                              <Link
+                                to={`/tours/${t.id}`}
+                                className="text-sm font-semibold text-emerald-700 hover:underline"
+                              >
+                                Se mer
+                              </Link>
+                            </div>
                           </div>
-                        </div>
-                      </article>
-                    ))}
+                        </article>
+                      );
+                    })}
                   </div>
                 </div>
               )}
