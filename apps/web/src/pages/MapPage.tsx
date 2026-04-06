@@ -1,31 +1,18 @@
-/**
- * Fil: MapPage.tsx
- * Utvikler(e): Vebjørn Baustad
- * Beskrivelse: Oversikt over turer og hytter med kart som viser lokasjoner 
- */
-/*
- * Videreutviklet av: Ramona Cretulescu
- * Endringer:
- * Leser valgt aktivitet fra URL-en (f.eks. /map?activity=skitur) Filterer hver turliste på aktivitet i tilegg til eksisterende tekstsøk.
- * f.eks.("/map?activity=skytur") viser kun skyturer.
- * Filteret kombineres med eksisterende søk. Hvis ingen aktivitet er valgt i URL-en, vises alle turer som før.
- * Viser aktivt filter øverst i sidemenyen med mulighet for å fjerne det.
- */
-
-import { useEffect, useMemo, useState } from 'react';
-import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
-import L, { LatLngExpression } from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import { tripStops, TripStop } from '../data/tripStops';
-import { useSearchParams } from "react-router-dom"; // Leser query-parametre fra URL --
+import { useEffect, useMemo, useState } from "react";
+import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import L, { LatLngExpression } from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { useSearchParams, Link } from "react-router-dom";
+import { getTours } from "../services/toursApi";
 
 const defaultIcon = L.icon({
-  iconUrl: new URL('leaflet/dist/images/marker-icon.png', import.meta.url).toString(),
-  shadowUrl: new URL('leaflet/dist/images/marker-shadow.png', import.meta.url).toString(),
+  iconUrl: new URL("leaflet/dist/images/marker-icon.png", import.meta.url).toString(),
+  shadowUrl: new URL("leaflet/dist/images/marker-shadow.png", import.meta.url).toString(),
   iconSize: [25, 41],
   iconAnchor: [12, 41],
-  popupAnchor: [1, -34]
+  popupAnchor: [1, -34],
 });
+
 L.Marker.prototype.options.icon = defaultIcon;
 
 function MapViewportUpdater({ coords }: { coords: LatLngExpression }) {
@@ -38,74 +25,136 @@ function MapViewportUpdater({ coords }: { coords: LatLngExpression }) {
   return null;
 }
 
-export default function MapPage() {
-  const [searchParams, setSearchParams] = useSearchParams(); // --- Henter query-parametre fra URL --
-  const activeActivity = searchParams.get("activity"); // f.eks. "skitur"
-  
-  // Henter og setter valgt tur basert på filter og søk.
-  const [selectedTrip, setSelectedTrip] = useState<TripStop | null>(tripStops[0] ?? null);
-  const [query, setQuery] = useState('');
+type Tour = {
+  _id?: string;
+  id?: string;
+  title: string;
+  location: string;
+  region: string;
+  difficulty: string;
+  distanceKm: number;
+  durationHours: number;
+  elevationM: number;
+  gear?: string[];
+  geometry?: {
+    type: "Point";
+    coordinates: [number, number]; // [lng, lat]
+  };
+};
 
+function getLatLng(tour: Tour): [number, number] | null {
+  if (
+    !tour.geometry ||
+    !Array.isArray(tour.geometry.coordinates) ||
+    tour.geometry.coordinates.length !== 2
+  ) {
+    return null;
+  }
+
+  const [lng, lat] = tour.geometry.coordinates;
+
+  if (typeof lat !== "number" || typeof lng !== "number") {
+    return null;
+  }
+
+  return [lat, lng];
+}
+
+export default function MapPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [allTours, setAllTours] = useState<Tour[]>([]);
+  const [selectedTrip, setSelectedTrip] = useState<Tour | null>(null);
+  const [query, setQuery] = useState("");
+
+  const activeActivity = searchParams.get("activity");
   const normalizedQuery = query.trim().toLowerCase();
 
-  const filteredTrips = useMemo(() => {  // Filtrerer turer basert på tekstsøk og eventuell aktivitet fra Url-en.
-    return tripStops.filter((trip) => {
+  useEffect(() => {
+    async function loadTours() {
+      try {
+        const data = await getTours();
+
+        const toursWithCoords = Array.isArray(data)
+          ? data.filter((tour: Tour) => getLatLng(tour) !== null)
+          : [];
+
+        setAllTours(toursWithCoords);
+        setSelectedTrip(toursWithCoords[0] ?? null);
+      } catch (error) {
+        console.error("Kunne ikke hente turer:", error);
+        setAllTours([]);
+        setSelectedTrip(null);
+      }
+    }
+
+    loadTours();
+  }, []);
+
+  const filteredTrips = useMemo(() => {
+    return allTours.filter((trip) => {
       const matchesQuery =
         !normalizedQuery ||
-        `${trip.name} ${trip.city} ${trip.country}`
-        .toLowerCase()
-        .includes(normalizedQuery);
+        `${trip.title ?? ""} ${trip.location ?? ""} ${trip.region ?? ""} ${trip.difficulty ?? ""}`
+          .toLowerCase()
+          .includes(normalizedQuery);
 
-      const matchesActivity = 
-      !activeActivity || trip.activity === activeActivity; // Sjekker om turens aktivitetstype matcher den valgte aktiviteten i URL-en.
+      const matchesActivity = !activeActivity;
 
       return matchesQuery && matchesActivity;
     });
-  }, [normalizedQuery, activeActivity]);
+  }, [allTours, normalizedQuery, activeActivity]);
 
   useEffect(() => {
     if (filteredTrips.length === 0) {
-      if (selectedTrip !== null) {
-        setSelectedTrip(null);
-      }
+      setSelectedTrip(null);
       return;
     }
 
-    if (!selectedTrip || !filteredTrips.some((trip) => trip.id === selectedTrip.id)) {
+    if (
+      !selectedTrip ||
+      !filteredTrips.some(
+        (trip) => (trip._id || trip.id) === (selectedTrip._id || selectedTrip.id)
+      )
+    ) {
       setSelectedTrip(filteredTrips[0]);
     }
   }, [filteredTrips, selectedTrip]);
 
+  const selectedCoords = selectedTrip ? getLatLng(selectedTrip) : null;
+  const firstCoords = filteredTrips[0] ? getLatLng(filteredTrips[0]) : null;
+
   const mapCenter: LatLngExpression =
-    selectedTrip?.coords ?? filteredTrips[0]?.coords ?? tripStops[0]?.coords ?? [61.5049, 8.8143];
+    selectedCoords ?? firstCoords ?? [61.5049, 8.8143];
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-64px)] bg-slate-50 lg:flex-row">
       <aside className="w-full bg-white p-6 flex flex-col lg:flex-[0.6]">
         <h1 className="text-2xl font-semibold text-slate-900">Finn din neste tur</h1>
         <p className="text-sm text-slate-500 mb-6">
-          Utforsk hytter, ruter og turer. Filtrer listen for a finne rett opplevelse.
+          Utforsk turer på kartet. Filtrer listen for å finne rett opplevelse.
         </p>
 
-      {/* Aktivt aktivitetsfilter fra URL (valgfritt) */}
-      {activeActivity && (
-    <div className="mb-6 flex items-center gap-3">
-    <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-      Filter: {activeActivity}
-    </span>
+        {activeActivity && (
+          <div className="mb-6 flex items-center gap-3">
+            <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+              Filter: {activeActivity}
+            </span>
 
-    <button
-      onClick={() => setSearchParams({})}
-      className="text-sm font-medium text-slate-500 underline hover:text-slate-800"> 
-      Fjern filter
-    </button>
-  </div>
-  )}
-
+            <button
+              onClick={() => setSearchParams({})}
+              className="text-sm font-medium text-slate-500 underline hover:text-slate-800"
+            >
+              Fjern filter
+            </button>
+          </div>
+        )}
 
         <div className="mb-6 space-y-2">
-          <label htmlFor="trip-search" className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Sok etter destinasjon
+          <label
+            htmlFor="trip-search"
+            className="text-xs font-semibold uppercase tracking-wider text-slate-500"
+          >
+            Søk etter destinasjon
           </label>
           <input
             id="trip-search"
@@ -120,44 +169,51 @@ export default function MapPage() {
         {selectedTrip ? (
           <>
             <div className="space-y-2 rounded-xl border border-slate-200 p-4">
-              <p className="text-xs uppercase tracking-wider text-slate-400">{selectedTrip.dateRange}</p>
-              <h2 className="text-xl font-semibold text-slate-900">{selectedTrip.name}</h2>
+              <h2 className="text-xl font-semibold text-slate-900">{selectedTrip.title}</h2>
               <p className="text-sm text-slate-600">
-                {selectedTrip.city}, {selectedTrip.country}
+                {selectedTrip.location}, {selectedTrip.region}
               </p>
-              <p className="text-sm text-slate-700">{selectedTrip.description}</p>
-              <div className="flex flex-wrap gap-2 pt-2">
-                {selectedTrip.highlights.map((highlight) => (
-                  <span key={highlight} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                    {highlight}
-                  </span>
-                ))}
-              </div>
+              <p className="text-sm text-slate-700">
+                Vanskelighetsgrad: {selectedTrip.difficulty}
+              </p>
+              <p className="text-sm text-slate-700">
+                {selectedTrip.distanceKm} km • {selectedTrip.durationHours} t • {selectedTrip.elevationM} hm
+              </p>
+
+              <Link
+                to={`/tours/${selectedTrip._id || selectedTrip.id}`}
+                className="inline-block pt-2 text-sm font-semibold text-emerald-700 hover:underline"
+              >
+                Se mer
+              </Link>
             </div>
 
             <div className="mt-6 space-y-3">
               <p className="text-xs uppercase tracking-wider text-slate-500">Lagrede ruter</p>
+
               <div className="space-y-2">
                 {filteredTrips.length === 0 ? (
                   <p className="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500">
-                    Ingen reiser matcher soket ditt.
+                    Ingen turer matcher søket ditt.
                   </p>
                 ) : (
                   filteredTrips.map((trip) => {
-                    const isActive = selectedTrip?.id === trip.id;
+                    const isActive =
+                      (selectedTrip._id || selectedTrip.id) === (trip._id || trip.id);
+
                     return (
                       <button
-                        key={trip.id}
+                        key={trip._id || trip.id}
                         onClick={() => setSelectedTrip(trip)}
                         className={`w-full rounded-xl border px-4 py-3 text-left transition ${
                           isActive
-                            ? 'border-slate-900 bg-slate-900 text-white'
-                            : 'border-slate-200 bg-white text-slate-800 hover:border-slate-400'
+                            ? "border-slate-900 bg-slate-900 text-white"
+                            : "border-slate-200 bg-white text-slate-800 hover:border-slate-400"
                         }`}
                       >
-                        <p className="text-sm font-semibold">{trip.name}</p>
+                        <p className="text-sm font-semibold">{trip.title}</p>
                         <p className="text-xs opacity-80">
-                          {trip.city}, {trip.country} - {trip.dateRange}
+                          {trip.location}, {trip.region}
                         </p>
                       </button>
                     );
@@ -168,29 +224,47 @@ export default function MapPage() {
           </>
         ) : (
           <div className="mt-10 flex flex-1 items-center justify-center rounded-xl border border-dashed border-slate-300 p-6 text-center text-slate-500">
-            Ingen treff akkurat na. Juster soket eller nullstill filteret.
+            Ingen treff akkurat nå. Sjekk at turene i databasen har geometry.coordinates.
           </div>
         )}
       </aside>
 
       <section className="flex-1 min-h-80 lg:flex-[1.4]">
-        <MapContainer center={mapCenter} zoom={5} className="h-full min-h-80 overflow-hidden" scrollWheelZoom>
+        <MapContainer
+          center={mapCenter}
+          zoom={5}
+          className="h-full min-h-80 overflow-hidden"
+          scrollWheelZoom
+        >
           <TileLayer
-            attribution='&copy; OpenStreetMap-bidragsytere'
+            attribution="&copy; OpenStreetMap-bidragsytere"
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          {selectedTrip && <MapViewportUpdater coords={selectedTrip.coords} />}
-          {filteredTrips.map((trip) => (
-            <Marker key={trip.id} position={trip.coords} eventHandlers={{ click: () => setSelectedTrip(trip) }}>
-              <Popup>
-                <strong>{trip.name}</strong>
-                <p className="text-sm text-slate-600">
-                  {trip.city}, {trip.country}
-                </p>
-                <p className="text-xs text-slate-500">{trip.dateRange}</p>
-              </Popup>
-            </Marker>
-          ))}
+
+          {selectedCoords && <MapViewportUpdater coords={selectedCoords} />}
+
+          {filteredTrips.map((trip) => {
+            const coords = getLatLng(trip);
+            if (!coords) return null;
+
+            return (
+              <Marker
+                key={trip._id || trip.id}
+                position={coords}
+                eventHandlers={{ click: () => setSelectedTrip(trip) }}
+              >
+                <Popup>
+                  <strong>{trip.title}</strong>
+                  <p className="text-sm text-slate-600">
+                    {trip.location}, {trip.region}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {trip.distanceKm} km • {trip.durationHours} t
+                  </p>
+                </Popup>
+              </Marker>
+            );
+          })}
         </MapContainer>
       </section>
     </div>
