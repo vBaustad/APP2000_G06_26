@@ -1,164 +1,57 @@
-/**
-  * Fil: turRoutes.ts
- * Utvikler(e): Fredrik Tharaldsen
- * Implementerer CRUD-operasjoner for turer. bruker express og prisma.
- * alle kan se turer men kun admin-rolle kan redigere.
- */
+import express from "express";
+import Tour from "../models/Tour";
 
-import { Router, Request, Response } from "express";
-import { prisma } from "../prisma";
-import { requireAuth, requireRole } from "../middleware/auth";
+const router = express.Router();
 
-export const turRouter = Router();
-
-// PUBLIC: Se alle turer.
-turRouter.get("/", async (_req, res) => {
+// Hent alle turer
+router.get("/", async (req, res) => {
   try {
-    const turer = await prisma.tur.findMany({
-      orderBy: { id: "desc" },
-    });
-
-    res.json(turer);
+    const tours = await Tour.find();
+    res.json(tours);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ message: "Kunne ikke hente turer" });
   }
 });
 
-//ADMIN: Create tur
-turRouter.post(
-  "/",
-  requireAuth,
-  requireRole("admin"),
-  async (req, res) => {
-    try {
-      const {
-        tittel,
-        beskrivelse,
-        vanskelighetsgrad,
-        min_deltakere,
-        max_deltakere,
-        status,
-        leder_bruker_id,
-      } = req.body;
+// Hent én tur
+router.get("/:id", async (req, res) => {
+  try {
+    const tour = await Tour.findById(req.params.id);
 
-      if (!tittel) {
-        return res.status(400).json({ error: "tittel is required" });
-      }
-
-      const created = await prisma.tur.create({
-        data: {
-          tittel,
-          beskrivelse,
-          vanskelighetsgrad,
-          min_deltakere: min_deltakere
-            ? Number(min_deltakere)
-            : null,
-          max_deltakere: max_deltakere
-            ? Number(max_deltakere)
-            : null,
-          status: status ?? "draft",
-          leder_bruker_id: leder_bruker_id
-            ? Number(leder_bruker_id)
-            : null,
-        },
-      });
-
-      res.status(201).json(created);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Internal server error" });
+    if (!tour) {
+      return res.status(404).json({ message: "Fant ikke turen" });
     }
+
+    res.json(tour);
+  } catch (error) {
+    res.status(500).json({ message: "Kunne ikke hente turen" });
   }
-);
+});
 
-//ADMIN: Update tur
-turRouter.put(
-  "/:id",
-  requireAuth,
-  requireRole("admin"),
-  async (req, res) => {
-    const id = Number(req.params.id);
-
-    if (isNaN(id)) {
-      return res.status(400).json({ error: "Invalid id" });
-    }
-
-    try {
-      const existing = await prisma.tur.findUnique({
-        where: { id },
-      });
-
-      if (!existing) {
-        return res.status(404).json({ error: "Tour not found" });
-      }
-
-      const {
-        tittel,
-        beskrivelse,
-        vanskelighetsgrad,
-        min_deltakere,
-        max_deltakere,
-        status,
-        leder_bruker_id,
-      } = req.body;
-
-      const updated = await prisma.tur.update({
-        where: { id },
-        data: {
-          tittel,
-          beskrivelse,
-          vanskelighetsgrad,
-          min_deltakere: min_deltakere
-            ? Number(min_deltakere)
-            : undefined,
-          max_deltakere: max_deltakere
-            ? Number(max_deltakere)
-            : undefined,
-          status,
-          leder_bruker_id: leder_bruker_id
-            ? Number(leder_bruker_id)
-            : undefined,
-        },
-      });
-
-      res.json(updated);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Internal server error" });
-    }
+// Opprett ny tur
+router.post("/", async (req, res) => {
+  try {
+    const newTour = new Tour(req.body);
+    const savedTour = await newTour.save();
+    res.status(201).json(savedTour);
+  } catch (error) {
+    res.status(400).json({ message: "Kunne ikke opprette tur" });
   }
-);
+});
 
-//ADMIN: Delete tur
-turRouter.delete(
-  "/:id",
-  requireAuth,
-  requireRole("admin"),
-  async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
+// (VALGFRI) Slett tur
+router.delete("/:id", async (req, res) => {
+  try {
+    const deleted = await Tour.findByIdAndDelete(req.params.id);
 
-    if (isNaN(id)) {
-      return res.status(400).json({ error: "Invalid id" });
+    if (!deleted) {
+      return res.status(404).json({ message: "Fant ikke turen" });
     }
 
-    try {
-      const existing = await prisma.tur.findUnique({
-        where: { id },
-      });
-
-      if (!existing) {
-        return res.status(404).json({ error: "Tour not found" });
-      }
-
-      await prisma.tur.delete({
-        where: { id },
-      });
-
-      res.status(204).send();
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Internal server error" });
-    }
+    res.json({ message: "Tur slettet" });
+  } catch (error) {
+    res.status(500).json({ message: "Kunne ikke slette tur" });
   }
-);
+});
+
+export default router;

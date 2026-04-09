@@ -18,10 +18,22 @@ type User = {
 type TripStatus = "Fullført" | "Påmeldt" | "Avlyst";
 
 type Trip = {
-  id: number;
+  id: string;
+  registrationId: string;
   title: string;
   date: string;
   status: TripStatus;
+};
+
+type RegistrationResponse = {
+  _id: string;
+  selectedDate: string;
+  status: "påmeldt" | "avmeldt";
+  tourId?: {
+    _id?: string;
+    id?: string;
+    title?: string;
+  } | null;
 };
 
 type FilterType = "Alle" | TripStatus;
@@ -35,11 +47,7 @@ export default function MyPage() {
 
   const favorites = ["Besseggen", "Gjendesheim", "Galdhøpiggen"];
 
-  const [myTrips, setMyTrips] = useState<Trip[]>([
-    { id: 1, title: "Besseggen", date: "12.08.2024", status: "Fullført" },
-    { id: 2, title: "Galdhøpiggen", date: "20.07.2025", status: "Påmeldt" },
-    { id: 3, title: "Rondane", date: "15.09.2025", status: "Avlyst" },
-  ]);
+  const [myTrips, setMyTrips] = useState<Trip[]>([]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -64,8 +72,31 @@ export default function MyPage() {
           return;
         }
 
-        const data = await res.json();
+        const data = (await res.json()) as User;
         setUser(data);
+
+        const registrationsRes = await fetch("http://localhost:4000/registrations/me", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!registrationsRes.ok) {
+          throw new Error("Kunne ikke hente påmeldinger");
+        }
+
+        const registrations = (await registrationsRes.json()) as RegistrationResponse[];
+
+        const trips: Trip[] = registrations.map((registration) => ({
+          id: String(registration.tourId?._id ?? registration.tourId?.id ?? registration._id),
+          registrationId: registration._id,
+          title: registration.tourId?.title ?? "Ukjent tur",
+          date: new Date(registration.selectedDate).toLocaleDateString("nb-NO"),
+          status: registration.status === "avmeldt" ? "Avlyst" : "Påmeldt",
+        }));
+
+        setMyTrips(trips);
       } catch (error) {
         console.error("Feil ved henting av bruker:", error);
         navigate("/login");
@@ -77,7 +108,7 @@ export default function MyPage() {
     fetchMe();
   }, [navigate]);
 
-  function markAsCompleted(tripId: number) {
+  function markAsCompleted(tripId: string) {
     setMyTrips((previousTrips) =>
       previousTrips.map((trip) =>
         trip.id === tripId ? { ...trip, status: "Fullført" } : trip
@@ -85,12 +116,33 @@ export default function MyPage() {
     );
   }
 
-  function cancelTrip(tripId: number) {
-    setMyTrips((previousTrips) =>
-      previousTrips.map((trip) =>
-        trip.id === tripId ? { ...trip, status: "Avlyst" } : trip
-      )
-    );
+  async function cancelTrip(registrationId: string) {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const res = await fetch(`http://localhost:4000/registrations/${registrationId}/cancel`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error("Kunne ikke melde av tur");
+      }
+
+      setMyTrips((previousTrips) =>
+        previousTrips.map((trip) =>
+          trip.registrationId === registrationId ? { ...trip, status: "Avlyst" } : trip
+        )
+      );
+    } catch (error) {
+      console.error("Feil ved avmelding:", error);
+    }
   }
 
   const completedTrips = myTrips.filter((trip) => trip.status === "Fullført").length;
@@ -263,7 +315,7 @@ export default function MyPage() {
 
                           <button
                             type="button"
-                            onClick={() => cancelTrip(trip.id)}
+                            onClick={() => cancelTrip(trip.registrationId)}
                             className="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-600"
                           >
                             Meld av

@@ -20,9 +20,11 @@ import {
   Footprints,
 } from "lucide-react";
 import TurMap from "../components/TurMap";
+import { useAuth } from "../context/AuthContext";
 
 type Tour = {
-  id: string;
+  _id?: string;
+  id?: string;
   title: string;
   location: string;
   region: string;
@@ -34,6 +36,10 @@ type Tour = {
   gear?: string[];
   lat?: number;
   lng?: number;
+  geometry?: {
+    type: string;
+    coordinates: [number, number];
+  };
 };
 
 type LatLng = [number, number];
@@ -56,15 +62,31 @@ function hashStringToIndex(s: string, mod: number) {
   return mod === 0 ? 0 : h % mod;
 }
 
+function getTourId(t: Partial<Tour> | null | undefined) {
+  return String(t?._id ?? t?.id ?? "");
+}
+
 function ensureTourImage(t: Tour): Tour {
   if (t.imageUrl && String(t.imageUrl).trim()) return t;
-  const idx = hashStringToIndex(t.id ?? t.title ?? "tour", TOUR_IMAGES.length);
+  const idx = hashStringToIndex(getTourId(t) || t.title || "tour", TOUR_IMAGES.length);
   return { ...t, imageUrl: TOUR_IMAGES[idx] };
 }
 
+function normalizeText(value: string | null | undefined) {
+  return String(value ?? "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function hasKeywordMatch(value: string | null | undefined, keywords: string[]) {
+  const normalized = normalizeText(value);
+  return keywords.some((keyword) => normalized.includes(normalizeText(keyword)));
+}
+
 /**
- * Demo geo-db (kart). Keys må matche tour.id
- * Legg gjerne inn flere id-er etter hvert.
+ * Demo geo-db (kart). Keys må matche tour.id / _id hvis dere vil bruke denne.
  */
 const TOUR_GEO: Record<
   string,
@@ -92,6 +114,33 @@ const TOUR_GEO: Record<
     protectedArea: true,
   },
 };
+
+function getGeoForTour(tour: Tour | null) {
+  if (!tour) return undefined;
+
+  const direct = TOUR_GEO[getTourId(tour)];
+  if (direct) return direct;
+
+  if (
+    hasKeywordMatch(tour.title, ["fløibanen", "floibanen"]) ||
+    hasKeywordMatch(tour.location, ["bergen"])
+  ) {
+    return TOUR_GEO.t1;
+  }
+
+  if (hasKeywordMatch(tour.title, ["oslofjorden"]) || hasKeywordMatch(tour.location, ["oslo"])) {
+    return TOUR_GEO.t2;
+  }
+
+  if (
+    hasKeywordMatch(tour.title, ["geiranger"]) ||
+    hasKeywordMatch(tour.location, ["geiranger"])
+  ) {
+    return TOUR_GEO.t3;
+  }
+
+  return undefined;
+}
 
 type Review = {
   id: string;
@@ -150,7 +199,7 @@ function keySaved(tourId: string) {
 }
 
 function storyForTour(tour: Tour) {
-  const id = String(tour.id ?? "");
+  const id = getTourId(tour);
 
   const fallback =
     "Dette er en tur som føles som klassisk Norge: tydelig sti, frisk luft og en utsikt som belønner deg for å gå rolig, jevnt og fornuftig. Ta pauser, drikk vann – og la fjellet få siste ordet.";
@@ -160,6 +209,15 @@ function storyForTour(tour: Tour) {
     t2: "Oslofjorden gjør det lett å være ute: lufta er mild, stiene er tydelige, og du kan gå med den deilige følelsen av at naturen ligger rett ved siden av hverdagen. Dette er en tur for deg som vil ha ro i hodet og fremdrift i beina – uten å måtte ‘prestere’ noe annet enn å møte opp.",
     t3: "Geiranger og fjellene rundt er Norge på sitt mest dramatiske: bratte sider, dype daler, og utsikt som får folk til å bli stille. Her lønner det seg å være tradisjonell: gode sko, litt ekstra klær og respekt for været. Gjør du det enkelt og riktig, får du en tur som sitter i kroppen lenge etterpå.",
   };
+
+  const scenicIntro =
+    hasKeywordMatch(tour.title, ["fløibanen", "floibanen"]) || hasKeywordMatch(tour.location, ["bergen"])
+      ? byId.t1
+      : hasKeywordMatch(tour.title, ["oslofjorden"]) || hasKeywordMatch(tour.location, ["oslo"])
+      ? byId.t2
+      : hasKeywordMatch(tour.title, ["geiranger"]) || hasKeywordMatch(tour.location, ["geiranger"])
+      ? byId.t3
+      : byId[id] ?? fallback;
 
   const diff = tour.difficulty;
   const region = tour.region;
@@ -184,10 +242,22 @@ function storyForTour(tour: Tour) {
       ? "Trøndelag er variert: småpartier som føles lette, før bakkene plutselig mener alvor."
       : "Sørlandet er mer enn svaberg – fine stier og gode pauser underveis.";
 
-  return `${byId[id] ?? fallback} ${diffLine} ${regionLine}`;
+  return `${scenicIntro} ${diffLine} ${regionLine}`;
 }
 
 function pickLatLngFromTour(tour: Partial<Tour> & Record<string, unknown>): LatLng | null {
+  if (
+    tour.geometry &&
+    typeof tour.geometry === "object" &&
+    Array.isArray((tour.geometry as { coordinates?: unknown[] }).coordinates)
+  ) {
+    const coords = (tour.geometry as { coordinates: [number, number] }).coordinates;
+    const [lng, lat] = coords;
+    if (typeof lat === "number" && typeof lng === "number") {
+      return [lat, lng];
+    }
+  }
+
   const lat =
     typeof tour.lat === "number"
       ? tour.lat
@@ -218,10 +288,14 @@ function pickLatLngFromTour(tour: Partial<Tour> & Record<string, unknown>): LatL
 
 export default function TourDetailsPage() {
   const { id } = useParams();
+  const { user, token } = useAuth();
+  const authToken = token || safeGet("token") || safeGet("auth_token");
 
   const [tour, setTour] = useState<Tour | null>(null);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [registering, setRegistering] = useState(false);
+  const [registerMessage, setRegisterMessage] = useState("");
 
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewName, setReviewName] = useState("");
@@ -256,11 +330,10 @@ export default function TourDetailsPage() {
     loadTour();
   }, [id]);
 
-  const tid = String(tour?.id ?? id ?? "");
+  const tid = String(getTourId(tour) || id || "");
 
   const geo = useMemo(() => {
-    if (!tour) return undefined;
-    return TOUR_GEO[String(tour.id)];
+    return getGeoForTour(tour);
   }, [tour]);
 
   const mapCenter = useMemo<LatLng>(() => {
@@ -277,10 +350,9 @@ export default function TourDetailsPage() {
   }, [tour]);
 
   const isLoggedIn = useMemo(() => {
-    const token = safeGet("token") || safeGet("auth_token");
-    const user = safeGet("user") || safeGet("auth_user");
-    return Boolean(token || user);
-  }, []);
+    const localUser = safeGet("user") || safeGet("auth_user");
+    return Boolean(user || authToken || localUser);
+  }, [authToken, user]);
 
   useEffect(() => {
     if (!tour) return;
@@ -301,6 +373,55 @@ export default function TourDetailsPage() {
     const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
     return Math.round((sum / reviews.length) * 10) / 10;
   }, [reviews]);
+
+  async function handleRegister() {
+    if (!authToken) {
+      setRegisterMessage("Du må logge inn på nytt for å melde deg på.");
+      return;
+    }
+
+    if (!tour) {
+      alert("Fant ikke tur.");
+      return;
+    }
+
+    const tourId = getTourId(tour);
+
+    if (!tourId) {
+      alert("Fant ikke tur-ID.");
+      return;
+    }
+
+    try {
+      setRegistering(true);
+      setRegisterMessage("");
+
+      const response = await fetch("http://localhost:4000/registrations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          tourId,
+          selectedDate: new Date().toISOString(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.message || "Kunne ikke melde deg på");
+      }
+
+      setRegisterMessage("Du er nå påmeldt turen 🎉");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Kunne ikke melde deg på";
+      setRegisterMessage(message);
+    } finally {
+      setRegistering(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -381,11 +502,13 @@ export default function TourDetailsPage() {
 
     const blob = new Blob([gpx], { type: "application/gpx+xml" });
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
+    const objectUrl = URL.createObjectURL(blob);
+    a.href = objectUrl;
     a.download = `${String(tour.title).replaceAll(" ", "_")}.gpx`;
     document.body.appendChild(a);
     a.click();
     a.remove();
+    URL.revokeObjectURL(objectUrl);
   }
 
   function submitReview() {
@@ -457,6 +580,32 @@ export default function TourDetailsPage() {
             <div className="mt-2 flex items-center gap-2 text-white/85">
               <MapPin className="h-4 w-4" />
               <p className="text-sm">{tour.location}</p>
+            </div>
+
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              {!isLoggedIn ? (
+                <Link
+                  to="/login"
+                  className="inline-flex rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
+                >
+                  Logg inn for å melde deg på
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleRegister}
+                  disabled={registering}
+                  className="inline-flex rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {registering ? "Melder deg på..." : "Meld deg på"}
+                </button>
+              )}
+
+              {registerMessage && (
+                <div className="rounded-xl bg-white/90 px-4 py-3 text-sm font-medium text-gray-900">
+                  {registerMessage}
+                </div>
+              )}
             </div>
           </div>
         </div>

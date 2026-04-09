@@ -13,6 +13,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   CalendarDays,
   CloudSun,
@@ -28,6 +29,7 @@ import {
   Send,
   Flag,
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 const dateOptions = [
   {
@@ -85,13 +87,46 @@ const participants = [
   "ekstra.testbruker@usn.no",
 ];
 
+const FLEXIBLE_TRIP_TITLE = "Hardangervidda på tvers";
+
+const FLEXIBLE_TRIP_PAYLOAD = {
+  title: FLEXIBLE_TRIP_TITLE,
+  location: "Finsehytta",
+  region: "Vestlandet",
+  difficulty: "Krevende",
+  distanceKm: 34,
+  durationHours: 16,
+  elevationM: 780,
+  gear: ["Fjellsko", "Vindjakke", "Ullundertøy", "Kart/Kompass"],
+  geometry: {
+    type: "Point",
+    coordinates: [7.5048, 60.6014] as [number, number],
+  },
+};
+
+const DATE_TO_ISO: Record<number, string> = {
+  1: "2026-04-17T12:00:00.000Z",
+  2: "2026-04-18T12:00:00.000Z",
+  3: "2026-04-19T12:00:00.000Z",
+  4: "2026-04-20T12:00:00.000Z",
+};
+
+type StoredTour = {
+  _id?: string;
+  id?: string;
+  title?: string;
+};
+
 export default function FlexibleTripDetailsPage() {
+  const { token } = useAuth();
   const [selectedDateId, setSelectedDateId] = useState<number | null>(
     dateOptions.find((option) => option.recommended)?.id ?? null
   );
   const [isDateLocked, setIsDateLocked] = useState(false);
   const [notificationsSent, setNotificationsSent] = useState(false);
   const [tripConfirmed, setTripConfirmed] = useState(false);
+  const [confirmingTrip, setConfirmingTrip] = useState(false);
+  const [registrationMessage, setRegistrationMessage] = useState("");
 
   const selectedDate = useMemo(() => {
     return dateOptions.find((option) => option.id === selectedDateId) ?? null;
@@ -119,9 +154,77 @@ export default function FlexibleTripDetailsPage() {
     setNotificationsSent(true);
   }
 
-  function handleConfirmTrip() {
-    if (!isDateLocked) return;
-    setTripConfirmed(true);
+  async function ensureFlexibleTripExists() {
+    const toursResponse = await fetch("http://localhost:4000/tours");
+
+    if (!toursResponse.ok) {
+      throw new Error("Kunne ikke hente turer");
+    }
+
+    const tours = (await toursResponse.json()) as StoredTour[];
+    const existingTrip = tours.find((tour) => tour.title === FLEXIBLE_TRIP_TITLE);
+    const existingTripId = String(existingTrip?._id ?? existingTrip?.id ?? "");
+
+    if (existingTripId) {
+      return existingTripId;
+    }
+
+    const createTripResponse = await fetch("http://localhost:4000/tours", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(FLEXIBLE_TRIP_PAYLOAD),
+    });
+
+    if (!createTripResponse.ok) {
+      throw new Error("Kunne ikke opprette fleksibel tur");
+    }
+
+    const createdTrip = (await createTripResponse.json()) as StoredTour;
+    return String(createdTrip._id ?? createdTrip.id ?? "");
+  }
+
+  async function handleConfirmTrip() {
+    if (!isDateLocked || !selectedDate) return;
+
+    if (!token) {
+      setRegistrationMessage("Du må logge inn for å bekrefte og melde deg på turen.");
+      return;
+    }
+
+    try {
+      setConfirmingTrip(true);
+      setRegistrationMessage("");
+
+      const tourId = await ensureFlexibleTripExists();
+
+      const response = await fetch("http://localhost:4000/registrations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          tourId,
+          selectedDate: DATE_TO_ISO[selectedDate.id] ?? "2026-04-19T12:00:00.000Z",
+        }),
+      });
+
+      const data = (await response.json()) as { message?: string };
+
+      if (!response.ok) {
+        throw new Error(data.message || "Kunne ikke registrere påmelding");
+      }
+
+      setTripConfirmed(true);
+      setRegistrationMessage("Du er nå påmeldt turen, og datoen er bekreftet.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Kunne ikke registrere påmelding";
+      setRegistrationMessage(message);
+    } finally {
+      setConfirmingTrip(false);
+    }
   }
 
   return (
@@ -293,13 +396,26 @@ export default function FlexibleTripDetailsPage() {
                 <button
                   type="button"
                   onClick={handleConfirmTrip}
-                  disabled={!isDateLocked || tripConfirmed}
+                  disabled={!isDateLocked || tripConfirmed || confirmingTrip}
                   className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-5 py-3 font-medium text-emerald-900 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <CheckCircle2 className="h-4 w-4" />
-                  Bekreft tur
+                  {confirmingTrip ? "Bekrefter..." : "Bekreft tur"}
                 </button>
               </div>
+
+              {registrationMessage && (
+                <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+                  {registrationMessage}
+                  {tripConfirmed && (
+                    <div className="mt-2">
+                      <Link to="/me" className="font-semibold underline underline-offset-2">
+                        Gå til Min side
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {selectedDate && (
                 <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">

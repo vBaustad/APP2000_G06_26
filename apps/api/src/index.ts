@@ -2,8 +2,10 @@ import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+
 import authRoutes from "./routes/authRoutes";
-import Tour from "./models/Tour"; // 👈 viktig
+import turRoutes from "./routes/turRoutes";
+import registrationRoutes from "./routes/registrationRoutes";
 
 // LOAD ENV
 dotenv.config();
@@ -17,30 +19,19 @@ app.use(express.json());
 
 // ROUTES
 app.use("/api/auth", authRoutes);
+app.use("/tours", turRoutes);
+app.use("/registrations", registrationRoutes);
 
-// 👇 NY ROUTE FOR TOURS
-app.get("/tours", async (req, res) => {
-  try {
-    const tours = await Tour.find();
-    res.json(tours);
-  } catch (error) {
-    res.status(500).json({ message: "Kunne ikke hente turer" });
-  }
+// TEST ROUTE
+app.get("/", (req, res) => {
+  res.send("API is running 🚀");
 });
-
-// TEST LOG
-console.log("MONGO_URI:", process.env.MONGO_URI);
 
 // CONNECT TO MONGODB
 mongoose
   .connect(process.env.MONGO_URI as string)
   .then(() => console.log("🔥 Connected to MongoDB"))
   .catch((error) => console.error("❌ MongoDB error:", error));
-
-// TEST ROUTE
-app.get("/", (req, res) => {
-  res.send("API is running 🚀");
-});
 
 // START SERVER
 app.listen(PORT, () => {

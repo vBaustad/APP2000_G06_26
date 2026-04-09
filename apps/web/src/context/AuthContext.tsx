@@ -7,9 +7,11 @@
 import { createContext, useContext, useMemo, useState } from "react";
 
 export type User = {
-  id: number;
-  epost: string;
-  roller: string[];
+  id?: string;
+  _id?: string;
+  email?: string;
+  epost?: string;
+  roller?: string[];
 };
 
 type AuthContextValue = {
@@ -31,8 +33,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return null;
     }
   });
-console.log("AuthProvider user state:", user);
-console.log("AuthProvider localStorage user:", localStorage.getItem("user"));
 
   const [token, setToken] = useState<string | null>(() => {
     const raw = localStorage.getItem("token");
