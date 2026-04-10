@@ -1,116 +1,114 @@
 ### Clone prosjektet
 
-Åpne terminalen i VS Code og naviger til mappen der du vil ha prosjektet:
+  Åpne terminalen i VS Code og naviger til mappen der du vil ha prosjektet:
 
-```bash
-git clone https://github.com/vBaustad/APP2000_G06_26.git
-cd APP2000_G06_26
-```
+  ```bash
+  git clone https://github.com/vBaustad/APP2000_G06_26.git
+  cd APP2000_G06_26
 
-Installer avhengigheter:
+  Installer avhengigheter (vi bruker pnpm):
 
-```bash
-npm install
-```
+  pnpm install
 
----
+  ▎ Har du ikke pnpm fra før? Installer med npm install -g pnpm (eller se https://pnpm.io/installation).
 
-## Prosjektstruktur (Monorepo)
+  ---
+  Prosjektstruktur (Monorepo)
 
-Dette prosjektet er et **monorepo**, som betyr at både frontend og backend ligger i samme repository.
+  Dette prosjektet er et monorepo, som betyr at både frontend og backend ligger i samme repository.
 
-* **Frontend:** `apps/web` (React + Vite)
-* **Backend:** `apps/api` (Express / REST API)
+  - Frontend: apps/web (React + Vite)
+  - Backend: apps/api (Express / REST API + Prisma)
 
----
+  ---
+  Miljøvariabler (.env)
 
-## Bygg prosjektet
+  Før du kan kjøre backend trenger du en .env-fil. Spør en i gruppa om innholdet.
 
-For å sjekke at prosjektet bygger uten feil, kan du kjøre fra **root**:
+  - apps/api/.env – inneholder bl.a. DATABASE_URL (mot den delte cloud-databasen) og JWT-secret.
+  - apps/web/.env – frontend-variabler (f.eks. VITE_API_URL).
 
-```bash
-npm run build
-```
+  .env-filene skal aldri committes.
 
-Dette bygger **både frontend og backend**.
+  ---
+  Prisma-klienten
 
-Du kan også bygge kun én del:
+  Backend bruker Prisma. Første gang du setter opp prosjektet – og hver gang noen endrer apps/api/prisma/schema.prisma –
+   må du generere Prisma-klienten:
 
-```bash
-npm run build:web
-npm run build:api
-```
+  pnpm --filter @app2000/api exec prisma generate
 
-Alternativt kan du `cd` inn i `apps/web` eller `apps/api` og kjøre:
+  Databasen er delt i skyen, så du trenger ikke å kjøre prisma db push eller seed selv med mindre du blir bedt om det.
 
-```bash
-npm run build
-```
+  ---
+  Bygg prosjektet
 
----
+  For å sjekke at prosjektet bygger uten feil, kan du kjøre fra root:
 
-## Kjør prosjektet lokalt
+  pnpm build
 
-For utvikling, start prosjektet fra **root**:
+  Dette bygger både frontend og backend.
 
-```bash
-npm run dev
-```
+  Du kan også bygge kun én del:
 
-Frontend er da tilgjengelig på:
+  pnpm build:web
+  pnpm build:api
 
-```
-http://localhost:5173
-```
+  ---
+  Kjør prosjektet lokalt
 
-(Backend starter samtidig i bakgrunnen.)
+  For utvikling, start prosjektet fra root:
 
-Alternativt kan frontend og backend kjøres i **hver sin terminal** ved å `cd` inn i respektive mapper.
+  pnpm dev
 
----
+  Frontend er da tilgjengelig på:
 
-## Git – arbeidsflyt
+  http://localhost:5173
 
-Vi bruker feature branches og pull requests.
+  (Backend starter samtidig i bakgrunnen.)
 
-1. Hent nyeste endringer fra `main`:
+  Alternativt kan frontend og backend kjøres i hver sin terminal ved å cd inn i respektive mapper og kjøre pnpm dev der.
 
-```bash
-git pull origin main
-```
+  ---
+  Git – arbeidsflyt
 
-2. Lag en ny branch:
+  Vi bruker feature branches og pull requests.
 
-```bash
-git switch -c feature/branch-navn
-```
+  1. Hent nyeste endringer fra main:
 
-Eksempel:
+  git pull origin main
 
-```bash
-feature/create-navbar
-```
+  2. Lag en ny branch:
 
-3. Når du er ferdig med endringene:
+  git switch -c feature/branch-navn
 
-```bash
-git add .
-git commit -m "Kort beskrivelse av hva som er gjort"
-```
+  Eksempel:
 
-4. Push branchen til GitHub:
+  feature/create-navbar
 
-```bash
-git push origin feature/branch-navn
-```
+  3. Når du er ferdig med endringene:
 
-5. Opprett **Pull Request** på GitHub for å slå endringene inn i `main`.
+  git add .
+  git commit -m "Kort beskrivelse av hva som er gjort"
 
----
+  4. Push branchen til GitHub:
 
-## 📝 Viktige retningslinjer
+  git push origin feature/branch-navn
 
-* Ikke push direkte til `main`
-* Én feature per branch
-* Test at prosjektet bygger før du lager PR (`npm run build`)
-* Skriv tydelige commit-meldinger
+  5. Opprett Pull Request på GitHub for å slå endringene inn i main.
+
+  Etter at du har pullet main
+
+  Hvis noen har endret schema.prisma eller lagt til pakker, kjør:
+
+  pnpm install
+  pnpm --filter @app2000/api exec prisma generate
+
+  ---
+  📝 Viktige retningslinjer
+
+  - Ikke push direkte til main
+  - Én feature per branch
+  - Test at prosjektet bygger før du lager PR (pnpm build)
+  - Skriv tydelige commit-meldinger
+  - .env-filer skal aldri committes
