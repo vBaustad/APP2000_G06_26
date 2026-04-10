@@ -1,147 +1,73 @@
-/**
- * Fil: EditProfile.jsx
- * Utvikler: Parasto Jamshidi
- * Beskrivelse: Denne siden lar brukeren redigere sin profilinformasjon som navn,
- * e-post, telefonnummer og favoritter. Data lagres midlertidig i state og kan senere
- * kobles til backend for å oppdatere informasjon i databasen.
- * Siden er kun tilgjengelig for innloggede brukere.
- */
-
-
-import { useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function EditProfile() {
   const navigate = useNavigate();
-  const isLoggedIn = true; // Simulerer innlogget status
+  const [formData, setFormData] = useState({ fornavn: "", etternavn: "", epost: "" });
 
-  // Dummy info lagret i state for redigering
-  const [formData, setFormData] = useState({
-    name: "Ola Nordmann",
-    email: "ola@nordmann.no",
-    phone: "987 65 432",
-    favorites: "Besseggen, Gjendesheim, Galdhøpiggen", // Behandler dette som en streng for enkel redigering
-  });
+  useEffect(() => {
+    const token = localStorage.getItem("token"); // Hent "nøkkelen"
+    
+    // Hent nåværende data fra MariaDB
+    fetch("http://localhost:4000/api/bruker/me", {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        setFormData({
+          fornavn: data.fornavn || "",
+          etternavn: data.etternavn || "",
+          epost: data.epost || ""
+        });
+      });
+  }, []);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Her ville du vanligvis sendt data til backend API
-    console.log("Lagrer data:", formData);
-    alert("Profilen er oppdatert!");
-    navigate("/mypage"); // Sender brukeren tilbake til min side
-  };
+    const token = localStorage.getItem("token");
 
-  if (!isLoggedIn) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4 bg-cover bg-center"
-        style={{ backgroundImage: `url('https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1470&q=80')` }}>
-        <p>Du må logge inn.</p>
-      </div>
-    );
-  }
+    // Send de nye endringene til databasen
+    const res = await fetch("http://localhost:4000/api/bruker/me", {
+      method: 'PUT',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(formData)
+    });
+
+    if (res.ok) {
+      alert("Profilen er oppdatert i databasen!");
+      navigate("/mypage"); // Send brukeren tilbake til Min Side
+    }
+  };
 
   return (
-    <div
-      className="min-h-screen px-4 py-8 bg-cover bg-center flex items-center justify-center"
-      style={{
-        backgroundImage: `url('https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1470&q=80')`,
-      }}
-    >
-      <div className="w-full max-w-2xl bg-white bg-opacity-95 rounded-xl p-8 shadow-lg">
-        <h1 className="text-3xl font-bold mb-6 text-gray-800">Rediger Profil</h1>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          
-          {/* Navn */}
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-              Fullt navn
-            </label>
-            <input
-              type="text"
-              name="name"
-              id="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition"
-            />
-          </div>
-
-          {/* E-post */}
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              E-postadresse
-            </label>
-            <input
-              type="email"
-              name="email"
-              id="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition"
-            />
-          </div>
-
-          {/* Telefon */}
-          <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-              Telefonnummer
-            </label>
-            <input
-              type="tel"
-              name="phone"
-              id="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition"
-            />
-          </div>
-
-          {/* Favoritter */}
-          <div>
-            <label htmlFor="favorites" className="block text-sm font-medium text-gray-700 mb-1">
-              Favoritter (separer med komma)
-            </label>
-            <textarea
-              name="favorites"
-              id="favorites"
-              rows="3"
-              value={formData.favorites}
-              onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition"
-              placeholder="F.eks: Besseggen, Galdhøpiggen..."
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              Skriv inn navnene på dine favorittsteder.
-            </p>
-          </div>
-
-          {/* Knapper */}
-          <div className="flex items-center gap-4 mt-8 pt-4 border-t">
-            <button
-              type="submit"
-              className="bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white px-6 py-3 rounded-lg font-medium transition shadow-md"
-            >
-              Lagre endringer
-            </button>
-            
-            <NavLink
-              to="/mypage"
-              className="text-gray-600 hover:text-gray-900 font-medium px-4 py-2 hover:bg-gray-100 rounded-lg transition"
-            >
-              Avbryt
-            </NavLink>
-          </div>
-        </form>
+    <form onSubmit={handleSubmit} className="p-8 bg-white rounded-xl shadow-lg">
+      <h1 className="text-2xl font-bold mb-4">Rediger Profil</h1>
+      <div className="space-y-4">
+        <input 
+          className="w-full p-2 border rounded"
+          placeholder="Fornavn"
+          value={formData.fornavn}
+          onChange={(e) => setFormData({...formData, fornavn: e.target.value})}
+        />
+        <input 
+          className="w-full p-2 border rounded"
+          placeholder="Etternavn"
+          value={formData.etternavn}
+          onChange={(e) => setFormData({...formData, etternavn: e.target.value})}
+        />
+        <input 
+          className="w-full p-2 border rounded"
+          placeholder="E-post"
+          value={formData.epost}
+          onChange={(e) => setFormData({...formData, epost: e.target.value})}
+        />
+        <button type="submit" className="bg-emerald-600 text-white px-4 py-2 rounded">
+          Lagre endringer
+        </button>
       </div>
-    </div>
+    </form>
   );
-}   
+}
