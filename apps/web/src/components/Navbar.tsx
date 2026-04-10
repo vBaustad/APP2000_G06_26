@@ -88,6 +88,11 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
                 Utforsker
               </NavLink>
             </li>
+           <li>
+            <NavLink to="/annonsor" className={linkClass}>
+             Annonsør
+            </NavLink>
+            </li>
 
             {!isLoggedIn ? (
               <>
