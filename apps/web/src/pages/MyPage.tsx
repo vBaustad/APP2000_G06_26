@@ -1,166 +1,134 @@
 /**
  * Fil: MyPage.tsx
- * Utvikler: Parasto Jamshidi
- * Beskrivelse: Denne siden viser brukerens personlige informasjon, inkludert profil,
- * favoritter og turer. Innholdet vises kun dersom brukeren er logget inn.
- * Hvis ikke, blir brukeren sendt til innloggingssiden.
+ * Utvikler: Parasto Jamshidi (Oppdatert for MariaDB/Prisma)
+ * Beskrivelse: Viser ekte brukerdata, favoritter og turer fra databasen.
  */
 
-import { useMemo } from "react";
-import { NavLink } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useState, useEffect } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 
 export default function MyPage() {
-  const { user } = useAuth();
-  const isLoggedIn = !!user;
-  const isHytteeier = useMemo(() => user?.roller?.includes("hytteeier") ?? false, [user]);
-  const isAnnonsor = useMemo(() => user?.roller?.includes("annonsor") ?? false, [user]);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-  const favorites = ["Besseggen", "Rondane", "Hardangervidda"];
+  useEffect(() => {
+    // 1. Finn tokenet som ble lagret ved innlogging
+    const token = localStorage.getItem("token");
 
-type Trip = {
-  id: number;
-  title: string;
-  date: string;
-  status: string;
-};
+    if (!token) {
+      setLoading(false);
+      return; // Hvis ingen token, er brukeren ikke logget inn
+    }
 
-const myTrips: Trip[] = [
-    { id: 1, title: "Besseggen", date: "12.08.2024", status: "Fullført" },
-    { id: 2, title: "Galdhøpiggen", date: "20.07.2025", status: "Påmeldt" },
-    { id: 3, title: "Rondane", date: "15.09.2025", status: "Avlyst" },
-  ];
+    // 2. Hent data fra API-et du lagde i Steg 1 & 2
+    fetch("http://localhost:4000/api/bruker/me", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Kunne ikke hente profil");
+        return res.json();
+      })
+      .then((data) => {
+        setUser(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
 
-  if (!isLoggedIn) {
+  // Vis en laste-skjerm mens vi venter på databasen
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Laster din profil...</div>;
+  }
+
+  // Hvis brukeren ikke er logget inn (ingen token eller feil i fetch)
+  if (!user) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center px-4 bg-cover bg-center"
-        style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1470&q=80')",
-        }}
-      >
+      <div className="min-h-screen flex items-center justify-center px-4 bg-cover bg-center"
+        style={{ backgroundImage: "url('https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1470&q=80')" }}>
         <div className="w-full max-w-md rounded-xl bg-white bg-opacity-90 p-8 shadow-lg text-center">
           <h1 className="text-3xl font-bold mb-4">Min Side</h1>
-          <p className="text-gray-600 mb-6">
-            Du må være logget inn for å se dine turer, favoritter og profilinformasjon.
-          </p>
-          <NavLink
-            to="/login"
-            className="inline-block rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-700 px-6 py-3 font-medium text-white hover:from-emerald-600 hover:to-emerald-800 transition"
-          >
+          <p className="text-gray-600 mb-6">Du må være logget inn for å se dine turer og favoritter.</p>
+          <NavLink to="/login" className="inline-block rounded-lg bg-emerald-600 px-6 py-3 font-medium text-white">
             Logg inn
           </NavLink>
-          <p className="mt-4 text-gray-600">
-            Har du ikke konto?{" "}
-            <NavLink
-              to="/signup"
-              className="text-emerald-700 font-medium hover:underline"
-            >
-              Registrer deg
-            </NavLink>
-          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div
-      className="min-h-screen px-4 py-8 bg-cover bg-center"
-      style={{
-        backgroundImage:
-          "url('https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1470&q=80')",
-      }}
-    >
+    <div className="min-h-screen px-4 py-8 bg-cover bg-center"
+      style={{ backgroundImage: "url('https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1470&q=80')" }}>
+      
       <div className="max-w-5xl mx-auto bg-white bg-opacity-90 rounded-xl p-6 shadow-lg">
-        {/* Brukerinfo */}
+        
+        {/* Brukerinfo fra MariaDB */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold mb-1">Velkommen, {user?.epost}</h1>
-            <p className="text-gray-500">{user?.roller.join(", ")}</p>
+            <h1 className="text-3xl font-bold mb-1">Velkommen, {user.fornavn} {user.etternavn}</h1>
+            <p className="text-gray-500">{user.epost}</p>
             <p className="text-gray-600 mt-2">
-              Du har {myTrips.filter((t) => t.status === "Fullført").length} turer fullført og{" "}
-              {myTrips.filter((t) => t.status === "Påmeldt").length} turer påmeldt.
+              Du har {user.tur_pamelding?.filter((t: any) => t.status === "Fullført").length || 0} turer fullført og{" "}
+              {user.tur_pamelding?.filter((t: any) => t.status === "pending").length || 0} turer påmeldt.
             </p>
           </div>
 
-          <div className="mt-4 md:mt-0 flex flex-col sm:flex-row gap-3">
-            <NavLink
-              to="/editprofile"
-              className="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white px-4 py-2 rounded-lg font-medium transition text-center"
-            >
+          <div className="mt-4 md:mt-0 flex gap-3">
+            <NavLink to="/editprofile" className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">
               Rediger profil
             </NavLink>
-
-            <NavLink
-              to="/create-trip"
-              className="bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white px-4 py-2 rounded-lg font-medium transition text-center"
-            >
+            <NavLink to="/create-trip" className="bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium">
               Opprett tur
             </NavLink>
           </div>
         </div>
 
-        {/* Favoritter */}
+        {/* Favoritter - Her henter vi navn via tursti-relasjonen */}
         <div className="mb-6">
           <h2 className="text-2xl font-semibold mb-4">Favoritter</h2>
-          {favorites.length > 0 ? (
-            <ul className="flex flex-wrap gap-2">
-              {favorites.map((fav, index) => (
-                <li
-                  key={index}
-                  className="bg-emerald-100 text-emerald-800 px-4 py-2 rounded-full font-medium hover:bg-emerald-200 cursor-pointer transition"
-                >
-                  {fav}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500">Ingen favoritter ennå.</p>
-          )}
+          <ul className="flex flex-wrap gap-2">
+            {user.favoritt?.map((fav: any) => (
+              <li key={fav.tursti_id} className="bg-emerald-100 text-emerald-800 px-4 py-2 rounded-full font-medium">
+                {fav.tursti.navn}
+              </li>
+            ))}
+            {user.favoritt?.length === 0 && <p className="text-gray-500">Ingen favoritter ennå.</p>}
+          </ul>
         </div>
 
-        {/* Mine turer */}
+        {/* Mine turer - Henter data gjennom tur_pamelding -> tur_dato -> tur */}
         <div>
           <h2 className="text-2xl font-semibold mb-4">Mine turer</h2>
           <ul className="space-y-3">
-            {myTrips.map((trip) => (
-              <li
-                key={trip.id}
-                className="p-4 border rounded-lg flex justify-between items-center hover:shadow-lg transition cursor-pointer"
-              >
+            {user.tur_pamelding?.map((pamelding: any) => (
+              <li key={pamelding.id} className="p-4 border rounded-lg flex justify-between items-center bg-white">
                 <div>
-                  <p className="font-medium text-lg">{trip.title}</p>
-                  <p className="text-gray-500 text-sm">Dato: {trip.date}</p>
+                  <p className="font-medium text-lg">{pamelding.tur_dato.tur.tittel}</p>
+                  <p className="text-gray-500 text-sm">
+                    Start: {new Date(pamelding.tur_dato.start_at).toLocaleDateString("no-NO")}
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                      trip.status === "Fullført"
-                        ? "bg-green-100 text-green-800"
-                        : trip.status === "Påmeldt"
-                        ? "bg-blue-100 text-blue-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {trip.status}
+                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                    pamelding.status === "pending" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"
+                  }`}>
+                    {pamelding.status === "pending" ? "Påmeldt" : pamelding.status}
                   </span>
-
-                  <button className="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded-lg text-sm transition">
-                    Sett som fullført
-                  </button>
-
-                  <NavLink
-                    to={`/tours/${trip.id}`}
-                    className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded-lg text-sm transition"
-                  >
+                  <button className="bg-yellow-400 text-white px-3 py-1 rounded-lg text-sm">Sett som fullført</button>
+                  <NavLink to={`/tours/${pamelding.tur_dato.tur_id}`} className="bg-emerald-500 text-white px-3 py-1 rounded-lg text-sm">
                     Detaljer
                   </NavLink>
                 </div>
               </li>
             ))}
+            {user.tur_pamelding?.length === 0 && <p className="text-gray-500">Du er ikke påmeldt noen turer.</p>}
           </ul>
         </div>
       </div>
