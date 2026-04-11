@@ -6,18 +6,26 @@
  * Hvis ikke, blir brukeren sendt til innloggingssiden.
  */
 
+import { useMemo } from "react";
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function MyPage() {
-  const isLoggedIn = true;
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
+  const isHytteeier = useMemo(() => user?.roller?.includes("hytteeier") ?? false, [user]);
+  const isAnnonsor = useMemo(() => user?.roller?.includes("annonsor") ?? false, [user]);
 
-  const user = {
-    name: "Ola Nordmann",
-    email: "ola@nordmann.no",
-    favorites: ["Besseggen", "Gjendesheim", "Galdhøpiggen"],
-  };
+  const favorites = ["Besseggen", "Rondane", "Hardangervidda"];
 
-  const myTrips = [
+type Trip = {
+  id: number;
+  title: string;
+  date: string;
+  status: string;
+};
+
+const myTrips: Trip[] = [
     { id: 1, title: "Besseggen", date: "12.08.2024", status: "Fullført" },
     { id: 2, title: "Galdhøpiggen", date: "20.07.2025", status: "Påmeldt" },
     { id: 3, title: "Rondane", date: "15.09.2025", status: "Avlyst" },
@@ -69,8 +77,8 @@ export default function MyPage() {
         {/* Brukerinfo */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold mb-1">Velkommen, {user.name}</h1>
-            <p className="text-gray-500">{user.email}</p>
+            <h1 className="text-3xl font-bold mb-1">Velkommen, {user?.epost}</h1>
+            <p className="text-gray-500">{user?.roller.join(", ")}</p>
             <p className="text-gray-600 mt-2">
               Du har {myTrips.filter((t) => t.status === "Fullført").length} turer fullført og{" "}
               {myTrips.filter((t) => t.status === "Påmeldt").length} turer påmeldt.
@@ -97,9 +105,9 @@ export default function MyPage() {
         {/* Favoritter */}
         <div className="mb-6">
           <h2 className="text-2xl font-semibold mb-4">Favoritter</h2>
-          {user.favorites.length > 0 ? (
+          {favorites.length > 0 ? (
             <ul className="flex flex-wrap gap-2">
-              {user.favorites.map((fav, index) => (
+              {favorites.map((fav, index) => (
                 <li
                   key={index}
                   className="bg-emerald-100 text-emerald-800 px-4 py-2 rounded-full font-medium hover:bg-emerald-200 cursor-pointer transition"

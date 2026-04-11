@@ -18,6 +18,7 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
   const { user, logout } = useAuth();
   const isLoggedIn = !!user;
   const isHytteeier = user?.roller?.includes("hytteeier");
+  const isAnnonsor = user?.roller?.includes("annonsor");
   const [profileOpen, setProfileOpen] = useState(false);
 
   const topBarClass = isTransparent
@@ -88,11 +89,13 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
                 Utforsker
               </NavLink>
             </li>
-           <li>
-            <NavLink to="/annonsor" className={linkClass}>
-             Annonsør
-            </NavLink>
-            </li>
+            {isAnnonsor && (
+              <li>
+                <NavLink to="/annonsor" className={linkClass}>
+                  Annonsør
+                </NavLink>
+              </li>
+            )}
 
             {!isLoggedIn ? (
               <>

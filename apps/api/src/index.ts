@@ -11,6 +11,8 @@ import cors from 'cors';
 import { authRouter } from './routes/authRoutes';
 import { hytteRouter } from "./routes/hytteRoutes";
 import { turRouter } from "./routes/turRoutes";
+import { annonseRouter } from "./routes/annonseRoutes";
+import { rolleRouter } from "./routes/rolleRoutes";
 
 const app = express();
 
@@ -21,6 +23,8 @@ app.use(express.json());
 app.use('/api/auth', authRouter);
 
 app.use("/api/hytter", hytteRouter);
+app.use("/api/annonser", annonseRouter);
+app.use("/api/roller", rolleRouter);
 
 app.use("/api/turer", turRouter);
 

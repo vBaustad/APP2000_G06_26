@@ -9,7 +9,7 @@ import { verifyToken } from "../auth/jwt";
 import { prisma } from "../prisma"
 
 export type AuthedRequest = Request & {
-  user?: { id: number; roles: string[] };
+  user?: { id: number; email: string; roles: string[] };
 };
 
 function getBearerToken(req: Request) {
@@ -32,6 +32,7 @@ export async function requireAuth(req: AuthedRequest, res: Response, next: NextF
       where: { id: userId },
       select: {
         id: true,
+        epost: true,
         bruker_rolle: {
           select: {
             rolle: { select: { kode: true } },
@@ -44,7 +45,7 @@ export async function requireAuth(req: AuthedRequest, res: Response, next: NextF
 
     const roles = user.bruker_rolle.map((ur: { rolle: { kode: any; }; }) => ur.rolle.kode);
 
-    req.user = { id: user.id, roles };
+    req.user = { id: user.id, email: user.epost, roles };
     next();
   } catch {
     return res.status(401).json({ error: "Invalid token" });
