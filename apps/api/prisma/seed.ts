@@ -1,6 +1,84 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
+
+const BCRYPT_ROUNDS = 10;
+
+async function migrerPlaintextPassord() {
+  const brukere = await prisma.bruker.findMany({
+    select: { id: true, epost: true, passord_hash: true },
+  });
+
+  let antallMigrert = 0;
+  for (const b of brukere) {
+    if (b.passord_hash.startsWith('$2')) continue;
+    const nyHash = await bcrypt.hash(b.passord_hash, BCRYPT_ROUNDS);
+    await prisma.bruker.update({
+      where: { id: b.id },
+      data: { passord_hash: nyHash },
+    });
+    antallMigrert++;
+  }
+
+  if (antallMigrert > 0) {
+    console.log(`Migrerte ${antallMigrert} plaintext-passord til bcrypt.`);
+  }
+}
+
+type TestbrukerSeed = {
+  gammelEpost: string | null;
+  epost: string;
+  fornavn: string;
+  etternavn: string;
+  rolleKode: string;
+};
+
+const testbrukere: TestbrukerSeed[] = [
+  { gammelEpost: 'ola@usn.no', epost: 'bruker1@usn.no', fornavn: 'Ola', etternavn: 'Bruker', rolleKode: 'bruker' },
+  { gammelEpost: 'per@usn.no', epost: 'bruker2@usn.no', fornavn: 'Per', etternavn: 'Hytteeier', rolleKode: 'hytteeier' },
+  { gammelEpost: 'kari@usn.no', epost: 'bruker3@usn.no', fornavn: 'Kari', etternavn: 'Admin', rolleKode: 'admin' },
+  { gammelEpost: 'lise@usn.no', epost: 'bruker4@usn.no', fornavn: 'Lise', etternavn: 'Annonsør', rolleKode: 'annonsor' },
+];
+
+async function sikreTestbrukere() {
+  const nyBrukerHash = await bcrypt.hash('hemmelig', BCRYPT_ROUNDS);
+
+  for (const u of testbrukere) {
+    if (u.gammelEpost) {
+      const gammel = await prisma.bruker.findUnique({ where: { epost: u.gammelEpost } });
+      if (gammel && gammel.epost !== u.epost) {
+        await prisma.bruker.update({
+          where: { id: gammel.id },
+          data: { epost: u.epost, fornavn: u.fornavn, etternavn: u.etternavn },
+        });
+      }
+    }
+
+    const bruker = await prisma.bruker.upsert({
+      where: { epost: u.epost },
+      update: { fornavn: u.fornavn, etternavn: u.etternavn },
+      create: {
+        epost: u.epost,
+        fornavn: u.fornavn,
+        etternavn: u.etternavn,
+        passord_hash: nyBrukerHash,
+      },
+    });
+
+    const rolle = await prisma.rolle.findUnique({ where: { kode: u.rolleKode } });
+    if (!rolle) continue;
+
+    await prisma.bruker_rolle.deleteMany({
+      where: { bruker_id: bruker.id, rolle_id: { not: rolle.id } },
+    });
+    await prisma.bruker_rolle.upsert({
+      where: { bruker_id_rolle_id: { bruker_id: bruker.id, rolle_id: rolle.id } },
+      update: {},
+      create: { bruker_id: bruker.id, rolle_id: rolle.id },
+    });
+  }
+}
 
 type Punkt = { lat: number; lng: number; hoyde_m?: number };
 
@@ -50,6 +128,8 @@ const turstier: TurstiSeed[] = [
 ];
 
 async function main() {
+  await migrerPlaintextPassord();
+
   await prisma.rolle.upsert({
     where: { kode: 'annonsor' },
     update: {},
@@ -60,6 +140,8 @@ async function main() {
         'Kan opprette og administrere annonser i annonseportalen.',
     },
   });
+
+  await sikreTestbrukere();
 
   for (const t of turstier) {
     const finnes = await prisma.tursti.findFirst({ where: { navn: t.navn } });

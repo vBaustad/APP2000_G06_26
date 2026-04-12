@@ -7,6 +7,7 @@
 import { Router } from "express";
 import { prisma } from "../prisma";
 import { signToken } from "../auth/jwt";
+import { verifyPassword } from "../auth/password";
 
 export const authRouter = Router();
 
@@ -33,8 +34,8 @@ authRouter.post("/login", async (req, res) => {
     return res.status(401).json({ error: "Feil epost eller passord" });
   }
 
-  // For testbrukere: plain text sjekk
-  if (user.passord_hash !== "hemmelig") {
+  const passordOk = await verifyPassword(passord, user.passord_hash);
+  if (!passordOk) {
     return res.status(401).json({ error: "Feil epost eller passord" });
   }
 
