@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 type Ad = {
@@ -34,6 +35,8 @@ export default function AnnonsorPage() {
     }
   }, [token, isAnnonsor]);
 
+  const navigate = useNavigate();
+
   async function loadAds() {
     setError(null);
     setLoading(true);
@@ -53,6 +56,10 @@ export default function AnnonsorPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleNewAd() {
+    navigate("/create-annonsor");
   }
 
   if (!token) {
@@ -76,7 +83,16 @@ export default function AnnonsorPage() {
   return (
     <div className="mx-auto max-w-6xl px-6 py-10 space-y-8">
       <div className="rounded-2xl bg-white p-6 shadow">
-        <h1 className="text-3xl font-bold mb-4">Annonsørportal</h1>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+          <h1 className="text-3xl font-bold">Annonsørportal</h1>
+          <button
+            type="button"
+            onClick={handleNewAd}
+            className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+          >
+            Ny annonse
+          </button>
+        </div>
         <p className="mb-6 text-gray-600">
           Her kan du administrere dine annonser. Funksjonen er begrenset til brukere med rollen <strong>annonsør</strong>.
         </p>

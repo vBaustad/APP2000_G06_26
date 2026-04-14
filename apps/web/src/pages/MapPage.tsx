@@ -14,9 +14,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
-import L, { LatLngExpression } from 'leaflet';
+import L from 'leaflet';
+import type { LatLngExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { tripStops, TripStop } from '../data/tripStops';
+import { tripStops } from '../data/tripStops';
+import type { TripStop } from '../data/tripStops';
 import { useSearchParams } from "react-router-dom"; // Leser query-parametre fra URL --
 
 const defaultIcon = L.icon({
