@@ -1,17 +1,28 @@
 import mongoose from "mongoose";
 
-const FavoriteSchema = new mongoose.Schema(
+const ReviewSchema = new mongoose.Schema(
   {
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-
     tourId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Tour",
       required: true,
+    },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    rating: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5,
+    },
+    text: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 10,
     },
   },
   {
@@ -19,7 +30,5 @@ const FavoriteSchema = new mongoose.Schema(
   }
 );
 
-FavoriteSchema.index({ userId: 1, tourId: 1 }, { unique: true });
-
-export default mongoose.models.Favorite ||
-  mongoose.model("Favorite", FavoriteSchema);
+export default mongoose.models.Review ||
+  mongoose.model("Review", ReviewSchema);

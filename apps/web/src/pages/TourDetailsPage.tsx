@@ -143,7 +143,7 @@ function getGeoForTour(tour: Tour | null) {
 }
 
 type Review = {
-  id: string;
+  _id: string;
   name: string;
   rating: number;
   text: string;
@@ -166,32 +166,12 @@ function formatDateNo(iso: string) {
   }
 }
 
-function makeId() {
-  try {
-    return crypto.randomUUID();
-  } catch {
-    return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
-  }
-}
-
 function safeGet(key: string) {
   try {
     return localStorage.getItem(key);
   } catch {
     return null;
   }
-}
-
-function safeSet(key: string, value: string) {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    // ignore
-  }
-}
-
-function keyReviews(tourId: string) {
-  return `tour_reviews_${tourId}`;
 }
 
 function keySaved(tourId: string) {
@@ -359,13 +339,24 @@ export default function TourDetailsPage() {
 
     setSaved(safeGet(keySaved(tid)) === "1");
 
-    const raw = safeGet(keyReviews(tid));
-    try {
-      const parsed = raw ? (JSON.parse(raw) as Review[]) : [];
-      setReviews(Array.isArray(parsed) ? parsed : []);
-    } catch {
-      setReviews([]);
+    async function loadReviews() {
+      try {
+        const res = await fetch(`http://localhost:4000/reviews/${tid}`);
+
+        if (!res.ok) {
+          setReviews([]);
+          return;
+        }
+
+        const data = await res.json();
+        setReviews(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Kunne ikke hente anmeldelser:", error);
+        setReviews([]);
+      }
     }
+
+    loadReviews();
   }, [tour, tid]);
 
   const avgRating = useMemo(() => {
@@ -511,7 +502,7 @@ export default function TourDetailsPage() {
     URL.revokeObjectURL(objectUrl);
   }
 
-  function submitReview() {
+  async function submitReview() {
     if (!isLoggedIn) {
       alert("Du må logge inn for å legge igjen anmeldelse.");
       return;
@@ -527,21 +518,35 @@ export default function TourDetailsPage() {
 
     const rating = clamp(reviewRating, 1, 5);
 
-    const nextReview: Review = {
-      id: makeId(),
-      name,
-      rating,
-      text,
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      const res = await fetch("http://localhost:4000/reviews", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tourId: tid,
+          name,
+          rating,
+          text,
+        }),
+      });
 
-    const next = [nextReview, ...reviews];
-    setReviews(next);
-    safeSet(keyReviews(tid), JSON.stringify(next));
+      if (!res.ok) {
+        alert("Kunne ikke lagre anmeldelse.");
+        return;
+      }
 
-    setReviewName("");
-    setReviewText("");
-    setReviewRating(5);
+      const savedReview = (await res.json()) as Review;
+      setReviews((prev) => [savedReview, ...prev]);
+
+      setReviewName("");
+      setReviewText("");
+      setReviewRating(5);
+    } catch (error) {
+      console.error("Kunne ikke sende anmeldelse:", error);
+      alert("Noe gikk galt.");
+    }
   }
 
   return (
@@ -842,7 +847,7 @@ export default function TourDetailsPage() {
             ) : (
               <div className="mt-4 space-y-4">
                 {reviews.map((r) => (
-                  <div key={r.id} className="rounded-2xl border border-gray-100 bg-white p-5">
+                  <div key={r._id} className="rounded-2xl border border-gray-100 bg-white p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <div className="font-semibold text-gray-900">{r.name}</div>

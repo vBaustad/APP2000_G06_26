@@ -36,11 +36,36 @@ type Tour = {
   durationHours: number;
   elevationM: number;
   gear?: string[];
+  imageUrl?: string;
   geometry?: {
     type: "Point";
     coordinates: [number, number]; // [lng, lat]
   };
 };
+
+const TOUR_IMAGES = [
+  "/images/tours/floibanen.jpg",
+  "/images/tours/oslofjord.jpg",
+  "/images/tours/geiranger.jpg",
+  "/images/tours/fjelltur-1.jpg",
+  "/images/tours/fjelltur-2.jpg",
+  "/images/tours/fjelltur-3.webp",
+  "/images/tours/bergen-fjelloping.avif",
+  "/images/tours/fjell-okt.avif",
+  "/images/tours/1635176958-noedt-til-aa-loepe.avif",
+];
+
+function hashStringToIndex(s: string, mod: number) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return mod === 0 ? 0 : h % mod;
+}
+
+function ensureTourImage(tour: Tour): Tour {
+  if (tour.imageUrl && tour.imageUrl.trim()) return tour;
+  const idx = hashStringToIndex(tour._id ?? tour.id ?? tour.title ?? "tour", TOUR_IMAGES.length);
+  return { ...tour, imageUrl: TOUR_IMAGES[idx] };
+}
 
 function getLatLng(tour: Tour): [number, number] | null {
   if (
@@ -75,7 +100,9 @@ export default function MapPage() {
         const data = await getTours();
 
         const toursWithCoords = Array.isArray(data)
-          ? data.filter((tour: Tour) => getLatLng(tour) !== null)
+          ? data
+              .map((tour: Tour) => ensureTourImage(tour))
+              .filter((tour: Tour) => getLatLng(tour) !== null)
           : [];
 
         setAllTours(toursWithCoords);
@@ -169,6 +196,11 @@ export default function MapPage() {
         {selectedTrip ? (
           <>
             <div className="space-y-2 rounded-xl border border-slate-200 p-4">
+              <img
+                src={selectedTrip.imageUrl || "/images/trip-card-placeholder.jpg"}
+                alt={selectedTrip.title}
+                className="mb-4 h-40 w-full rounded-xl object-cover"
+              />
               <h2 className="text-xl font-semibold text-slate-900">{selectedTrip.title}</h2>
               <p className="text-sm text-slate-600">
                 {selectedTrip.location}, {selectedTrip.region}
@@ -254,6 +286,11 @@ export default function MapPage() {
                 eventHandlers={{ click: () => setSelectedTrip(trip) }}
               >
                 <Popup>
+                  <img
+                    src={trip.imageUrl || "/images/trip-card-placeholder.jpg"}
+                    alt={trip.title}
+                    className="mb-3 h-28 w-full rounded-lg object-cover"
+                  />
                   <strong>{trip.title}</strong>
                   <p className="text-sm text-slate-600">
                     {trip.location}, {trip.region}

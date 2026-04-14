@@ -6,6 +6,8 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes";
 import turRoutes from "./routes/turRoutes";
 import registrationRoutes from "./routes/registrationRoutes";
+import reviewRoutes from "./routes/reviewRoutes";
+
 
 // LOAD ENV
 dotenv.config();
@@ -21,6 +23,8 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/tours", turRoutes);
 app.use("/registrations", registrationRoutes);
+app.use("/reviews", reviewRoutes);
+
 
 // TEST ROUTE
 app.get("/", (req, res) => {
