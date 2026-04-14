@@ -19,3 +19,7 @@ declare module "./pages/EditProfile" {
   const EditProfile: any;
   export default EditProfile;
 }
+declare module "./pages/EditProfile.jsx" {
+  const EditProfile: any;
+  export default EditProfile;
+}
