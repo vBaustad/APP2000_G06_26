@@ -25,10 +25,22 @@ async function getCurrentAnnonsor(req: AuthedRequest) {
   });
 }
 
-// PUBLIC: List all annonser
+// PUBLIC: List all annonser sorted etter bud og tilgjengelighet
 annonseRouter.get("/", async (_req, res) => {
+  const now = new Date();
   const annonser = await prisma.annonse.findMany({
-    orderBy: { created_at: "desc" },
+    where: {
+      status: "active",
+      AND: [
+        { OR: [{ start_at: null }, { start_at: { lte: now } }] },
+        { OR: [{ end_at: null }, { end_at: { gte: now } }] },
+      ],
+    },
+    orderBy: [
+      { pris_per_klikk: "desc" },
+      { daily_budget: "desc" },
+      { created_at: "desc" },
+    ],
   });
   res.json(annonser);
 });
@@ -70,8 +82,10 @@ annonseRouter.post(
       bilde_url,
       lenke_url,
       kategori,
+      annonsetype,
       start_at,
       end_at,
+      daily_budget,
       pris_per_visning,
       pris_per_klikk,
     } = req.body;
@@ -88,8 +102,10 @@ annonseRouter.post(
         bilde_url: bilde_url || null,
         lenke_url: lenke_url || null,
         kategori: kategori || null,
+        annonsetype: annonsetype || null,
         start_at: start_at ? new Date(start_at) : null,
         end_at: end_at ? new Date(end_at) : null,
+        daily_budget: daily_budget ? Number(daily_budget) : 0,
         pris_per_visning: pris_per_visning ? Number(pris_per_visning) : 0,
         pris_per_klikk: pris_per_klikk ? Number(pris_per_klikk) : 0,
       },
@@ -111,7 +127,7 @@ annonseRouter.put(
       return res.status(404).json({ error: "Annonsørprofil ikke funnet" });
     }
 
-    const existing = await prisma.annonse.findUnique({ where: { id } });
+    const existing = (await prisma.annonse.findUnique({ where: { id } })) as any;
     if (!existing || existing.annonsor_id !== annonsor.id) {
       return res.status(404).json({ error: "Annonse ikke funnet" });
     }
@@ -122,6 +138,10 @@ annonseRouter.put(
         ...req.body,
         start_at: req.body.start_at ? new Date(req.body.start_at) : null,
         end_at: req.body.end_at ? new Date(req.body.end_at) : null,
+        daily_budget: req.body.daily_budget
+          ? Number(req.body.daily_budget)
+          : existing.daily_budget,
+        annonsetype: req.body.annonsetype || existing.annonsetype,
         pris_per_visning: req.body.pris_per_visning
           ? Number(req.body.pris_per_visning)
           : existing.pris_per_visning,
@@ -162,7 +182,7 @@ annonseRouter.post("/:id/view", async (req, res) => {
 // Public: register annonse-klikk
 annonseRouter.post("/:id/click", async (req, res) => {
   const id = Number(req.params.id);
-  const existing = await prisma.annonse.findUnique({ where: { id } });
+  const existing = (await prisma.annonse.findUnique({ where: { id } })) as any)) as any;
   if (!existing) {
     return res.status(404).json({ error: "Annonse ikke funnet" });
   }
@@ -175,9 +195,25 @@ annonseRouter.post("/:id/click", async (req, res) => {
     return res.status(400).json({ error: "Annonse er ikke aktiv" });
   }
 
+  const nextSpend = Number(existing.budget_spent) + Number(existing.pris_per_klikk || 0);
+  if (existing.daily_budget > 0 && nextSpend > Number(existing.daily_budget)) {
+    const updated = await prisma.annonse.update({
+      where: { id },
+      data: { status: "budget_exhausted" },
+    });
+    return res.status(402).json({ error: "Budsjettet er brukt opp", annonse: updated });
+  }
+
   const updated = await prisma.annonse.update({
     where: { id },
-    data: { klikk: existing.klikk + 1 },
+    data: {
+      klikk: existing.klikk + 1,
+      budget_spent: nextSpend,
+      status:
+        Number(existing.daily_budget) > 0 && nextSpend >= Number(existing.daily_budget)
+          ? "budget_exhausted"
+          : existing.status,
+    },
   });
 
   res.json(updated);

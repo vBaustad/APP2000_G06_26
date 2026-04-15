@@ -13,10 +13,13 @@ type Ad = {
   tittel: string;
   beskrivelse: string | null;
   kategori: string | null;
+  annonsetype: string | null;
   lenke_url: string | null;
   bilde_url: string | null;
   pris_per_visning: string | number;
   pris_per_klikk: string | number;
+  daily_budget: string | number;
+  budget_spent: string | number;
   visninger: number;
   klikk: number;
   start_at: string | null;
@@ -169,8 +172,11 @@ export default function AnnonsorPage() {
                   <p className="mb-4 text-slate-700">{ad.beskrivelse ?? "Ingen beskrivelse"}</p>
 
                   <div className="grid gap-2 text-sm text-slate-600 md:grid-cols-2">
+                    <span className="rounded-2xl bg-slate-50 px-3 py-2">Type: {ad.annonsetype || "–"}</span>
                     <span className="rounded-2xl bg-slate-50 px-3 py-2">Pris/visning: {ad.pris_per_visning}</span>
                     <span className="rounded-2xl bg-slate-50 px-3 py-2">Pris/klikk: {ad.pris_per_klikk}</span>
+                    <span className="rounded-2xl bg-slate-50 px-3 py-2">Dagsbudsjett: {ad.daily_budget} kr</span>
+                    <span className="rounded-2xl bg-slate-50 px-3 py-2">Brukt i dag: {ad.budget_spent} kr</span>
                     <span className="rounded-2xl bg-slate-50 px-3 py-2">Visninger: {ad.visninger}</span>
                     <span className="rounded-2xl bg-slate-50 px-3 py-2">Klikk: {ad.klikk}</span>
                     <span className="rounded-2xl bg-slate-50 px-3 py-2 md:col-span-2">Periode: {ad.start_at ? new Date(ad.start_at).toLocaleDateString("no-NO") : "-"} – {ad.end_at ? new Date(ad.end_at).toLocaleDateString("no-NO") : "-"}</span>

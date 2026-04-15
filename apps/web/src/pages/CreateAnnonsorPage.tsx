@@ -12,12 +12,42 @@ export default function CreateAnnonsorPage() {
   const [bildeUrl, setBildeUrl] = useState("");
   const [lenkeUrl, setLenkeUrl] = useState("");
   const [kategori, setKategori] = useState("turutstyr");
+  const [annonseType, setAnnonseType] = useState("standard");
   const [startAt, setStartAt] = useState("");
   const [endAt, setEndAt] = useState("");
-  const [prisPerVisning, setPrisPerVisning] = useState("");
-  const [prisPerKlikk, setPrisPerKlikk] = useState("");
+  const [dailyBudget, setDailyBudget] = useState("300");
+  const [prisPerVisning, setPrisPerVisning] = useState("0");
+  const [prisPerKlikk, setPrisPerKlikk] = useState("5");
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const planRecommendations = {
+    basic: {
+      title: "Basic",
+      description: "En rimelig startpakke med lavere kostnad per klikk og små budsjetter.",
+      clickPrice: 2.5,
+      dailyBudget: 100,
+    },
+    standard: {
+      title: "Standard",
+      description: "God balanse mellom pris og synlighet. Passer de fleste annonsører.",
+      clickPrice: 5,
+      dailyBudget: 300,
+    },
+    premium: {
+      title: "Premium",
+      description: "Sterk synlighet med høyere bud og større daglig budsjett.",
+      clickPrice: 10,
+      dailyBudget: 600,
+    },
+  } as const;
+
+  const selectedPlan = planRecommendations[annonseType as keyof typeof planRecommendations];
+
+  function applyPlanRecommendation() {
+    setPrisPerKlikk(String(selectedPlan.clickPrice));
+    setDailyBudget(String(selectedPlan.dailyBudget));
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -39,8 +69,10 @@ export default function CreateAnnonsorPage() {
           bilde_url: bildeUrl || null,
           lenke_url: lenkeUrl || null,
           kategori,
+          annonsetype: annonseType,
           start_at: startAt || null,
           end_at: endAt || null,
+          daily_budget: dailyBudget ? Number(dailyBudget) : 0,
           pris_per_visning: prisPerVisning ? Number(prisPerVisning) : 0,
           pris_per_klikk: prisPerKlikk ? Number(prisPerKlikk) : 0,
         }),
@@ -58,10 +90,12 @@ export default function CreateAnnonsorPage() {
       setBildeUrl("");
       setLenkeUrl("");
       setKategori("turutstyr");
+      setAnnonseType("standard");
       setStartAt("");
       setEndAt("");
-      setPrisPerVisning("");
-      setPrisPerKlikk("");
+      setDailyBudget("300");
+      setPrisPerVisning("0");
+      setPrisPerKlikk("5");
     } catch {
       setError("Kunne ikke kontakte serveren. Sjekk at API kjører.");
     }
@@ -149,48 +183,57 @@ export default function CreateAnnonsorPage() {
                 <h2 className="mb-4 text-xl font-semibold text-slate-900">Annonsevalg</h2>
                 <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-4">
                   <label className="mb-2 block text-sm font-medium text-slate-800">
-                    Kategori
+                    Annonsetype
                   </label>
                   <select
-                    value={kategori}
-                    onChange={(event) => setKategori(event.target.value)}
+                    value={annonseType}
+                    onChange={(event) => setAnnonseType(event.target.value)}
                     className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
                   >
-                    <option value="turutstyr">Turutstyr</option>
-                    <option value="turmat">Turmat</option>
-                    <option value="hytte">Hytte</option>
-                    <option value="friluftsliv">Friluftsliv</option>
-                    <option value="pakker">Pakker</option>
+                    <option value="basic">Basic</option>
+                    <option value="standard">Standard</option>
+                    <option value="premium">Premium</option>
                   </select>
-                  <p className="mt-2 text-xs text-gray-500">
-                    Velg kategori slik at annonsen vises ved relevante søk.
-                  </p>
+                  <p className="mt-2 text-xs text-gray-500">Velg et budsjettnivå som gir synlighet og foreslåtte priser.</p>
+                </div>
+
+                <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">Anbefalt</p>
+                      <p className="text-xs text-slate-500">{selectedPlan.description}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={applyPlanRecommendation}
+                      className="rounded-full bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
+                    >
+                      Bruk forslag
+                    </button>
+                  </div>
+                  <div className="grid gap-3">
+                    <div className="rounded-3xl bg-slate-50 p-3">
+                      <p className="text-xs text-slate-500">Forslag pris per klikk</p>
+                      <p className="mt-1 text-lg font-semibold text-slate-900">{selectedPlan.clickPrice} kr</p>
+                    </div>
+                    <div className="rounded-3xl bg-slate-50 p-3">
+                      <p className="text-xs text-slate-500">Forslag daglig budsjett</p>
+                      <p className="mt-1 text-lg font-semibold text-slate-900">{selectedPlan.dailyBudget} kr</p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-4">
                   <label className="mb-2 block text-sm font-medium text-slate-800">
-                    Tidsrom
+                    Daglig budsjett
                   </label>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="mb-2 block text-xs uppercase tracking-[0.18em] text-slate-500">Fra</label>
-                      <input
-                        type="date"
-                        value={startAt}
-                        onChange={(event) => setStartAt(event.target.value)}
-                        className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-xs uppercase tracking-[0.18em] text-slate-500">Til</label>
-                      <input
-                        type="date"
-                        value={endAt}
-                        onChange={(event) => setEndAt(event.target.value)}
-                        className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                      />
-                    </div>
-                  </div>
+                  <input
+                    type="number"
+                    placeholder="300"
+                    value={dailyBudget}
+                    onChange={(event) => setDailyBudget(event.target.value)}
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                  />
                 </div>
 
                 <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-4">
@@ -212,7 +255,7 @@ export default function CreateAnnonsorPage() {
                   </label>
                   <input
                     type="number"
-                    placeholder="0"
+                    placeholder="5"
                     value={prisPerKlikk}
                     onChange={(event) => setPrisPerKlikk(event.target.value)}
                     className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
