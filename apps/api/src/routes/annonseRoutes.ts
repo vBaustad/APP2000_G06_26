@@ -135,6 +135,54 @@ annonseRouter.put(
   }
 );
 
+// Public: register annonse-visning
+annonseRouter.post("/:id/view", async (req, res) => {
+  const id = Number(req.params.id);
+  const existing = await prisma.annonse.findUnique({ where: { id } });
+  if (!existing) {
+    return res.status(404).json({ error: "Annonse ikke funnet" });
+  }
+
+  const now = new Date();
+  if (existing.start_at && now < existing.start_at) {
+    return res.status(400).json({ error: "Annonse er ikke aktiv enda" });
+  }
+  if (existing.end_at && now > existing.end_at) {
+    return res.status(400).json({ error: "Annonse er ikke aktiv" });
+  }
+
+  const updated = await prisma.annonse.update({
+    where: { id },
+    data: { visninger: existing.visninger + 1 },
+  });
+
+  res.json(updated);
+});
+
+// Public: register annonse-klikk
+annonseRouter.post("/:id/click", async (req, res) => {
+  const id = Number(req.params.id);
+  const existing = await prisma.annonse.findUnique({ where: { id } });
+  if (!existing) {
+    return res.status(404).json({ error: "Annonse ikke funnet" });
+  }
+
+  const now = new Date();
+  if (existing.start_at && now < existing.start_at) {
+    return res.status(400).json({ error: "Annonse er ikke aktiv enda" });
+  }
+  if (existing.end_at && now > existing.end_at) {
+    return res.status(400).json({ error: "Annonse er ikke aktiv" });
+  }
+
+  const updated = await prisma.annonse.update({
+    where: { id },
+    data: { klikk: existing.klikk + 1 },
+  });
+
+  res.json(updated);
+});
+
 // Annonsør: delete egen annonse
 annonseRouter.delete(
   "/:id",
