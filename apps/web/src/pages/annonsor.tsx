@@ -109,7 +109,26 @@ export default function AnnonsorPage() {
               <article key={ad.id} className="rounded-3xl border border-gray-200 bg-slate-50 p-5 shadow-sm">
                 <h2 className="text-xl font-semibold mb-2">{ad.tittel}</h2>
                 <p className="mb-3 text-sm text-gray-600">{ad.kategori || "Uten kategori"}</p>
+                {ad.bilde_url ? (
+                  <img
+                    src={ad.bilde_url}
+                    alt={ad.tittel}
+                    className="mb-4 h-40 w-full rounded-2xl object-cover"
+                  />
+                ) : null}
                 <p className="mb-4 text-gray-700">{ad.beskrivelse ?? "Ingen beskrivelse"}</p>
+                {ad.lenke_url ? (
+                  <p className="mb-4">
+                    <a
+                      href={ad.lenke_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-emerald-600 underline"
+                    >
+                      Gå til nettstedet
+                    </a>
+                  </p>
+                ) : null}
                 <div className="flex flex-wrap gap-2 text-sm text-gray-500">
                   <span>Status: {ad.status}</span>
                   <span>Visning: {ad.pris_per_visning}</span>
