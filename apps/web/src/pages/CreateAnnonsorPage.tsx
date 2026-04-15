@@ -12,7 +12,6 @@ export default function CreateAnnonsorPage() {
   const [bildeUrl, setBildeUrl] = useState("");
   const [lenkeUrl, setLenkeUrl] = useState("");
   const [prisPerVisning, setPrisPerVisning] = useState("");
-  const [prisPerKlikk, setPrisPerKlikk] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,7 +35,6 @@ export default function CreateAnnonsorPage() {
           bilde_url: bildeUrl || null,
           lenke_url: lenkeUrl || null,
           pris_per_visning: prisPerVisning ? Number(prisPerVisning) : 0,
-          pris_per_klikk: prisPerKlikk ? Number(prisPerKlikk) : 0,
         }),
       });
 
@@ -52,7 +50,6 @@ export default function CreateAnnonsorPage() {
       setBildeUrl("");
       setLenkeUrl("");
       setPrisPerVisning("");
-      setPrisPerKlikk("");
     } catch {
       setError("Kunne ikke kontakte serveren. Sjekk at API kjører.");
     }
@@ -144,21 +141,6 @@ export default function CreateAnnonsorPage() {
                   onChange={(event) => setPrisPerVisning(event.target.value)}
                   className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
                 />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-800">
-                  Pris per klikk
-                </label>
-                <input
-                  type="number"
-                  placeholder="0"
-                  value={prisPerKlikk}
-                  onChange={(event) => setPrisPerKlikk(event.target.value)}
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                />
-                <p className="mt-2 text-xs text-gray-500">
-                  Dette er kostnaden for hvert klikk. Eierne av nettsiden kan bestemme prisen.
-                </p>
               </div>
             </div>
 
