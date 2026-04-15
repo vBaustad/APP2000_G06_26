@@ -16,7 +16,6 @@ type Ad = {
   lenke_url: string | null;
   bilde_url: string | null;
   pris_per_visning: string | number;
-  pris_per_klikk: string | number;
   status: string;
 };
 
@@ -132,7 +131,6 @@ export default function AnnonsorPage() {
                 <div className="flex flex-wrap gap-2 text-sm text-gray-500">
                   <span>Status: {ad.status}</span>
                   <span>Visning: {ad.pris_per_visning}</span>
-                  <span>Klikk: {ad.pris_per_klikk}</span>
                 </div>
               </article>
             ))}

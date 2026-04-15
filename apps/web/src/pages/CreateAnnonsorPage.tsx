@@ -12,6 +12,7 @@ export default function CreateAnnonsorPage() {
   const [bildeUrl, setBildeUrl] = useState("");
   const [lenkeUrl, setLenkeUrl] = useState("");
   const [prisPerVisning, setPrisPerVisning] = useState("");
+  const [plassering, setPlassering] = useState("top");
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,6 +36,7 @@ export default function CreateAnnonsorPage() {
           bilde_url: bildeUrl || null,
           lenke_url: lenkeUrl || null,
           pris_per_visning: prisPerVisning ? Number(prisPerVisning) : 0,
+          kategori: plassering,
         }),
       });
 
@@ -50,6 +52,7 @@ export default function CreateAnnonsorPage() {
       setBildeUrl("");
       setLenkeUrl("");
       setPrisPerVisning("");
+      setPlassering("top");
     } catch {
       setError("Kunne ikke kontakte serveren. Sjekk at API kjører.");
     }
@@ -64,7 +67,7 @@ export default function CreateAnnonsorPage() {
           </p>
           <h1 className="text-4xl font-semibold md:text-5xl">Opprett ny annonse</h1>
           <p className="mt-4 max-w-3xl text-lg leading-8 text-emerald-100/90">
-            Fyll inn annonseinformasjonen og publiser den for dine besøkende.
+             Kom i kontakt med hundrevis av turinteresserte!
           </p>
         </div>
       </section>
@@ -77,71 +80,95 @@ export default function CreateAnnonsorPage() {
                 {error}
               </div>
             )}
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-800">
-                Tittel
-              </label>
-              <input
-                type="text"
-                placeholder="For eksempel Sommerstilbud på hytte"
-                value={tittel}
-                onChange={(event) => setTittel(event.target.value)}
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-              />
-            </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-800">
-                Beskrivelse
-              </label>
-              <textarea
-                rows={4}
-                placeholder="Skriv kort hva annonsen handler om"
-                value={beskrivelse}
-                onChange={(event) => setBeskrivelse(event.target.value)}
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-              />
-            </div>
+            <div className="grid gap-8 lg:grid-cols-[1.7fr_0.95fr]">
+              <div className="space-y-6">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-800">
+                    Tittel
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Annonsetittel"
+                    value={tittel}
+                    onChange={(event) => setTittel(event.target.value)}
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-800">
-                Bilde-URL
-              </label>
-              <input
-                type="text"
-                placeholder="https://dittdomene.no/bilde.jpg"
-                value={bildeUrl}
-                onChange={(event) => setBildeUrl(event.target.value)}
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-              />
-            </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-800">
+                    Beskrivelse
+                  </label>
+                  <textarea
+                    rows={4}
+                    placeholder="Annonsetekst"
+                    value={beskrivelse}
+                    onChange={(event) => setBeskrivelse(event.target.value)}
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-800">
-                Link til hjemmeside
-              </label>
-              <input
-                type="url"
-                placeholder="https://din-hjemmeside.no"
-                value={lenkeUrl}
-                onChange={(event) => setLenkeUrl(event.target.value)}
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-              />
-            </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-800">
+                    Bilde-URL
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="https://dittdomene.no/bilde.jpg"
+                    value={bildeUrl}
+                    onChange={(event) => setBildeUrl(event.target.value)}
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-800">
-                  Pris per visning
-                </label>
-                <input
-                  type="number"
-                  placeholder="0"
-                  value={prisPerVisning}
-                  onChange={(event) => setPrisPerVisning(event.target.value)}
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                />
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-800">
+                    Link til hjemmeside
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://din-hjemmeside.no"
+                    value={lenkeUrl}
+                    onChange={(event) => setLenkeUrl(event.target.value)}
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
               </div>
+
+              <aside className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
+                <h2 className="mb-4 text-xl font-semibold text-slate-900">Annonsevalg</h2>
+                <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-4">
+                  <label className="mb-2 block text-sm font-medium text-slate-800">
+                    Pris per visning
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={prisPerVisning}
+                    onChange={(event) => setPrisPerVisning(event.target.value)}
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
+
+                <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                  <label className="mb-2 block text-sm font-medium text-slate-800">
+                    Plassering
+                  </label>
+                  <select
+                    value={plassering}
+                    onChange={(event) => setPlassering(event.target.value)}
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                  >
+                    <option value="top">Topp</option>
+                    <option value="sidebar">Side</option>
+                    <option value="bottom">Bunn</option>
+                  </select>
+                  <p className="mt-2 text-xs text-gray-500">
+                    Velg hvor annonsen skal vises.
+                  </p>
+                </div>
+              </aside>
             </div>
 
             <button
