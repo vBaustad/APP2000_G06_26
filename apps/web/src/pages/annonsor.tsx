@@ -16,6 +16,11 @@ type Ad = {
   lenke_url: string | null;
   bilde_url: string | null;
   pris_per_visning: string | number;
+  pris_per_klikk: string | number;
+  visninger: number;
+  klikk: number;
+  start_at: string | null;
+  end_at: string | null;
   status: string;
 };
 
@@ -128,9 +133,14 @@ export default function AnnonsorPage() {
                     </a>
                   </p>
                 ) : null}
-                <div className="flex flex-wrap gap-2 text-sm text-gray-500">
+                <div className="grid gap-2 text-sm text-gray-500 md:grid-cols-2">
                   <span>Status: {ad.status}</span>
-                  <span>Visning: {ad.pris_per_visning}</span>
+                  <span>Kategori: {ad.kategori || "Uten kategori"}</span>
+                  <span>Pris/visning: {ad.pris_per_visning}</span>
+                  <span>Pris/klikk: {ad.pris_per_klikk}</span>
+                  <span>Visninger: {ad.visninger}</span>
+                  <span>Klikk: {ad.klikk}</span>
+                  <span>Periode: {ad.start_at ? new Date(ad.start_at).toLocaleDateString("no-NO") : "-"} – {ad.end_at ? new Date(ad.end_at).toLocaleDateString("no-NO") : "-"}</span>
                 </div>
               </article>
             ))}
