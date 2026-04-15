@@ -22,7 +22,7 @@ export default function MyPage() {
     }
 
     // 2. Hent data fra API-et du lagde i Steg 1 & 2
-    fetch("http://localhost:4000/api/bruker/me", {
+   fetch(`${import.meta.env.VITE_API_URL}/api/bruker/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
