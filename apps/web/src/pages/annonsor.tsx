@@ -13,6 +13,7 @@ type Ad = {
   tittel: string;
   beskrivelse: string | null;
   kategori: string | null;
+  keywords?: string | null;
   annonsetype: string | null;
   lenke_url: string | null;
   bilde_url: string | null;
@@ -156,7 +157,10 @@ export default function AnnonsorPage() {
                   <div className="mb-4 flex items-start justify-between gap-3">
                     <div>
                       <h2 className="text-xl font-semibold text-slate-900">{ad.tittel}</h2>
-                      <p className="text-sm text-slate-500">{ad.kategori || "Uten kategori"}</p>
+                      <p className="text-sm text-slate-500">
+                        {ad.kategori || "Uten kategori"}
+                        {ad.keywords ? ` • ${ad.keywords}` : ""}
+                      </p>
                     </div>
                     <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">{ad.status}</span>
                   </div>

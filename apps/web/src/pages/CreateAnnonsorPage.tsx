@@ -12,10 +12,20 @@ export default function CreateAnnonsorPage() {
   const [bildeUrl, setBildeUrl] = useState("");
   const [lenkeUrl, setLenkeUrl] = useState("");
   const [kategori, setKategori] = useState("turutstyr");
+  const keywordOptions = ["turutstyr", "turmat", "hytte", "turtips", "friluftsliv"];
+  const [keywords, setKeywords] = useState<string[]>(["turutstyr"]);
   const [annonseType, setAnnonseType] = useState("standard");
   const [startAt, setStartAt] = useState("");
   const [endAt, setEndAt] = useState("");
   const [dailyBudget, setDailyBudget] = useState("300");
+
+  function toggleKeyword(keyword: string) {
+    setKeywords((previous) =>
+      previous.includes(keyword)
+        ? previous.filter((item) => item !== keyword)
+        : [...previous, keyword]
+    );
+  }
   const [prisPerVisning, setPrisPerVisning] = useState("0");
   const [prisPerKlikk, setPrisPerKlikk] = useState("5");
   const [submitted, setSubmitted] = useState(false);
@@ -69,6 +79,7 @@ export default function CreateAnnonsorPage() {
           bilde_url: bildeUrl || null,
           lenke_url: lenkeUrl || null,
           kategori,
+          keywords: keywords.length ? keywords.join(",") : null,
           annonsetype: annonseType,
           start_at: startAt || null,
           end_at: endAt || null,
@@ -90,6 +101,7 @@ export default function CreateAnnonsorPage() {
       setBildeUrl("");
       setLenkeUrl("");
       setKategori("turutstyr");
+      setKeywords(["turutstyr"]);
       setAnnonseType("standard");
       setStartAt("");
       setEndAt("");
@@ -176,6 +188,49 @@ export default function CreateAnnonsorPage() {
                     onChange={(event) => setLenkeUrl(event.target.value)}
                     className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
                   />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-800">
+                    Kategori
+                  </label>
+                  <select
+                    value={kategori}
+                    onChange={(event) => setKategori(event.target.value)}
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                  >
+                    <option value="turutstyr">Turutstyr</option>
+                    <option value="turmat">Turmat</option>
+                    <option value="hytte">Hytte</option>
+                    <option value="turtips">Turtips</option>
+                    <option value="friluftsliv">Friluftsliv</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-800">
+                    Søkeord / kategorier
+                  </label>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {keywordOptions.map((keyword) => {
+                      const active = keywords.includes(keyword);
+                      return (
+                        <button
+                          key={keyword}
+                          type="button"
+                          onClick={() => toggleKeyword(keyword)}
+                          className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${
+                            active
+                              ? "border-emerald-600 bg-emerald-50 text-emerald-900"
+                              : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
+                          }`}
+                        >
+                          {keyword}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-2 text-xs text-slate-500">Velg søkeord og kategorier som skal knyttes til annonsen.</p>
                 </div>
               </div>
 

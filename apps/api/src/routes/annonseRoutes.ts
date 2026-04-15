@@ -82,6 +82,7 @@ annonseRouter.post(
       bilde_url,
       lenke_url,
       kategori,
+      keywords,
       annonsetype,
       start_at,
       end_at,
@@ -102,6 +103,7 @@ annonseRouter.post(
         bilde_url: bilde_url || null,
         lenke_url: lenke_url || null,
         kategori: kategori || null,
+        keywords: keywords || null,
         annonsetype: annonsetype || null,
         start_at: start_at ? new Date(start_at) : null,
         end_at: end_at ? new Date(end_at) : null,
@@ -141,6 +143,8 @@ annonseRouter.put(
         daily_budget: req.body.daily_budget
           ? Number(req.body.daily_budget)
           : existing.daily_budget,
+        keywords:
+          req.body.keywords !== undefined ? req.body.keywords : existing.keywords,
         annonsetype: req.body.annonsetype || existing.annonsetype,
         pris_per_visning: req.body.pris_per_visning
           ? Number(req.body.pris_per_visning)
@@ -182,7 +186,7 @@ annonseRouter.post("/:id/view", async (req, res) => {
 // Public: register annonse-klikk
 annonseRouter.post("/:id/click", async (req, res) => {
   const id = Number(req.params.id);
-  const existing = (await prisma.annonse.findUnique({ where: { id } })) as any)) as any;
+  const existing = (await prisma.annonse.findUnique({ where: { id } })) as any;
   if (!existing) {
     return res.status(404).json({ error: "Annonse ikke funnet" });
   }
