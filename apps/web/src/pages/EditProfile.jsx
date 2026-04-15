@@ -9,7 +9,7 @@ export default function EditProfile() {
     const token = localStorage.getItem("token"); // Hent "nøkkelen"
     
     // Hent nåværende data fra MariaDB
-    fetch("http://localhost:4000/api/bruker/me", {
+    fetch(`${import.meta.env.VITE_API_URL}/api/bruker/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => res.json())
