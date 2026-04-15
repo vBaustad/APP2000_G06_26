@@ -340,13 +340,13 @@ export default function CreateAnnonsorPage() {
               <button
                 type="button"
                 onClick={resetFormFields}
-                className="rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:border-slate-400 hover:bg-slate-50"
+                className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
               >
                 Slett innhold
               </button>
               <button
                 type="submit"
-                className="rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
               >
                 Send inn
               </button>
