@@ -11,8 +11,8 @@ export default function CreateAnnonsorPage() {
   const [beskrivelse, setBeskrivelse] = useState("");
   const [bildeUrl, setBildeUrl] = useState("");
   const [lenkeUrl, setLenkeUrl] = useState("");
-  const [kategori, setKategori] = useState("turutstyr");
-  const keywordOptions = ["turutstyr", "turmat", "hytte", "turtips", "friluftsliv"];
+  const [kategori, setKategori] = useState("Turutstyr");
+  const keywordOptions = ["Turutstyr", "Turmat", "Hytte", "turtips", "friluftsliv"];
   const [keywords, setKeywords] = useState<string[]>(["turutstyr"]);
   const [annonseType, setAnnonseType] = useState("standard");
   const [startAt, setStartAt] = useState("");
@@ -57,6 +57,23 @@ export default function CreateAnnonsorPage() {
   function applyPlanRecommendation() {
     setPrisPerKlikk(String(selectedPlan.clickPrice));
     setDailyBudget(String(selectedPlan.dailyBudget));
+  }
+
+  function resetFormFields() {
+    setTittel("");
+    setBeskrivelse("");
+    setBildeUrl("");
+    setLenkeUrl("");
+    setKategori("turutstyr");
+    setKeywords(["turutstyr"]);
+    setAnnonseType("standard");
+    setStartAt("");
+    setEndAt("");
+    setDailyBudget("300");
+    setPrisPerVisning("0");
+    setPrisPerKlikk("5");
+    setError(null);
+    setSubmitted(false);
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -319,12 +336,27 @@ export default function CreateAnnonsorPage() {
               </aside>
             </div>
 
-            <button
-              type="submit"
-              className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
-            >
-              Lagre annonse
-            </button>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <button
+                type="button"
+                onClick={resetFormFields}
+                className="rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:border-slate-400 hover:bg-slate-50"
+              >
+                Slett innhold
+              </button>
+              <button
+                type="submit"
+                className="rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+              >
+                Send inn
+              </button>
+              <button
+                type="submit"
+                className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+              >
+                Lagre annonse
+              </button>
+            </div>
 
             {submitted && (
               <p className="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
