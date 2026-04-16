@@ -10,6 +10,8 @@ import cors from 'cors';
 import { authRouter } from './routes/authRoutes';
 import { hytteRouter } from "./routes/hytteRoutes";
 import { turRouter } from "./routes/turRoutes";
+import { annonseRouter } from "./routes/annonseRoutes";
+import { rolleRouter } from "./routes/rolleRoutes";
 import { userRouter } from "./routes/userRoutes"; // Din nye rute
 
 const app = express();
@@ -21,6 +23,9 @@ app.use(express.json());
 // API-ruter (Kun én definisjon per rute)
 app.use('/api/auth', authRouter);
 app.use("/api/hytter", hytteRouter);
+app.use("/api/annonser", annonseRouter);
+app.use("/api/roller", rolleRouter);
+
 app.use("/api/turer", turRouter);
 app.use("/api/bruker", userRouter); // Din rute for profil/min side
 
