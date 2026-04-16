@@ -36,6 +36,30 @@ export default function AnnonsorPage() {
   const [ads, setAds] = useState<Ad[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "paused" | "ended">("all");
+
+  const filteredAds = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return ads.filter((ad) => {
+      const status = ad.status?.toLowerCase() ?? "";
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" && status === "active") ||
+        (statusFilter === "paused" && status === "paused") ||
+        (statusFilter === "ended" && (status === "ended" || status === "utløpt"));
+
+      const matchesSearch =
+        !query ||
+        ad.tittel.toLowerCase().includes(query) ||
+        ad.beskrivelse?.toLowerCase().includes(query) ||
+        ad.kategori?.toLowerCase().includes(query) ||
+        ad.keywords?.toLowerCase().includes(query) ||
+        ad.annonsetype?.toLowerCase().includes(query);
+
+      return matchesStatus && matchesSearch;
+    });
+  }, [ads, searchQuery, statusFilter]);
 
   useEffect(() => {
     if (token && isAnnonsor) {
@@ -47,6 +71,20 @@ export default function AnnonsorPage() {
 
   const totalViews = useMemo(() => ads.reduce((sum, ad) => sum + ad.visninger, 0), [ads]);
   const totalClicks = useMemo(() => ads.reduce((sum, ad) => sum + ad.klikk, 0), [ads]);
+
+  function getStatusBadgeClasses(status: string | null) {
+    const value = status?.toLowerCase() ?? "";
+    if (value === "active") {
+      return "bg-emerald-50 text-emerald-700";
+    }
+    if (value === "paused") {
+      return "bg-amber-50 text-amber-700";
+    }
+    if (value === "ended" || value === "utløpt") {
+      return "bg-slate-100 text-slate-700";
+    }
+    return "bg-slate-50 text-slate-700";
+  }
 
   async function registerAdEvent(id: number, eventType: "view" | "click") {
     try {
@@ -122,13 +160,71 @@ export default function AnnonsorPage() {
           </button>
         </div>
         <p className="mb-6 text-gray-600">
-          Her kan du administrere dine annonser. Funksjonen er begrenset til brukere med rollen <strong>annonsør</strong>.
+          Her kan du administrere dine annonser.
         </p>
+
+        <div className="mb-6 grid gap-3 lg:grid-cols-[1fr_260px] lg:items-end">
+          <div className="space-y-3">
+            <div className="grid gap-2 sm:grid-cols-4">
+              {[
+                { value: "all", label: "Alle annonser" },
+                { value: "active", label: "Aktive annonser" },
+                { value: "paused", label: "Inaktive annonser" },
+                { value: "ended", label: "Annonse historikk" },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setStatusFilter(option.value as typeof statusFilter)}
+                  className={`rounded-full border px-3 py-2 text-sm font-medium transition ${
+                    statusFilter === option.value
+                      ? "border-emerald-600 bg-emerald-600 text-white"
+                      : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-sm text-slate-500">Filtrer annonsene dine etter status for å finne kampanjer raskere.</p>
+          </div>
+          <div className="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
+            <label className="mb-2 block text-sm font-medium text-slate-700">Søk i annonser</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="search"
+                placeholder="Tittel, kategori eller søkeord"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                className="w-full rounded-2xl border border-slate-300 px-4 py-2 text-sm outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+              />
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="rounded-full border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-700 hover:bg-slate-200"
+              >
+                Nullstill
+              </button>
+            </div>
+          </div>
+        </div>
 
         {error && <p className="mb-4 rounded bg-red-50 px-4 py-2 text-red-700">{error}</p>}
 
         {loading ? (
-          <p>Laster annonser...</p>
+          <div className="grid gap-6 md:grid-cols-2">
+            {[1, 2, 3, 4].map((item) => (
+              <div key={item} className="animate-pulse rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="mb-4 h-6 w-3/4 rounded-full bg-slate-200" />
+                <div className="mb-4 h-48 rounded-3xl bg-slate-200" />
+                <div className="grid gap-2">
+                  <div className="h-10 rounded-2xl bg-slate-200" />
+                  <div className="h-10 rounded-2xl bg-slate-200" />
+                  <div className="h-10 rounded-2xl bg-slate-200" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : ads.length === 0 ? (
           <p>Ingen annonser er funnet.</p>
         ) : (
@@ -149,63 +245,75 @@ export default function AnnonsorPage() {
                   <p className="mt-2 text-3xl font-semibold text-slate-900">{totalClicks}</p>
                 </div>
               </div>
+              <p className="mt-4 text-sm text-slate-500">Viser {filteredAds.length} annonser etter gjeldende filter.</p>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
-              {ads.map((ad) => (
-                <article key={ad.id} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                  <div className="mb-4 flex items-start justify-between gap-3">
-                    <div>
-                      <h2 className="text-xl font-semibold text-slate-900">{ad.tittel}</h2>
-                      <p className="text-sm text-slate-500">
-                        {ad.kategori || "Uten kategori"}
-                        {ad.keywords ? ` • ${ad.keywords}` : ""}
-                      </p>
+              {filteredAds.length === 0 ? (
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm text-slate-600">
+                  Ingen annonser matcher søk eller filter. Prøv et annet søk eller nullstill filteret.
+                </div>
+              ) : (
+                filteredAds.map((ad) => (
+                  <article key={ad.id} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                    <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h2 className="text-xl font-semibold text-slate-900">{ad.tittel}</h2>
+                        <p className="text-sm text-slate-500">
+                          {ad.kategori || "Uten kategori"}
+                          {ad.keywords ? ` • ${ad.keywords}` : ""}
+                        </p>
+                      </div>
+                      <span className={`rounded-full px-3 py-1 text-sm font-medium ${getStatusBadgeClasses(ad.status)}`}>
+                        {ad.status || "Ukjent"}
+                      </span>
                     </div>
-                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">{ad.status}</span>
-                  </div>
 
-                  {ad.bilde_url ? (
-                    <img
-                      src={ad.bilde_url}
-                      alt={ad.tittel}
-                      className="mb-4 h-40 w-full rounded-3xl object-cover"
-                    />
-                  ) : null}
+                    {ad.bilde_url ? (
+                      <img
+                        src={ad.bilde_url}
+                        alt={ad.tittel}
+                        className="mb-4 h-40 w-full rounded-3xl object-cover"
+                      />
+                    ) : null}
 
-                  <p className="mb-4 text-slate-700">{ad.beskrivelse ?? "Ingen beskrivelse"}</p>
+                    <p className="mb-4 text-slate-700">{ad.beskrivelse ?? "Ingen beskrivelse"}</p>
 
-                  <div className="grid gap-2 text-sm text-slate-600 md:grid-cols-2">
-                    <span className="rounded-2xl bg-slate-50 px-3 py-2">Type: {ad.annonsetype || "–"}</span>
-                    <span className="rounded-2xl bg-slate-50 px-3 py-2">Pris/visning: {ad.pris_per_visning}</span>
-                    <span className="rounded-2xl bg-slate-50 px-3 py-2">Pris/klikk: {ad.pris_per_klikk}</span>
-                    <span className="rounded-2xl bg-slate-50 px-3 py-2">Dagsbudsjett: {ad.daily_budget} kr</span>
-                    <span className="rounded-2xl bg-slate-50 px-3 py-2">Brukt i dag: {ad.budget_spent} kr</span>
-                    <span className="rounded-2xl bg-slate-50 px-3 py-2">Visninger: {ad.visninger}</span>
-                    <span className="rounded-2xl bg-slate-50 px-3 py-2">Klikk: {ad.klikk}</span>
-                    <span className="rounded-2xl bg-slate-50 px-3 py-2 md:col-span-2">Periode: {ad.start_at ? new Date(ad.start_at).toLocaleDateString("no-NO") : "-"} – {ad.end_at ? new Date(ad.end_at).toLocaleDateString("no-NO") : "-"}</span>
-                  </div>
+                    <div className="grid gap-2 text-sm text-slate-600 md:grid-cols-2">
+                      <span className="rounded-2xl bg-slate-50 px-3 py-2">Type: {ad.annonsetype || "–"}</span>
+                      <span className="rounded-2xl bg-slate-50 px-3 py-2">Pris/visning: {ad.pris_per_visning}</span>
+                      <span className="rounded-2xl bg-slate-50 px-3 py-2">Pris/klikk: {ad.pris_per_klikk}</span>
+                      <span className="rounded-2xl bg-slate-50 px-3 py-2">Dagsbudsjett: {ad.daily_budget} kr</span>
+                      <span className="rounded-2xl bg-slate-50 px-3 py-2">Brukt i dag: {ad.budget_spent} kr</span>
+                      <span className="rounded-2xl bg-slate-50 px-3 py-2">Visninger: {ad.visninger}</span>
+                      <span className="rounded-2xl bg-slate-50 px-3 py-2">Klikk: {ad.klikk}</span>
+                      <span className="rounded-2xl bg-slate-50 px-3 py-2 md:col-span-2">Periode: {ad.start_at ? new Date(ad.start_at).toLocaleDateString("no-NO") : "-"} – {ad.end_at ? new Date(ad.end_at).toLocaleDateString("no-NO") : "-"}</span>
+                    </div>
 
-                  <div className="mt-5 flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      onClick={() => registerAdEvent(ad.id, "view")}
-                      className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
-                    >
-                      Registrer visning
-                    </button>
-                    {ad.lenke_url ? (
+                    <div className="mt-5 flex flex-wrap gap-3">
                       <button
                         type="button"
-                        onClick={() => handleLinkClick(ad)}
-                        className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                        onClick={() => registerAdEvent(ad.id, "view")}
+                        className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
                       >
-                        Åpne annonse
+                        Registrer visning
                       </button>
-                    ) : null}
-                  </div>
-                </article>
-              ))}
+                      {ad.lenke_url ? (
+                        <button
+                          type="button"
+                          onClick={() => handleLinkClick(ad)}
+                          className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                        >
+                          Åpne annonse
+                        </button>
+                      ) : null}
+                      <span className="ml-auto rounded-full bg-slate-100 px-3 py-2 text-sm text-slate-700">
+                        Budsjett brukt: {ad.budget_spent} kr
+                      </span>
+                    </div>
+                  </article>
+                ))
+              )}
             </div>
           </>
         )}

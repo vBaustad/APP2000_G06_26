@@ -17,7 +17,7 @@ export default function CreateAnnonsorPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [lenkeUrl, setLenkeUrl] = useState("");
   const [kategori, setKategori] = useState("turutstyr");
-  const keywordOptions = ["Turutstyr", "Turmat", "Hytte", "turtips", "friluftsliv"];
+  const keywordOptions = ["Turutstyr", "Turmat", "Hytte", "Turtips", "Friluftsliv"];
   const [keywords, setKeywords] = useState<string[]>(["Turutstyr"]);
   const [annonseType, setAnnonseType] = useState("standard");
   const [startAt, setStartAt] = useState("");
