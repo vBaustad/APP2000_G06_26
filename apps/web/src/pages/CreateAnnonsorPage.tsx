@@ -4,16 +4,21 @@
  * Utvikler(e): Synne Nilsen Oppberget
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext";
 
 export default function CreateAnnonsorPage() {
+  const { token } = useAuth();
   const [tittel, setTittel] = useState("");
   const [beskrivelse, setBeskrivelse] = useState("");
   const [bildeUrl, setBildeUrl] = useState("");
+  const [bildeFile, setBildeFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [lenkeUrl, setLenkeUrl] = useState("");
-  const [kategori, setKategori] = useState("Turutstyr");
+  const [kategori, setKategori] = useState("turutstyr");
   const keywordOptions = ["Turutstyr", "Turmat", "Hytte", "turtips", "friluftsliv"];
-  const [keywords, setKeywords] = useState<string[]>(["turutstyr"]);
+  const [keywords, setKeywords] = useState<string[]>(["Turutstyr"]);
   const [annonseType, setAnnonseType] = useState("standard");
   const [startAt, setStartAt] = useState("");
   const [endAt, setEndAt] = useState("");
@@ -63,9 +68,12 @@ export default function CreateAnnonsorPage() {
     setTittel("");
     setBeskrivelse("");
     setBildeUrl("");
+    setBildeFile(null);
+    setPreviewUrl(null);
+    setUploadError(null);
     setLenkeUrl("");
     setKategori("turutstyr");
-    setKeywords(["turutstyr"]);
+    setKeywords(["Turutstyr"]);
     setAnnonseType("standard");
     setStartAt("");
     setEndAt("");
@@ -75,6 +83,43 @@ export default function CreateAnnonsorPage() {
     setError(null);
     setSubmitted(false);
   }
+
+  function handleBildeChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+    if (!file) {
+      setBildeFile(null);
+      setPreviewUrl(null);
+      setBildeUrl("");
+      setUploadError(null);
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setUploadError("Velg et bilde (jpg, png eller lignende).");
+      return;
+    }
+
+    setBildeFile(file);
+    setUploadError(null);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result === "string") {
+        setPreviewUrl(result);
+        setBildeUrl(result);
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -86,10 +131,18 @@ export default function CreateAnnonsorPage() {
       return;
     }
 
+    if (bildeFile && !bildeUrl) {
+      setError("Vennligst vent på at bildet lastes opp før du sender inn annonsen.");
+      return;
+    }
+
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/annonser`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           tittel,
           beskrivelse: beskrivelse || null,
@@ -118,7 +171,7 @@ export default function CreateAnnonsorPage() {
       setBildeUrl("");
       setLenkeUrl("");
       setKategori("turutstyr");
-      setKeywords(["turutstyr"]);
+      setKeywords(["Turutstyr"]);
       setAnnonseType("standard");
       setStartAt("");
       setEndAt("");
@@ -155,184 +208,238 @@ export default function CreateAnnonsorPage() {
 
             <div className="grid gap-8 lg:grid-cols-[1.7fr_0.95fr]">
               <div className="space-y-6">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-800">
-                    Tittel
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Annonsetittel"
-                    value={tittel}
-                    onChange={(event) => setTittel(event.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-800">
-                    Beskrivelse
-                  </label>
-                  <textarea
-                    rows={4}
-                    placeholder="Annonsetekst"
-                    value={beskrivelse}
-                    onChange={(event) => setBeskrivelse(event.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-800">
-                    Bilde-URL
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="https://dittdomene.no/bilde.jpg"
-                    value={bildeUrl}
-                    onChange={(event) => setBildeUrl(event.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-800">
-                    Link til hjemmeside
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://din-hjemmeside.no"
-                    value={lenkeUrl}
-                    onChange={(event) => setLenkeUrl(event.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-800">
-                    Kategori
-                  </label>
-                  <select
-                    value={kategori}
-                    onChange={(event) => setKategori(event.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                  >
-                    <option value="turutstyr">Turutstyr</option>
-                    <option value="turmat">Turmat</option>
-                    <option value="hytte">Hytte</option>
-                    <option value="turtips">Turtips</option>
-                    <option value="friluftsliv">Friluftsliv</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-800">
-                    Søkeord / kategorier
-                  </label>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {keywordOptions.map((keyword) => {
-                      const active = keywords.includes(keyword);
-                      return (
-                        <button
-                          key={keyword}
-                          type="button"
-                          onClick={() => toggleKeyword(keyword)}
-                          className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${
-                            active
-                              ? "border-emerald-600 bg-emerald-50 text-emerald-900"
-                              : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
-                          }`}
-                        >
-                          {keyword}
-                        </button>
-                      );
-                    })}
+                <section className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
+                  <div className="mb-4">
+                    <h2 className="text-xl font-semibold text-slate-900">Annonseinfo</h2>
+                    <p className="mt-1 text-sm text-slate-500">Skriv inn tittel, beskrivelse og last opp bilde for annonsen.</p>
                   </div>
-                  <p className="mt-2 text-xs text-slate-500">Velg søkeord og kategorier som skal knyttes til annonsen.</p>
-                </div>
+                  <div className="space-y-6">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-800">
+                        Tittel
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Annonsetittel"
+                        value={tittel}
+                        onChange={(event) => setTittel(event.target.value)}
+                        className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-800">
+                        Beskrivelse
+                      </label>
+                      <textarea
+                        rows={4}
+                        placeholder="Annonsetekst"
+                        value={beskrivelse}
+                        onChange={(event) => setBeskrivelse(event.target.value)}
+                        className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-800">
+                        Last opp bilde
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBildeChange}
+                        className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition file:cursor-pointer file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-700 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                      />
+                      {uploadError && (
+                        <p className="mt-2 text-sm text-red-600">{uploadError}</p>
+                      )}
+                      {previewUrl && (
+                        <img
+                          src={previewUrl}
+                          alt="Preview av annonsebildet"
+                          className="mt-3 h-40 w-full rounded-2xl object-cover border border-slate-200"
+                        />
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-800">
+                        Link til hjemmeside
+                      </label>
+                      <input
+                        type="url"
+                        placeholder="https://din-hjemmeside.no"
+                        value={lenkeUrl}
+                        onChange={(event) => setLenkeUrl(event.target.value)}
+                        className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                <section className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
+                  <div className="mb-4">
+                    <h2 className="text-xl font-semibold text-slate-900">Målretting</h2>
+                    <p className="mt-1 text-sm text-slate-500">Velg riktig kategori, relevante søkeord og kampanjeperiode.</p>
+                  </div>
+                  <div className="space-y-6">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-800">
+                        Kategori
+                      </label>
+                      <select
+                        value={kategori}
+                        onChange={(event) => setKategori(event.target.value)}
+                        className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                      >
+                        <option value="turutstyr">Turutstyr</option>
+                        <option value="turmat">Turmat</option>
+                        <option value="hytte">Hytte</option>
+                        <option value="turtips">Turtips</option>
+                        <option value="friluftsliv">Friluftsliv</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-800">
+                        Søkeord / kategorier
+                      </label>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {keywordOptions.map((keyword) => {
+                          const active = keywords.includes(keyword);
+                          return (
+                            <button
+                              key={keyword}
+                              type="button"
+                              onClick={() => toggleKeyword(keyword)}
+                              className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${
+                                active
+                                  ? "border-emerald-600 bg-emerald-50 text-emerald-900"
+                                  : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
+                              }`}
+                            >
+                              {keyword}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="mt-2 text-xs text-slate-500">Velg søkeord og kategorier som skal knyttes til annonsen.</p>
+                    </div>
+
+                    <div className="grid gap-6 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-slate-800">
+                          Startdato
+                        </label>
+                        <input
+                          type="date"
+                          value={startAt}
+                          onChange={(event) => setStartAt(event.target.value)}
+                          className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-slate-800">
+                          Sluttdato
+                        </label>
+                        <input
+                          type="date"
+                          value={endAt}
+                          onChange={(event) => setEndAt(event.target.value)}
+                          className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </section>
               </div>
 
-              <aside className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
-                <h2 className="mb-4 text-xl font-semibold text-slate-900">Annonsevalg</h2>
-                <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-4">
-                  <label className="mb-2 block text-sm font-medium text-slate-800">
-                    Annonsetype
-                  </label>
-                  <select
-                    value={annonseType}
-                    onChange={(event) => setAnnonseType(event.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                  >
-                    <option value="basic">Basic</option>
-                    <option value="standard">Standard</option>
-                    <option value="premium">Premium</option>
-                  </select>
-                  <p className="mt-2 text-xs text-gray-500">Velg et budsjettnivå som gir synlighet og foreslåtte priser.</p>
-                </div>
-
-                <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-4">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">Anbefalt</p>
-                      <p className="text-xs text-slate-500">{selectedPlan.description}</p>
+              <aside className="space-y-6">
+                <section className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
+                  <h2 className="mb-4 text-xl font-semibold text-slate-900">Budsjett & annonsevalg</h2>
+                  <div className="space-y-6">
+                    <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                      <label className="mb-2 block text-sm font-medium text-slate-800">
+                        Annonsetype
+                      </label>
+                      <select
+                        value={annonseType}
+                        onChange={(event) => setAnnonseType(event.target.value)}
+                        className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                      >
+                        <option value="basic">Basic</option>
+                        <option value="standard">Standard</option>
+                        <option value="premium">Premium</option>
+                      </select>
+                      <p className="mt-2 text-xs text-gray-500">Velg et budsjettnivå som gir synlighet og foreslåtte priser.</p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={applyPlanRecommendation}
-                      className="rounded-full bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
-                    >
-                      Bruk forslag
-                    </button>
+
+                    <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">Anbefalt</p>
+                          <p className="text-xs text-slate-500">{selectedPlan.description}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={applyPlanRecommendation}
+                          className="rounded-full bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
+                        >
+                          Bruk forslag
+                        </button>
+                      </div>
+                      <div className="grid gap-3">
+                        <div className="rounded-3xl bg-slate-50 p-3">
+                          <p className="text-xs text-slate-500">Forslag pris per klikk</p>
+                          <p className="mt-1 text-lg font-semibold text-slate-900">{selectedPlan.clickPrice} kr</p>
+                        </div>
+                        <div className="rounded-3xl bg-slate-50 p-3">
+                          <p className="text-xs text-slate-500">Forslag daglig budsjett</p>
+                          <p className="mt-1 text-lg font-semibold text-slate-900">{selectedPlan.dailyBudget} kr</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                      <label className="mb-2 block text-sm font-medium text-slate-800">
+                        Daglig budsjett
+                      </label>
+                      <input
+                        type="number"
+                        placeholder="300"
+                        value={dailyBudget}
+                        onChange={(event) => setDailyBudget(event.target.value)}
+                        className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+
+                    <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                      <label className="mb-2 block text-sm font-medium text-slate-800">
+                        Pris per visning
+                      </label>
+                      <input
+                        type="number"
+                        placeholder="0"
+                        value={prisPerVisning}
+                        onChange={(event) => setPrisPerVisning(event.target.value)}
+                        className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+
+                    <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                      <label className="mb-2 block text-sm font-medium text-slate-800">
+                        Pris per klikk
+                      </label>
+                      <input
+                        type="number"
+                        placeholder="5"
+                        value={prisPerKlikk}
+                        onChange={(event) => setPrisPerKlikk(event.target.value)}
+                        className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
                   </div>
-                  <div className="grid gap-3">
-                    <div className="rounded-3xl bg-slate-50 p-3">
-                      <p className="text-xs text-slate-500">Forslag pris per klikk</p>
-                      <p className="mt-1 text-lg font-semibold text-slate-900">{selectedPlan.clickPrice} kr</p>
-                    </div>
-                    <div className="rounded-3xl bg-slate-50 p-3">
-                      <p className="text-xs text-slate-500">Forslag daglig budsjett</p>
-                      <p className="mt-1 text-lg font-semibold text-slate-900">{selectedPlan.dailyBudget} kr</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-4">
-                  <label className="mb-2 block text-sm font-medium text-slate-800">
-                    Daglig budsjett
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="300"
-                    value={dailyBudget}
-                    onChange={(event) => setDailyBudget(event.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
-
-                <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-4">
-                  <label className="mb-2 block text-sm font-medium text-slate-800">
-                    Pris per visning
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="0"
-                    value={prisPerVisning}
-                    onChange={(event) => setPrisPerVisning(event.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
-
-                <div className="rounded-3xl border border-slate-200 bg-white p-4">
-                  <label className="mb-2 block text-sm font-medium text-slate-800">
-                    Pris per klikk
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="5"
-                    value={prisPerKlikk}
-                    onChange={(event) => setPrisPerKlikk(event.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
+                </section>
               </aside>
             </div>
 
@@ -340,7 +447,7 @@ export default function CreateAnnonsorPage() {
               <button
                 type="button"
                 onClick={resetFormFields}
-                className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                className="rounded-full bg-slate-200 px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-300"
               >
                 Slett innhold
               </button>
@@ -349,12 +456,6 @@ export default function CreateAnnonsorPage() {
                 className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
               >
                 Send inn
-              </button>
-              <button
-                type="submit"
-                className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
-              >
-                Lagre annonse
               </button>
             </div>
 
