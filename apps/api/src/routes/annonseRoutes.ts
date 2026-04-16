@@ -20,7 +20,7 @@ async function getCurrentAnnonsor(req: AuthedRequest) {
     data: {
       navn: email.split("@")[0],
       epost: email,
-      status: "active",
+      status: "pending",
     },
   });
 }
@@ -75,7 +75,11 @@ annonseRouter.post(
     if (!annonsor) {
       return res.status(404).json({ error: "Annonsørprofil ikke funnet" });
     }
-
+    if(annonsor.status !== "approved"){
+      return res.status(403).json({
+        error: "Annonsørprofilen din venter på godkjenning fra admin. Du kan opprette annonser når du er godkjent"
+      });
+    } 
     const {
       tittel,
       beskrivelse,
@@ -129,7 +133,7 @@ annonseRouter.put(
       return res.status(404).json({ error: "Annonsørprofil ikke funnet" });
     }
 
-    const existing = (await prisma.annonse.findUnique({ where: { id } })) as any;
+    const existing = await prisma.annonse.findUnique({ where: { id } });
     if (!existing || existing.annonsor_id !== annonsor.id) {
       return res.status(404).json({ error: "Annonse ikke funnet" });
     }
@@ -186,7 +190,7 @@ annonseRouter.post("/:id/view", async (req, res) => {
 // Public: register annonse-klikk
 annonseRouter.post("/:id/click", async (req, res) => {
   const id = Number(req.params.id);
-  const existing = (await prisma.annonse.findUnique({ where: { id } })) as any;
+  const existing = await prisma.annonse.findUnique({ where: { id } });
   if (!existing) {
     return res.status(404).json({ error: "Annonse ikke funnet" });
   }
@@ -200,7 +204,7 @@ annonseRouter.post("/:id/click", async (req, res) => {
   }
 
   const nextSpend = Number(existing.budget_spent) + Number(existing.pris_per_klikk || 0);
-  if (existing.daily_budget > 0 && nextSpend > Number(existing.daily_budget)) {
+  if (Number(existing.daily_budget) > 0 && nextSpend > Number(existing.daily_budget)) {
     const updated = await prisma.annonse.update({
       where: { id },
       data: { status: "budget_exhausted" },

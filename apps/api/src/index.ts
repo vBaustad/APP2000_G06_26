@@ -12,7 +12,8 @@ import { hytteRouter } from "./routes/hytteRoutes";
 import { turRouter } from "./routes/turRoutes";
 import { annonseRouter } from "./routes/annonseRoutes";
 import { rolleRouter } from "./routes/rolleRoutes";
-import { userRouter } from "./routes/userRoutes"; // Din nye rute
+import { userRouter } from "./routes/userRoutes"; 
+import { adminRouter } from "./routes/adminRoutes";
 
 const app = express();
 
@@ -20,14 +21,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// API-ruter (Kun én definisjon per rute)
+// API-ruter
 app.use('/api/auth', authRouter);
 app.use("/api/hytter", hytteRouter);
 app.use("/api/annonser", annonseRouter);
 app.use("/api/roller", rolleRouter);
 
 app.use("/api/turer", turRouter);
-app.use("/api/bruker", userRouter); // Din rute for profil/min side
+app.use("/api/bruker", userRouter);
+app.use("/api/admin", adminRouter);
 
 // Helsesjekk
 app.get('/', (req, res) => {

@@ -29,11 +29,11 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
     ? "absolute top-8 left-0 z-[9999] w-full bg-gradient-to-b from-black/40 to-transparent text-white"
     : "relative z-[9999] w-full border-b border-gray-200 bg-white/95 text-gray-900 shadow-sm backdrop-blur";
 
-  const navClass = "mx-auto flex max-w-7xl items-center justify-between px-6 py-4";
+  const navClass = "mx-auto flex max-w-7xl items-center justify-between px-6 py-2";
 
   const logoClass = isTransparent
-    ? "h-16 w-auto object-contain md:h-20 brightness-0 invert drop-shadow-[0_3px_8px_rgba(0,0,0,0.7)]"
-    : "h-16 w-auto object-contain md:h-20";
+    ? "h-16 w-auto object-contain brightness-0 invert drop-shadow-[0_3px_8px_rgba(0,0,0,0.7)]"
+    : "h-16 w-auto object-contain";
 
   const linkBase = "transition font-medium";
   const linkClass = ({ isActive }: { isActive: boolean }) => {
