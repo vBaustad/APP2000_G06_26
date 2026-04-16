@@ -89,15 +89,20 @@ export default function MyPage() {
           </div>
         </div>
 
-        {/* Favoritter - Her henter vi navn via tursti-relasjonen */}
+        {/*Henter favoritter — hver favoritt peker enten på en tur eller en hytte*/}
         <div className="mb-6">
           <h2 className="text-2xl font-semibold mb-4">Favoritter</h2>
           <ul className="flex flex-wrap gap-2">
-            {user.favoritt?.map((fav: any) => (
-              <li key={fav.tursti_id} className="bg-emerald-100 text-emerald-800 px-4 py-2 rounded-full font-medium">
-                {fav.tursti.navn}
-              </li>
-            ))}
+
+                {user.favoritt?.map((fav: any) => {
+                  const navn = fav.tur?.tittel ?? fav.hytte?.navn ?? "Ukjent favoritt";
+                  const type = fav.tur ? "Tur" : "Hytte";
+                  return(
+                    <li key={fav.id} className="bg-emerald-100 text-emerald-800 px-4 py-2 rounded-full font-medium">
+                      {navn} <span className="text-xs opacity-70">({type})</span>
+                    </li>
+                  );
+                })}
             {user.favoritt?.length === 0 && <p className="text-gray-500">Ingen favoritter ennå.</p>}
           </ul>
         </div>

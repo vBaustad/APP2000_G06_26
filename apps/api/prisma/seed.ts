@@ -130,16 +130,20 @@ const turstier: TurstiSeed[] = [
 async function main() {
   await migrerPlaintextPassord();
 
-  await prisma.rolle.upsert({
-    where: { kode: 'annonsor' },
-    update: {},
-    create: {
-      kode: 'annonsor',
-      navn: 'Annonsør',
-      beskrivelse:
-        'Kan opprette og administrere annonser i annonseportalen.',
-    },
-  });
+  const roller = [
+    { kode: 'admin', navn: 'Administrator', beskrivelse: 'Redaktør med full tilgang.' },
+    { kode: 'bruker', navn: 'Bruker', beskrivelse: 'Vanlig innlogget bruker.' },
+    { kode: 'hytteeier', navn: 'Hytteeier', beskrivelse: 'Eier én eller flere hytter.' },
+    { kode: 'annonsor', navn: 'Annonsør', beskrivelse: 'Kan opprette og administrere annonser i annonseportalen.' },
+  ];
+
+  for (const r of roller) {
+    await prisma.rolle.upsert({
+      where: { kode: r.kode },
+      update: {},
+      create: r,
+    });
+  }
 
   await sikreTestbrukere();
 
