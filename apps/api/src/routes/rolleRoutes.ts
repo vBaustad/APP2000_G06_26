@@ -56,7 +56,6 @@ rolleRouter.post("/apply", requireAuth, async (req, res) => {
         where: { id: existingAnnonsor.id },
         data: {
           navn: email.split("@")[0],
-          status: "active",
         },
       });
     } else {
@@ -64,7 +63,6 @@ rolleRouter.post("/apply", requireAuth, async (req, res) => {
         data: {
           navn: email.split("@")[0],
           epost: email,
-          status: "active",
         },
       });
     }
