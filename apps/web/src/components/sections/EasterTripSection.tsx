@@ -9,51 +9,19 @@
 
 import { Link } from "react-router-dom";
 import { ArrowRight, Clock3, Route as RouteIcon, SunMedium } from "lucide-react";
+import type { Tour } from "../../utils/mockTours";
 
-type EasterTrip = {
-  id: number;
-  title: string;
-  description: string;
-  duration: string;
-  distance: string;
-  difficulty: string;
-  to: string;
+type EasterTripsSectionProps = {
+  tours: Tour[];
 };
 
-const easterTrips: EasterTrip[] = [
-  {
-    id: 1,
-    title: "Rundtur ved Eventyrvannet",
-    description:
-      "En klassiker med flott utsikt. Passer godt for turfolk med vinterutstyr og erfaring fra variert terreng.",
-    duration: "5 timer",
-    distance: "12 km",
-    difficulty: "Middels",
-    to: "/explore",
-  },
-  {
-    id: 2,
-    title: "Fra Solbu til Stormbu",
-    description:
-      "Variert rute med gode muligheter for skitur i påskesol og fine stopp underveis.",
-    duration: "6 timer",
-    distance: "14 km",
-    difficulty: "Middels",
-    to: "/explore",
-  },
-  {
-    id: 3,
-    title: "Solstien ved Rjukan",
-    description:
-      "En lettere tur med panoramautsikt og historiske stoppesteder, egnet for familie og roligere tempo.",
-    duration: "2.5 timer",
-    distance: "6 km",
-    difficulty: "Lett",
-    to: "/explore",
-  },
-];
+export default function EasterTripsSection({ tours }: EasterTripsSectionProps) {
+  const easterTrips = tours.slice(0, 3);
 
-export default function EasterTripsSection() {
+  if (easterTrips.length === 0) {
+    return null;
+  }
+
   return (
     <section className="py-4">
       <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -98,16 +66,18 @@ export default function EasterTripsSection() {
               {trip.title}
             </h3>
 
-            <p className="mb-5 leading-7 text-slate-700">{trip.description}</p>
+            <p className="mb-5 leading-7 text-slate-700">
+              {trip.description || "Se turdetaljer for mer informasjon om denne turen."}
+            </p>
 
             <div className="mb-6 space-y-2 text-sm text-slate-600">
               <p className="inline-flex items-center gap-2">
                 <Clock3 className="h-4 w-4 text-[#8b5a10]" />
-                {trip.duration}
+                {trip.durationHours} timer
               </p>
               <p className="inline-flex items-center gap-2">
                 <RouteIcon className="h-4 w-4 text-[#8b5a10]" />
-                {trip.distance}
+                {trip.distanceKm} km
               </p>
               <p>
                 <span className="font-medium text-slate-800">Nivå:</span>{" "}
@@ -117,7 +87,7 @@ export default function EasterTripsSection() {
 
             <div className="mt-auto border-t border-amber-100 pt-4">
               <Link
-                to={trip.to}
+                to={`/tours/${trip.id}`}
                 className="inline-flex items-center gap-2 font-semibold text-[#8b5a10] hover:underline"
               >
                 Se tur
