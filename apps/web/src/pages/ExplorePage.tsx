@@ -1,4 +1,3 @@
-
 /**
  * Fil: ExplorePage.tsx
  * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu.
@@ -10,7 +9,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import TourForm from "../components/TourForm";
 import { getTours } from "../services/toursApi";
-import { mockTours } from "../utils/mockTours";
 import type { Tour, Region } from "../utils/mockTours";
 import {
   Pencil,
@@ -276,13 +274,13 @@ export default function ExplorePage() {
     async function loadTours() {
       try {
         const data = await getTours();
-        const source = Array.isArray(data) && data.length > 0 ? data : mockTours;
         if (isMounted) {
-          setAllTours(source.map(ensureTourImage));
+          setAllTours(Array.isArray(data) ? data.map(ensureTourImage) : []);
         }
-      } catch {
+      } catch (error) {
+        console.error("Kunne ikke hente turer fra API:", error);
         if (isMounted) {
-          setAllTours(mockTours.map(ensureTourImage));
+          setAllTours([]);
         }
       }
     }
