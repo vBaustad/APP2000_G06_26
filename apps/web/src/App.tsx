@@ -24,6 +24,7 @@ import CreateAnnonsorPage from "./pages/CreateAnnonsorPage";
 import FlexibleTripDetailsPage from "./pages/FlexibleTripDetailsPage";
 import FastGroupTripDetailsPage from "./pages/FastGroupTripDetailsPage";
 import AnnonsorPage from "./pages/annonsor";
+import LoggedOutPage from "./pages/LoggedOutPage";
 
 
 
@@ -48,6 +49,7 @@ export default function App() {
           <Route path="/flexible-trip-demo" element={<FlexibleTripDetailsPage />} />
           <Route path="/fast-group-trip-demo" element={<FastGroupTripDetailsPage />} />
           <Route path="/annonsor" element={<AnnonsorPage />} />
+          <Route path="/logged-out" element={<LoggedOutPage />} />
 
         </Route>
 

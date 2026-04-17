@@ -6,7 +6,7 @@
  */
 
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom"; 
 import { useAuth } from "../context/AuthContext";
 
 type NavbarVariant = "transparent" | "solid";
@@ -14,7 +14,7 @@ type NavbarProps = { variant?: NavbarVariant };
 
 export default function Navbar({ variant = "solid" }: NavbarProps) {
   const isTransparent = variant === "transparent";
-
+    const navigate = useNavigate(); 
   const { user, logout } = useAuth();
   const isLoggedIn = !!user;
   const isHytteeier = user?.roller?.includes("hytteeier");
@@ -144,6 +144,7 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
                       onClick={() => {
                         setProfileOpen(false);
                         logout();
+                          navigate("/logged-out"); 
                       }}
                       className="mt-1 block w-full rounded-lg px-3 py-2 text-left text-red-600 hover:bg-red-50"
                     >
