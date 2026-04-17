@@ -7,13 +7,11 @@
  * er begrenset til innloggede brukere med admin-rolle.
  *
  * Videreutviklet av: Ramona Cretulescu
- * Endringer:
  * - Justert GET-ruten for henting av turer slik at den returnerer et kontrollert
- *   utvalg felter fra databasen i stedet for å hente alt ukritisk.
- * - Lagt inn tydeligere feillogging i GET /api/turer for enklere feilsøking ved
- *   kobling mellom frontend, API og database.
- * - Tilpasset ruten som første steg i overgang fra mock-data til ekte turdata
- *   fra databasen i frontend.
+ *   utvalg felter fra databasen.
+ * - Inkludert type og koblede turstier i GET /api/turer slik at frontend kan
+ *   vise turtype, samlet distanse og høydemeter riktig.
+ * - Lagt inn tydeligere feillogging i API-rutene.
  */
 
 import { Router, Request, Response } from "express";
@@ -31,6 +29,7 @@ turRouter.get("/", async (_req, res) => {
         id: true,
         tittel: true,
         beskrivelse: true,
+        type: true,
         vanskelighetsgrad: true,
         varighet_timer: true,
         omrade: true,
@@ -41,6 +40,21 @@ turRouter.get("/", async (_req, res) => {
         leder_bruker_id: true,
         created_at: true,
         updated_at: true,
+        tur_tursti: {
+          select: {
+            rekkefolge: true,
+            tursti: {
+              select: {
+                id: true,
+                navn: true,
+                hoydemeter: true,
+                lengde_km: true,
+                omrade: true,
+              },
+            },
+          },
+          orderBy: { rekkefolge: "asc" },
+        },
       },
     });
 
