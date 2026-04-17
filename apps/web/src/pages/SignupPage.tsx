@@ -1,16 +1,19 @@
 /**
  * Fil: SignupPage.tsx
  * Utvikler(e): Vebjørn Baustad & Parasto Jamshidi
- * Beskrivelse: Fullstendig registreringsside koblet til MariaDB via API.
+ * Beskrivelse: Fullstendig registreringsside koblet til MariaDB via API med automatisk innlogging.
  */
 
 import React, { useState } from "react";
+// ENDRING 1: Lagt til useNavigate og useAuth (Viktig for å flytte brukeren og lagre status)
 import { useNavigate, NavLink } from "react-router-dom";
+import { useAuth } from "../context/AuthContext"; 
 
 export default function SignupPage() {
   const navigate = useNavigate();
+  // ENDRING 2: Henter login-funksjonen fra AuthContext
+  const { login } = useAuth(); 
 
-  // State for alle skjemafeltene
   const [formData, setFormData] = useState({
     fornavn: "",
     etternavn: "",
@@ -21,18 +24,17 @@ export default function SignupPage() {
 
   const [error, setError] = useState("");
 
-  // Funksjon som sender data til backenden (API)
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
 
-    // Sjekk at passordene er like
     if (formData.passord !== formData.bekreftPassord) {
       setError("Passordene er ikke like!");
       return;
     }
 
     try {
+      // STEG 1: Registrerer brukeren (som før)
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -47,17 +49,40 @@ export default function SignupPage() {
       const data = await response.json();
 
       if (response.ok) {
-        alert("Gratulerer! Du er nå registrert. Logg inn for å fortsette.");
-        navigate("/login");
+        // ENDRING 3: Istedenfor alert(), gjør vi nå en automatisk innlogging i bakgrunnen
+        
+        // Vi sender e-post og passord til login-apiet med en gang
+        const loginRes = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            epost: formData.epost,
+            passord: formData.passord,
+          }),
+        });
+
+        const loginData = await loginRes.json();
+
+        if (loginRes.ok && loginData.token) {
+          // Lagrer tokenet og oppdaterer "global status" (slik at Navbaren vet du er logget inn)
+          localStorage.setItem("token", loginData.token);
+          if (login) login(loginData.user, loginData.token);
+          
+          // Sender deg rett til profil-siden din!
+          navigate("/me"); 
+        } else {
+          // Backup: Hvis noe feiler med auto-innlogging, send dem til vanlig login-side
+          navigate("/login");
+        }
       } else {
         setError(data.error || "Noe gikk galt under registrering.");
       }
     } catch (err) {
-      setError("Kunne ikke koble til serveren. Sjekk at backenden kjører.");
+      setError("Kunne ikke koble til serveren.");
     }
   }
 
-  // CSS-klasser for styling
+  // Resten av koden (HTML/CSS) forblir nøyaktig som den var!
   const inputClass = "w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-emerald-500 transition";
   const buttonClass = "w-full rounded-lg bg-emerald-600 py-3 font-bold text-white hover:bg-emerald-700 transition shadow-md active:scale-95";
 
