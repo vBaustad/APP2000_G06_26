@@ -6,7 +6,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { mockTours, type Tour } from "../utils/mockTours";
+import { getTourById } from "../services/toursApi";
+import type { Tour } from "../utils/mockTours";
 import {
   MapPin,
   Route,
@@ -47,37 +48,6 @@ function ensureTourImage(t: Tour): Tour {
   const idx = hashStringToIndex((t as any).id ?? (t as any).title ?? "tour", TOUR_IMAGES.length);
   return { ...(t as any), imageUrl: TOUR_IMAGES[idx] } as Tour;
 }
-
-/**
- * Demo geo-db (kart). Keys må matche tour.id
- * Legg gjerne inn flere id-er etter hvert.
- */
-const TOUR_GEO: Record<
-  string,
-  { center: LatLng; season: string; roundTrip: string; typeText: string; protectedArea: boolean }
-> = {
-  t1: {
-    center: [60.39299, 5.32415],
-    season: "Hele året (best vår–høst)",
-    roundTrip: "Tur/retur samme vei",
-    typeText: "Fottur (fjell/utsikt)",
-    protectedArea: false,
-  },
-  t2: {
-    center: [59.9139, 10.7522],
-    season: "Vår–høst (fin også på vinter med brodder)",
-    roundTrip: "Rundtur (sløyfe)",
-    typeText: "By-nær skogstur",
-    protectedArea: false,
-  },
-  t3: {
-    center: [62.1015, 7.205],
-    season: "Sommer–tidlig høst",
-    roundTrip: "Tur/retur samme vei",
-    typeText: "Fjelltur (brattere parti)",
-    protectedArea: true,
-  },
-};
 
 type Review = {
   id: string;
@@ -136,45 +106,48 @@ function keySaved(tourId: string) {
 }
 
 function storyForTour(tour: Tour) {
-  const id = String((tour as any).id ?? "");
-
   const fallback =
-    "Dette er en tur som føles som klassisk Norge: tydelig sti, frisk luft og en utsikt som belønner deg for å gå rolig, jevnt og fornuftig. Ta pauser, drikk vann – og la fjellet få siste ordet.";
-
-  const byId: Record<string, string> = {
-    t1: "Fløibanen-området er som et gammelt, godt friluftsråd i praksis: du får høyde, skog og utsikt – uten at det blir sirkus. Hold et jevnt tempo, og du blir belønnet med by og fjord under deg. Dette er turen du kan gå mange ganger og likevel finne en ny liten detalj hver gang.",
-    t2: "Oslofjorden gjør det lett å være ute: lufta er mild, stiene er tydelige, og du kan gå med den deilige følelsen av at naturen ligger rett ved siden av hverdagen. Dette er en tur for deg som vil ha ro i hodet og fremdrift i beina – uten å måtte ‘prestere’ noe annet enn å møte opp.",
-    t3: "Geiranger og fjellene rundt er Norge på sitt mest dramatiske: bratte sider, dype daler, og utsikt som får folk til å bli stille. Her lønner det seg å være tradisjonell: gode sko, litt ekstra klær og respekt for været. Gjør du det enkelt og riktig, får du en tur som sitter i kroppen lenge etterpå.",
-  };
+    "Dette er en tur som gir en tydelig naturopplevelse med god progresjon underveis. Gå jevnt, ta pauser og bruk forholdene til din fordel.";
 
   const diff = (tour as any).difficulty;
   const region = (tour as any).region;
 
   const diffLine =
     diff === "Lett"
-      ? "Passer for en rolig dag, og for folk som liker tur uten drama."
+      ? "Passer for en rolig dag og for deg som vil ha en mer tilgjengelig tur."
       : diff === "Middels"
-      ? "Nok motbakke til at kaffepausen blir fortjent."
-      : diff === "Krevende"
-      ? "Brattere partier – her er det lurt å ta det kontrollert og ikke jage tempo."
-      : "Dette er en tur for sterke bein og god dømmekraft. Ingen skam i å snu.";
+        ? "Gir nok motbakke og lengde til at turen føles ordentlig, uten å bli for ekstrem."
+        : diff === "Krevende"
+          ? "Her bør du ha gode sko, litt erfaring og være forberedt på en mer fysisk tur."
+          : "Dette er en tur for sterke bein og god dømmekraft.";
 
   const regionLine =
     region === "Vestlandet"
-      ? "Vestlandet kan skifte vær fort – pakk som om fjellet ikke har lest værmeldingen."
+      ? "Vestlandet kan skifte vær fort, så det lønner seg å pakke for mer enn bare sol."
       : region === "Nord-Norge"
-      ? "Nord-Norge gir deg stor natur og store inntrykk. Ta med ekstra varme."
-      : region === "Østlandet"
-      ? "Østlandet er ofte stabilt, men undervurder aldri en våt sti i skog."
-      : region === "Trøndelag"
-      ? "Trøndelag er variert: småpartier som føles lette, før bakkene plutselig mener alvor."
-      : "Sørlandet er mer enn svaberg – fine stier og gode pauser underveis.";
+        ? "Nord-Norge gir store naturopplevelser, men krever også respekt for vær og avstander."
+        : region === "Østlandet"
+          ? "Østlandet gir ofte fine og stabile forhold, men våte stier og værskifter må fortsatt tas på alvor."
+          : region === "Trøndelag"
+            ? "Trøndelag byr ofte på variert terreng og turer som kan overraske underveis."
+            : "Sørlandet kan gi rolige og fine turer med gode stopp underveis.";
 
-  return `${byId[id] ?? fallback} ${diffLine} ${regionLine}`;
+  const typeLine =
+    (tour as any).type
+      ? `Turtypen er ${(tour as any).type.toLowerCase()}, så det er lurt å tilpasse tempo og utstyr deretter.`
+      : "Tilpass turen etter forholdene og formen din den dagen.";
+
+  return `${fallback} ${diffLine} ${regionLine} ${typeLine}`;
 }
 
-/** Prøv å hente lat/lng fra tour hvis dere har det i mockTours */
 function pickLatLngFromTour(tour: any): LatLng | null {
+  const center = tour?.mapCenter;
+  if (Array.isArray(center) && center.length === 2) {
+    const lat = Number(center[0]);
+    const lng = Number(center[1]);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) return [lat, lng];
+  }
+
   const lat = tour?.lat ?? tour?.latitude ?? tour?.coords?.lat ?? tour?.coordinates?.lat;
   const lng = tour?.lng ?? tour?.lon ?? tour?.longitude ?? tour?.coords?.lng ?? tour?.coordinates?.lng;
 
@@ -185,26 +158,17 @@ function pickLatLngFromTour(tour: any): LatLng | null {
 export default function TourDetailsPage() {
   const { id } = useParams();
 
-  const tour = useMemo(() => {
-    if (!id) return null;
-    const found = mockTours.find((x) => String((x as any).id) === String(id));
-    return found ? ensureTourImage(found) : null;
-  }, [id]);
+  const [tour, setTour] = useState<Tour | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const tid = String((tour as any)?.id ?? id ?? "");
-
-  const geo = useMemo(() => {
-    if (!tour) return undefined;
-    return TOUR_GEO[String((tour as any).id)];
-  }, [tour]);
 
   const mapCenter = useMemo<LatLng>(() => {
     if (!tour) return [60.472, 8.468];
     const fromTour = pickLatLngFromTour(tour as any);
     if (fromTour) return fromTour;
-    if (geo?.center) return geo.center;
     return [60.472, 8.468];
-  }, [tour, geo?.center]);
+  }, [tour]);
 
   const gear: string[] = useMemo(() => {
     if (!tour) return [];
@@ -213,7 +177,6 @@ export default function TourDetailsPage() {
   }, [tour]);
 
   const [saved, setSaved] = useState(false);
-
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewName, setReviewName] = useState("");
   const [reviewText, setReviewText] = useState("");
@@ -224,6 +187,40 @@ export default function TourDetailsPage() {
     const user = safeGet("user") || safeGet("auth_user");
     return Boolean(token || user);
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadTour() {
+      if (!id) {
+        if (isMounted) {
+          setTour(null);
+          setLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const data = await getTourById(id);
+        if (isMounted) {
+          setTour(ensureTourImage(data));
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("Kunne ikke hente turdetaljer fra API:", error);
+        if (isMounted) {
+          setTour(null);
+          setLoading(false);
+        }
+      }
+    }
+
+    loadTour();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
 
   useEffect(() => {
     if (!tour) return;
@@ -244,6 +241,18 @@ export default function TourDetailsPage() {
     const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
     return Math.round((sum / reviews.length) * 10) / 10;
   }, [reviews]);
+
+  if (loading) {
+    return (
+      <main className="min-h-[70vh] bg-gray-50">
+        <section className="mx-auto max-w-7xl px-6 py-10">
+          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow">
+            <p className="text-gray-600">Laster turdetaljer...</p>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   if (!tour) {
     return (
@@ -356,7 +365,6 @@ export default function TourDetailsPage() {
 
   return (
     <main className="bg-gray-50">
-      {/* HERO */}
       <section className="relative h-[38vh] min-h-[320px]">
         <img src={imageUrl} alt={(tour as any).title} className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-black/45" />
@@ -379,6 +387,12 @@ export default function TourDetailsPage() {
                 {(tour as any).region}
               </span>
 
+              {(tour as any).type && (
+                <span className="rounded-full bg-white/90 px-3 py-1 text-sm font-medium text-gray-900">
+                  {(tour as any).type}
+                </span>
+              )}
+
               {avgRating !== null && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-sm font-semibold text-gray-900">
                   <Star className="h-4 w-4" /> {avgRating}
@@ -396,9 +410,7 @@ export default function TourDetailsPage() {
         </div>
       </section>
 
-      {/* CONTENT */}
       <section className="mx-auto max-w-7xl px-6 py-10">
-        {/* TOP STATS */}
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
             <div>
@@ -435,9 +447,7 @@ export default function TourDetailsPage() {
           </div>
         </div>
 
-        {/* Om turen + kart */}
         <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Left */}
           <div className="lg:col-span-2">
             <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow">
               <h2 className="flex items-center gap-2 text-xl font-semibold">
@@ -459,7 +469,7 @@ export default function TourDetailsPage() {
                 <div className="flex items-center gap-3">
                   <Footprints className="h-5 w-5 text-emerald-700" />
                   <div>
-                    <div className="font-semibold">{geo?.typeText ?? "Fottur"}</div>
+                    <div className="font-semibold">{(tour as any).type || "Fottur"}</div>
                     <div className="text-sm text-gray-500">{(tour as any).difficulty}</div>
                   </div>
                 </div>
@@ -467,7 +477,7 @@ export default function TourDetailsPage() {
                 <div className="flex items-center gap-3">
                   <Repeat className="h-5 w-5 text-emerald-700" />
                   <div>
-                    <div className="font-semibold">{geo?.roundTrip ?? "Tur/retur samme vei"}</div>
+                    <div className="font-semibold">Tur basert på koblede turstier</div>
                     <div className="text-sm text-gray-500">Rute</div>
                   </div>
                 </div>
@@ -475,18 +485,18 @@ export default function TourDetailsPage() {
                 <div className="flex items-center gap-3">
                   <Calendar className="h-5 w-5 text-emerald-700" />
                   <div>
-                    <div className="font-semibold">{geo?.season ?? "Hele året (væravhengig)"}</div>
+                    <div className="font-semibold">Hele året (væravhengig)</div>
                     <div className="text-sm text-gray-500">Sesong</div>
                   </div>
                 </div>
               </div>
 
-              <p className="mt-6 leading-relaxed text-gray-700">{storyForTour(tour)}</p>
+              <p className="mt-6 leading-relaxed text-gray-700">
+                {(tour as any).description || storyForTour(tour)}
+              </p>
 
               <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
-                <div className="text-sm font-semibold text-emerald-900">
-                  {geo?.protectedArea ? "Denne turen går i vernede områder!" : "Turvett (klassisk og smart)"}
-                </div>
+                <div className="text-sm font-semibold text-emerald-900">Turvett (klassisk og smart)</div>
                 <p className="mt-1 text-sm text-emerald-900/80">
                   Hold deg på stien der det er mulig, vis hensyn, og ta med søppel hjem. Naturen er ikke en søppelbøtte.
                 </p>
@@ -514,7 +524,6 @@ export default function TourDetailsPage() {
             </div>
           </div>
 
-          {/* Right (Kart) */}
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-gray-900">Kart</h3>
@@ -541,18 +550,9 @@ export default function TourDetailsPage() {
             </div>
 
             <TurMap center={mapCenter} title={(tour as any).title} />
-
-            {!geo && (
-              <div className="mt-3 text-xs text-gray-500">
-                Demo: Denne turen bruker foreløpig standard kartinnstillinger. Legg inn turens id{" "}
-                (<span className="font-mono">{tid}</span>) i <span className="font-mono">TOUR_GEO</span> for mer
-                presis sesong-, rute- og typeinformasjon.
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Reviews */}
         <div className="mt-10 rounded-2xl border border-gray-100 bg-white p-6 shadow">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -562,7 +562,6 @@ export default function TourDetailsPage() {
             </div>
           </div>
 
-          {/* Skriv anmeldelse */}
           <div className="mt-6">
             <div className="text-sm font-semibold text-gray-900">Skriv en anmeldelse</div>
 
@@ -624,7 +623,6 @@ export default function TourDetailsPage() {
             )}
           </div>
 
-          {/* Hva andre sier */}
           <div className="mt-6 border-t border-gray-100 pt-6">
             <div className="text-sm font-semibold text-gray-900">Hva andre sier</div>
 
@@ -656,7 +654,6 @@ export default function TourDetailsPage() {
             )}
           </div>
 
-          {/* Actions */}
           <div className="mt-8 flex flex-col gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-xs text-gray-500">Lagret lokalt (demo) • Tur-ID: {tid}</div>
 

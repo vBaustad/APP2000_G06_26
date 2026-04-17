@@ -4,12 +4,22 @@
  * Beskrivelse: Henter turer fra backend-API og mapper dataene til formatet som brukes i frontend.
  */
 
+type ApiTurstiPunkt = {
+  rekkefolge: number;
+  lat?: string | number | null;
+  lng?: string | number | null;
+  hoyde_m?: number | null;
+};
+
 type ApiTursti = {
   id: number;
   navn: string;
+  beskrivelse?: string | null;
+  vanskelighetsgrad?: string | null;
   hoydemeter?: number | null;
   lengde_km?: string | number | null;
   omrade?: string | null;
+  tursti_punkt?: ApiTurstiPunkt[];
 };
 
 type ApiTurTursti = {
@@ -142,16 +152,20 @@ function getOverrideImage(title?: string | null, currentImage?: string | null) {
   return currentImage ?? "";
 }
 
-export async function getTours() {
-  const res = await fetch(`${import.meta.env.VITE_API_URL}/api/turer`);
+function getMapCenterFromTurstier(turstier?: ApiTurTursti[]) {
+  const firstPoint = turstier?.[0]?.tursti?.tursti_punkt?.[0];
+  if (!firstPoint) return null;
 
-  if (!res.ok) {
-    throw new Error("Kunne ikke hente turer fra API");
-  }
+  const lat = Number(firstPoint.lat);
+  const lng = Number(firstPoint.lng);
 
-  const data: ApiTour[] = await res.json();
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
 
-  return data.map((tour) => ({
+  return [lat, lng] as [number, number];
+}
+
+function mapTour(tour: ApiTour) {
+  return {
     id: String(tour.id),
     title: tour.tittel ?? "Ukjent tur",
     description: tour.beskrivelse ?? "",
@@ -164,5 +178,28 @@ export async function getTours() {
     durationHours: tour.varighet_timer ?? 0,
     gear: [],
     imageUrl: getOverrideImage(tour.tittel, tour.bilde_url),
-  }));
+    mapCenter: getMapCenterFromTurstier(tour.tur_tursti),
+  };
+}
+
+export async function getTours() {
+  const res = await fetch(`${import.meta.env.VITE_API_URL}/api/turer`);
+
+  if (!res.ok) {
+    throw new Error("Kunne ikke hente turer fra API");
+  }
+
+  const data: ApiTour[] = await res.json();
+  return data.map(mapTour);
+}
+
+export async function getTourById(id: string) {
+  const res = await fetch(`${import.meta.env.VITE_API_URL}/api/turer/${id}`);
+
+  if (!res.ok) {
+    throw new Error("Kunne ikke hente tur fra API");
+  }
+
+  const data: ApiTour = await res.json();
+  return mapTour(data);
 }
