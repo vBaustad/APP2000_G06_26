@@ -11,6 +11,7 @@
  *   utvalg felter fra databasen.
  * - Inkludert type og koblede turstier i GET /api/turer slik at frontend kan
  *   vise turtype, samlet distanse og høydemeter riktig.
+ * - Lagt til GET /api/turer/:id for detaljside med tursti- og kartdata.
  * - Lagt inn tydeligere feillogging i API-rutene.
  */
 
@@ -61,6 +62,72 @@ turRouter.get("/", async (_req, res) => {
     res.json(turer);
   } catch (error) {
     console.error("Feil i GET /api/turer:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// PUBLIC: Se én tur.
+turRouter.get("/:id", async (req, res) => {
+  const id = Number(req.params.id);
+
+  if (isNaN(id)) {
+    return res.status(400).json({ error: "Invalid id" });
+  }
+
+  try {
+    const tur = await prisma.tur.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        tittel: true,
+        beskrivelse: true,
+        type: true,
+        vanskelighetsgrad: true,
+        varighet_timer: true,
+        omrade: true,
+        bilde_url: true,
+        min_deltakere: true,
+        max_deltakere: true,
+        status: true,
+        leder_bruker_id: true,
+        created_at: true,
+        updated_at: true,
+        tur_tursti: {
+          select: {
+            rekkefolge: true,
+            tursti: {
+              select: {
+                id: true,
+                navn: true,
+                beskrivelse: true,
+                vanskelighetsgrad: true,
+                hoydemeter: true,
+                lengde_km: true,
+                omrade: true,
+                tursti_punkt: {
+                  select: {
+                    rekkefolge: true,
+                    lat: true,
+                    lng: true,
+                    hoyde_m: true,
+                  },
+                  orderBy: { rekkefolge: "asc" },
+                },
+              },
+            },
+          },
+          orderBy: { rekkefolge: "asc" },
+        },
+      },
+    });
+
+    if (!tur) {
+      return res.status(404).json({ error: "Tour not found" });
+    }
+
+    res.json(tur);
+  } catch (error) {
+    console.error("Feil i GET /api/turer/:id:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
