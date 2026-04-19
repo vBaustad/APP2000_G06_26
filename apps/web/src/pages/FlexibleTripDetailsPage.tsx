@@ -3,7 +3,7 @@
  * Utvikler(e): Ramona Cretulescu
  * Beskrivelse:
  * Detaljside for en fleksibel fellestur i Utopia.
- * Komponenten er laget for å demonstrere oppgavens krav knyttet til:
+ * Komponenten demonstrerer krav knyttet til:
  * - fleksibel startdato
  * - flere datoalternativer
  * - hytte-til-hytte-tur
@@ -102,10 +102,10 @@ export default function FlexibleTripDetailsPage() {
   }, []);
 
   const tripStatus = useMemo(() => {
-    if (tripConfirmed) return "Bekreftet tur";
+    if (tripConfirmed) return "Tur bekreftet";
     if (notificationsSent) return "Varsler sendt";
     if (isDateLocked) return "Dato låst";
-    return "Åpen for ikke-bindende interesse";
+    return "Åpen for registrering av interesse";
   }, [tripConfirmed, notificationsSent, isDateLocked]);
 
   function handleLockDate() {
@@ -127,45 +127,49 @@ export default function FlexibleTripDetailsPage() {
   return (
     <main className="bg-slate-100 text-slate-900">
       <section className="bg-[#17331C] text-white">
-        <div className="mx-auto max-w-6xl px-4 py-14 md:py-16">
+        <div className="mx-auto max-w-6xl px-4 py-12 md:py-14">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300">
             Fellestur
           </p>
 
-          <h1 className="text-4xl font-semibold md:text-5xl">
+          <h1 className="max-w-4xl text-4xl font-semibold leading-tight md:text-5xl">
             Hardangervidda på tvers
           </h1>
 
-          <p className="mt-4 max-w-4xl text-lg leading-8 text-white/85">
+          <p className="mt-4 max-w-4xl text-base leading-8 text-white/85 md:text-lg">
             Fleksibel fellestur med hytte-til-hytte-rute, flere datoalternativer
-            og foreløpig kapasitet fra hytteeiere.
+            og foreløpig innmeldt kapasitet fra hytteeiere.
           </p>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-4">
+          <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
               <p className="text-sm text-white/70">Status</p>
-              <p className="mt-1 font-semibold">{tripStatus}</p>
+              <p className="mt-2 text-xl font-semibold leading-snug">{tripStatus}</p>
             </div>
 
             <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
               <p className="text-sm text-white/70">Turleder</p>
-              <p className="mt-1 font-semibold">bruker2@usn.no</p>
+              <p className="mt-2 text-xl font-semibold leading-snug">bruker2@usn.no</p>
             </div>
 
             <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
               <p className="text-sm text-white/70">Interesserte</p>
-              <p className="mt-1 font-semibold">{participants.length} brukere</p>
+              <p className="mt-2 text-xl font-semibold leading-snug">
+                {participants.length} brukere
+              </p>
             </div>
 
             <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
               <p className="text-sm text-white/70">Sengeplasser</p>
-              <p className="mt-1 font-semibold">{totalCapacity} foreløpige plasser</p>
+              <p className="mt-2 text-xl font-semibold leading-snug">
+                {totalCapacity} foreløpige plasser
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-12">
+      <section className="mx-auto max-w-6xl px-4 py-10">
         <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="space-y-6">
             <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
@@ -205,10 +209,10 @@ export default function FlexibleTripDetailsPage() {
                 </div>
               </div>
 
-              <p className="mt-5 leading-7 text-slate-700">
-                Turen går fra Finsehytta via Krækkja til Tuva. Brukere melder først
-                ikke-bindende interesse. Deretter vurderer turleder vær, kapasitet
-                og antall interesserte før dato låses og turen bekreftes.
+              <p className="mt-5 leading-8 text-slate-700">
+                Turen går fra Finsehytta via Krækkja til Tuva. Brukere registrerer først
+                interesse, før turleder vurderer værforhold, kapasitet og antall deltakere.
+                Deretter kan dato låses og turen bekreftes.
               </p>
             </div>
 
@@ -235,8 +239,8 @@ export default function FlexibleTripDetailsPage() {
                         isSelected
                           ? "border-[#0f3d2e] bg-[#eef5f1]"
                           : option.recommended
-                          ? "border-emerald-300 bg-emerald-50"
-                          : "border-slate-200 bg-slate-50"
+                            ? "border-emerald-300 bg-emerald-50"
+                            : "border-slate-200 bg-slate-50"
                       } ${isDateLocked ? "cursor-default" : "hover:border-[#0f3d2e]"}`}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -257,11 +261,11 @@ export default function FlexibleTripDetailsPage() {
                         </div>
                       </div>
 
-                      <p className="mt-3 text-sm text-slate-700">
+                      <p className="mt-3 text-sm leading-6 text-slate-700">
                         <span className="font-medium">Vær:</span> {option.weather}
                       </p>
 
-                      <p className="mt-1 text-sm text-slate-700">
+                      <p className="mt-1 text-sm leading-6 text-slate-700">
                         <span className="font-medium">Status:</span> {option.status}
                       </p>
                     </button>
@@ -304,7 +308,7 @@ export default function FlexibleTripDetailsPage() {
               {selectedDate && (
                 <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="font-medium text-slate-900">Aktiv vurdering</p>
-                  <p className="mt-2 text-sm text-slate-700">
+                  <p className="mt-2 text-sm leading-6 text-slate-700">
                     Turleder vurderer nå <strong>{selectedDate.date}</strong> som
                     aktuell dato for turen.
                   </p>
@@ -322,7 +326,7 @@ export default function FlexibleTripDetailsPage() {
 
               <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5">
                 <div className="flex min-h-[180px] flex-col items-center justify-center rounded-xl bg-white px-4 text-center text-sm text-slate-500">
-                  <p>Kartplassholder for hytte-til-hytte-rute</p>
+                  <p>Kartvisning for planlagt hytte-til-hytte-rute</p>
 
                   <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm text-slate-600">
                     <span className="rounded-full bg-slate-100 px-3 py-1">Finsehytta</span>
@@ -360,17 +364,17 @@ export default function FlexibleTripDetailsPage() {
               <div className="mb-4 flex items-center gap-2">
                 <Flag className="h-5 w-5 text-[#0f3d2e]" />
                 <h2 className="text-2xl font-semibold text-slate-900">
-                  Teststatus
+                  Turstatus
                 </h2>
               </div>
 
               <ul className="space-y-2 text-slate-700">
                 <li>• Fleksibel startdato er satt opp med 4 alternativer</li>
-                <li>• Turen er innom minst 2 hytter</li>
-                <li>• Turleder er bruker2@usn.no</li>
-                <li>• Hytteeier er satt opp som bruker3@usn.no</li>
-                <li>• Ikke-bindende interesse kan demonstreres</li>
-                <li>• Turen kan senere låses til fast dato</li>
+                <li>• Turen går via flere hytter på ruten</li>
+                <li>• Turleder er registrert for oppfølging av turen</li>
+                <li>• Hytteeiere har meldt inn foreløpig kapasitet</li>
+                <li>• Interesse registreres før endelig bekreftelse</li>
+                <li>• Turen kan låses til fast dato når vilkårene er oppfylt</li>
               </ul>
 
               <div className="mt-5 grid gap-3 md:grid-cols-2">
@@ -401,7 +405,7 @@ export default function FlexibleTripDetailsPage() {
             <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <Users className="h-5 w-5 text-[#0f3d2e]" />
-                <h2 className="text-xl font-semibold text-slate-900">
+                <h2 className="text-2xl font-semibold text-slate-900">
                   Interesserte deltakere
                 </h2>
               </div>
@@ -422,7 +426,7 @@ export default function FlexibleTripDetailsPage() {
             <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <House className="h-5 w-5 text-[#0f3d2e]" />
-                <h2 className="text-xl font-semibold text-slate-900">
+                <h2 className="text-2xl font-semibold text-slate-900">
                   Hytter og kapasitet
                 </h2>
               </div>
@@ -445,29 +449,29 @@ export default function FlexibleTripDetailsPage() {
             <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <CloudSun className="h-5 w-5 text-[#0f3d2e]" />
-                <h2 className="text-xl font-semibold text-slate-900">
-                  Turleder må vurdere
+                <h2 className="text-2xl font-semibold text-slate-900">
+                  Før turen kan bekreftes
                 </h2>
               </div>
 
               <ul className="space-y-3 text-slate-700">
-                <li>• hvilket datoalternativ som har best vær</li>
-                <li>• om nok deltakere har meldt interesse</li>
-                <li>• om nok hytter har meldt kapasitet</li>
-                <li>• når dato kan låses</li>
+                <li>• hvilket datoalternativ som gir best forhold</li>
+                <li>• om nok deltakere har registrert interesse</li>
+                <li>• om tilstrekkelig kapasitet er meldt inn fra hyttene</li>
+                <li>• når datoen kan låses og turen kan bekreftes</li>
               </ul>
             </div>
 
             <div className="rounded-[2rem] border border-emerald-200 bg-[#eef5f1] p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <Clock3 className="h-5 w-5 text-[#0f3d2e]" />
-                <h2 className="text-xl font-semibold text-slate-900">
+                <h2 className="text-2xl font-semibold text-slate-900">
                   Neste steg
                 </h2>
               </div>
 
               <ul className="space-y-3 text-slate-700">
-                <li>1. Brukere melder ikke-bindende interesse</li>
+                <li>1. Brukere registrerer interesse</li>
                 <li>2. Hytteeiere melder inn foreløpig kapasitet</li>
                 <li>3. Turleder velger datoalternativ</li>
                 <li>4. Dato låses og varsler sendes ut</li>
@@ -478,7 +482,7 @@ export default function FlexibleTripDetailsPage() {
             <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <BedDouble className="h-5 w-5 text-[#0f3d2e]" />
-                <h2 className="text-xl font-semibold text-slate-900">
+                <h2 className="text-2xl font-semibold text-slate-900">
                   Overnatting
                 </h2>
               </div>
@@ -493,7 +497,7 @@ export default function FlexibleTripDetailsPage() {
             <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <MapPinned className="h-5 w-5 text-[#0f3d2e]" />
-                <h2 className="text-xl font-semibold text-slate-900">
+                <h2 className="text-2xl font-semibold text-slate-900">
                   Ruteoppsett
                 </h2>
               </div>

@@ -12,6 +12,7 @@
  * - Inkludert type og koblede turstier i GET /api/turer slik at frontend kan
  *   vise turtype, samlet distanse og høydemeter riktig.
  * - Lagt til GET /api/turer/:id for detaljside med tursti- og kartdata.
+ * - Lagt til POST /api/turer/:id/pameld for turpåmelding fra detaljsiden.
  * - Lagt inn tydeligere feillogging i API-rutene.
  */
 
@@ -62,7 +63,7 @@ turRouter.get("/", async (_req, res) => {
     res.json(turer);
   } catch (error) {
     console.error("Feil i GET /api/turer:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Intern serverfeil." });
   }
 });
 
@@ -71,7 +72,7 @@ turRouter.get("/:id", async (req, res) => {
   const id = Number(req.params.id);
 
   if (isNaN(id)) {
-    return res.status(400).json({ error: "Invalid id" });
+    return res.status(400).json({ error: "Ugyldig tur-id." });
   }
 
   try {
@@ -92,6 +93,18 @@ turRouter.get("/:id", async (req, res) => {
         leder_bruker_id: true,
         created_at: true,
         updated_at: true,
+        tur_dato: {
+          select: {
+            id: true,
+            tittel: true,
+            start_at: true,
+            end_at: true,
+            status: true,
+            tidlig_pamelding_frist: true,
+            rabatt_prosent: true,
+          },
+          orderBy: { start_at: "asc" },
+        },
         tur_tursti: {
           select: {
             rekkefolge: true,
@@ -122,13 +135,85 @@ turRouter.get("/:id", async (req, res) => {
     });
 
     if (!tur) {
-      return res.status(404).json({ error: "Tour not found" });
+      return res.status(404).json({ error: "Fant ikke turen." });
     }
 
     res.json(tur);
   } catch (error) {
     console.error("Feil i GET /api/turer/:id:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Intern serverfeil." });
+  }
+});
+
+// AUTH: Meld innlogget bruker på en tur.
+turRouter.post("/:id/pameld", requireAuth, async (req: any, res) => {
+  const turId = Number(req.params.id);
+  const brukerId = req.user?.id;
+
+  if (isNaN(turId)) {
+    return res.status(400).json({ error: "Ugyldig tur-id." });
+  }
+
+  if (!brukerId) {
+    return res.status(401).json({ error: "Du må være logget inn." });
+  }
+
+  try {
+    const tur = await prisma.tur.findUnique({
+      where: { id: turId },
+      include: {
+        tur_dato: {
+          where: {
+            status: "planned",
+          },
+          orderBy: {
+            start_at: "asc",
+          },
+          take: 1,
+        },
+      },
+    });
+
+    if (!tur) {
+      return res.status(404).json({ error: "Fant ikke turen." });
+    }
+
+    const turDato = tur.tur_dato[0];
+
+    if (!turDato) {
+      return res.status(404).json({
+        error: "Ingen tilgjengelig turdato ble funnet for denne turen.",
+      });
+    }
+
+    const existing = await prisma.tur_pamelding.findFirst({
+      where: {
+        tur_dato_id: turDato.id,
+        bruker_id: brukerId,
+      },
+    });
+
+    if (existing) {
+      return res.status(409).json({
+        error: "Du er allerede påmeldt denne turen.",
+      });
+    }
+
+    const pamelding = await prisma.tur_pamelding.create({
+      data: {
+        tur_dato_id: turDato.id,
+        bruker_id: brukerId,
+        status: "pending",
+      },
+    });
+
+    return res.status(201).json({
+      message: "Du er nå påmeldt turen.",
+      pamelding,
+    });
+  } catch (error) {
+    console.error("Feil i POST /api/turer/:id/pameld:", error);
+    return res.status(500).json({ error: "Intern serverfeil." });
   }
 });
 
@@ -150,7 +235,7 @@ turRouter.post(
       } = req.body;
 
       if (!tittel) {
-        return res.status(400).json({ error: "tittel is required" });
+        return res.status(400).json({ error: "Tittel er påkrevd." });
       }
 
       const created = await prisma.tur.create({
@@ -168,7 +253,7 @@ turRouter.post(
       res.status(201).json(created);
     } catch (error) {
       console.error("Feil i POST /api/turer:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ error: "Intern serverfeil." });
     }
   }
 );
@@ -182,7 +267,7 @@ turRouter.put(
     const id = Number(req.params.id);
 
     if (isNaN(id)) {
-      return res.status(400).json({ error: "Invalid id" });
+      return res.status(400).json({ error: "Ugyldig tur-id." });
     }
 
     try {
@@ -191,7 +276,7 @@ turRouter.put(
       });
 
       if (!existing) {
-        return res.status(404).json({ error: "Tour not found" });
+        return res.status(404).json({ error: "Fant ikke turen." });
       }
 
       const {
@@ -220,7 +305,7 @@ turRouter.put(
       res.json(updated);
     } catch (error) {
       console.error("Feil i PUT /api/turer/:id:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ error: "Intern serverfeil." });
     }
   }
 );
@@ -234,7 +319,7 @@ turRouter.delete(
     const id = Number(req.params.id);
 
     if (isNaN(id)) {
-      return res.status(400).json({ error: "Invalid id" });
+      return res.status(400).json({ error: "Ugyldig tur-id." });
     }
 
     try {
@@ -243,7 +328,7 @@ turRouter.delete(
       });
 
       if (!existing) {
-        return res.status(404).json({ error: "Tour not found" });
+        return res.status(404).json({ error: "Fant ikke turen." });
       }
 
       await prisma.tur.delete({
@@ -253,7 +338,7 @@ turRouter.delete(
       res.status(204).send();
     } catch (error) {
       console.error("Feil i DELETE /api/turer/:id:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ error: "Intern serverfeil." });
     }
   }
 );
