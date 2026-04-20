@@ -101,10 +101,10 @@ export default function LandingActivities() {
 
         <button
           type="button"
-          onClick={() => navigate("/explore")}
+          onClick={() => navigate("/turer")}
           className="inline-flex items-center gap-2 font-medium text-[#0f3d2e] hover:underline"
         >
-          Gå til utforsker
+          Gå til turer
           <ArrowRight className="h-4 w-4" />
         </button>
       </div>

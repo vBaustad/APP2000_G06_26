@@ -1,5 +1,5 @@
 /**
- * Fil: FastGroupTripDetailsPage.tsx
+ * Fil: FastGruppeTur.tsx
  * Utvikler(e): Ramona Cretulescu
  * Beskrivelse:
  * Detaljside for en arrangert fellestur med fast dato.
@@ -46,7 +46,7 @@ const participants = [
   },
 ];
 
-export default function FastGroupTripDetailsPage() {
+export default function FastGruppeTur() {
   return (
     <main className="bg-slate-100 text-slate-900">
       <section className="bg-[#17331C] text-white">

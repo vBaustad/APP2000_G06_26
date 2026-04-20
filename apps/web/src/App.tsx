@@ -6,26 +6,27 @@
  */
 
 import { Routes, Route } from "react-router-dom";
-import NotFoundPage from "./pages/NotFoundPage";
-import LandingPage from "./pages/LandingPage";
-import LoginPage from "./pages/LoginPage";
+import IkkeFunnet from "./pages/IkkeFunnet";
+import Forside from "./pages/Forside";
+import LoggInn from "./pages/LoggInn";
 import Layout from "./components/Layout";
-import ExplorePage from "./pages/ExplorePage";
-import MapPage from "./pages/MapPage";
-import MyPage from "./pages/MyPage";
-import SignupPage from "./pages/SignupPage";
-import MyCabinsPage from "./pages/MyCabinsPage";
-import TourDetailsPage from "./pages/TourDetailsPage";
-import EditProfile from "./pages/EditProfile";
-import AboutPage from "./pages/AboutPage";
-import ContactPage from "./pages/ContactPage";
-import CreateTripPage from "./pages/CreateTripPage";
-import CreateAnnonsorPage from "./pages/CreateAnnonsorPage";
-import FlexibleTripDetailsPage from "./pages/FlexibleTripDetailsPage";
-import FastGroupTripDetailsPage from "./pages/FastGroupTripDetailsPage";
-import AnnonsorPage from "./pages/annonsor";
-import LoggedOutPage from "./pages/LoggedOutPage";
-
+import Turer from "./pages/Turer";
+import Kart from "./pages/Kart";
+import MinSide from "./pages/MinSide";
+import Registrer from "./pages/Registrer";
+import MineHytter from "./pages/MineHytter";
+import TurDetaljer from "./pages/TurDetaljer";
+import RedigerProfil from "./pages/RedigerProfil";
+import OmOss from "./pages/OmOss";
+import Kontakt from "./pages/Kontakt";
+import OpprettTur from "./pages/OpprettTur";
+import OpprettAnnonsor from "./pages/OpprettAnnonsor";
+import FleksibelTur from "./pages/FleksibelTur";
+import FastGruppeTur from "./pages/FastGruppeTur";
+import Annonsor from "./pages/Annonsor";
+import LoggetUt from "./pages/LoggetUt";
+import Admin from "./pages/Admin";
+import Hytter from "./pages/Hytter";
 
 
 export default function App() {
@@ -33,27 +34,29 @@ export default function App() {
     <div className="min-h-screen bg-gray-100 text-gray-900">
       <Routes>
         <Route element={<Layout />}>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/explore" element={<ExplorePage />} />
-          <Route path="/map" element={<MapPage />} />
-          <Route path="/me" element={<MyPage />} />
-          <Route path="/mycabins" element={<MyCabinsPage />} />
-          <Route path="/editprofile" element={<EditProfile />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/tours/:id" element={<TourDetailsPage />} />
-          <Route path="/create-trip" element={<CreateTripPage />} />
-          <Route path="/create-annonsor" element={<CreateAnnonsorPage />} />
-          <Route path="/flexible-trip-demo" element={<FlexibleTripDetailsPage />} />
-          <Route path="/fast-group-trip-demo" element={<FastGroupTripDetailsPage />} />
-          <Route path="/annonsor" element={<AnnonsorPage />} />
-          <Route path="/logged-out" element={<LoggedOutPage />} />
+          <Route path="/" element={<Forside />} />
+          <Route path="/logg-inn" element={<LoggInn />} />
+          <Route path="/registrer" element={<Registrer />} />
+          <Route path="/turer" element={<Turer />} />
+          <Route path="/turer/:id" element={<TurDetaljer />} />
+          <Route path="/kart" element={<Kart />} />
+          <Route path="/min-side" element={<MinSide />} />
+          <Route path="/mine-hytter" element={<MineHytter />} />
+          <Route path="/hytter" element={<Hytter />} />
+          <Route path="/rediger-profil" element={<RedigerProfil />} />
+          <Route path="/om-oss" element={<OmOss />} />
+          <Route path="/kontakt" element={<Kontakt />} />
+          <Route path="/opprett-tur" element={<OpprettTur />} />
+          <Route path="/opprett-annonsor" element={<OpprettAnnonsor />} />
+          <Route path="/fleksibel-tur" element={<FleksibelTur />} />
+          <Route path="/fast-gruppe-tur" element={<FastGruppeTur />} />
+          <Route path="/annonsor" element={<Annonsor />} />
+          <Route path="/logget-ut" element={<LoggetUt />} />
+          <Route path="/admin" element={<Admin />} />
 
         </Route>
 
-        <Route path="*" element={<NotFoundPage />} />
+        <Route path="*" element={<IkkeFunnet />} />
       </Routes>
     </div>
   );

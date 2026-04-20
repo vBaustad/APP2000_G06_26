@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 apps/api/backup_*.json
+apps/api/uploads/
 .claude/settings.local.json
 .env
 .env.*

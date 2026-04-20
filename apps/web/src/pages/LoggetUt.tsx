@@ -1,5 +1,5 @@
 /**
- * Fil: LoggedOutPage.jsx
+ * Fil: LoggetUt.tsx
  * Utvikler: Parasto Jamshidi
  * Beskrivelse: 
  * En enkel landingsside som vises etter at brukeren har logget ut av Utopia-portalen.
@@ -9,7 +9,7 @@
 
 import { NavLink } from "react-router-dom";
 
-export default function LoggedOutPage() {
+export default function LoggetUt() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl text-center border border-gray-100">
@@ -19,7 +19,7 @@ export default function LoggedOutPage() {
           Takk for besøket i Utopia! Håper vi sees snart igjen for nye turer.
         </p>
         <NavLink 
-          to="/login" 
+          to="/logg-inn"
           className="block w-full bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition"
         >
           Logg inn igjen

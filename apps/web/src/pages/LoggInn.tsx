@@ -1,5 +1,5 @@
 /**
- * Fil: LoginPage.tsx
+ * Fil: LoggInn.tsx
  * Utvikler(e): Vebjørn Baustad
  * Beskrivelse: Innloggingsside med e-post og passord. Logger inn via API og lagrer brukerinfo.
  */
@@ -17,7 +17,7 @@ type LoginResponse = {
   };
 };
 
-export default function LoginPage() {
+export default function LoggInn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +47,7 @@ export default function LoginPage() {
       const data = (await res.json()) as LoginResponse;
 
       login(data.user, data.token);
-      navigate("/me");
+      navigate("/min-side");
     } catch {
       setError("Kunne ikke kontakte serveren. Sjekk at API kjører.");
     } finally {
@@ -111,7 +111,7 @@ export default function LoginPage() {
         <footer>
           <p className="mt-4 text-center text-sm text-gray-600">
             Har du ikke konto?{" "}
-            <NavLink to="/signup" className="text-emerald-700 hover:underline">
+            <NavLink to="/registrer" className="text-emerald-700 hover:underline">
               Registrer deg
             </NavLink>
           </p>

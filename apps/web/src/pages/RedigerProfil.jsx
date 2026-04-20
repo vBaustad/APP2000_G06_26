@@ -1,5 +1,5 @@
 /**
- * Fil: EditProfile.jsx
+ * Fil: RedigerProfil.jsx
  * Utvikler (Logikk & API-integrasjon): Parasto Jamshidi
  * Design & UI-oppsett: Ramona Cretulescu
  * 
@@ -22,7 +22,7 @@ import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { Mail, Save, User, CalendarDays, FileText } from "lucide-react";
 
-export default function EditProfile() {
+export default function RedigerProfil() {
   const [form, setForm] = useState({
     fornavn: "",
     etternavn: "",
@@ -143,7 +143,7 @@ export default function EditProfile() {
 
               <div className="mt-5 space-y-4">
                 <NavLink
-                  to="/me"
+                  to="/min-side"
                   className="block rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 >
                   Tilbake til min side

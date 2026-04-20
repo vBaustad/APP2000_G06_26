@@ -41,7 +41,7 @@ export default function EasterTripsSection({ tours }: EasterTripsSectionProps) {
         </div>
 
         <Link
-          to="/explore"
+          to="/turer"
           className="inline-flex items-center gap-2 font-medium text-[#8b5a10] hover:underline"
         >
           Se flere sesongturer
@@ -87,7 +87,7 @@ export default function EasterTripsSection({ tours }: EasterTripsSectionProps) {
 
             <div className="mt-auto border-t border-amber-100 pt-4">
               <Link
-                to={`/tours/${trip.id}`}
+                to={`/turer/${trip.id}`}
                 className="inline-flex items-center gap-2 font-semibold text-[#8b5a10] hover:underline"
               >
                 Se tur

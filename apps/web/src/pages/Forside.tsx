@@ -1,5 +1,5 @@
 /**
- * Fil: LandingPage.tsx
+ * Fil: Forside.tsx
  * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu, Synne Oppberget
  * Beskrivelse:
  * Hovedkomponent for landingssiden som setter sammen og strukturerer alle
@@ -22,7 +22,7 @@ import PartnersSection from "../components/sections/PartnerSection";
 import { getTours } from "../services/toursApi";
 import type { Tour } from "../utils/mockTours";
 
-export default function LandingPage() {
+export default function Forside() {
   const [tours, setTours] = useState<Tour[]>([]);
 
   useEffect(() => {

@@ -105,7 +105,7 @@ export default function FlexibleTripsCard() {
         </span>
 
         <Link
-          to="/explore"
+          to="/turer"
           className="inline-flex items-center gap-2 font-semibold text-[#0f3d2e] hover:underline"
         >
           Se fellesturer

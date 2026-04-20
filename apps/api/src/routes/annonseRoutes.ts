@@ -8,6 +8,61 @@ import { prisma } from "../prisma";
 import { requireAuth, requireRole, AuthedRequest } from "../middleware/auth";
 
 export const annonseRouter = Router();
+export const annonsorRouter = Router();
+
+// Innlogget bruker: søk om å bli annonsør. Oppretter pending annonsør-rad,
+// men gir IKKE rollen — det gjør admin ved godkjenning.
+annonsorRouter.post("/soknad", requireAuth, async (req, res) => {
+  const authed = req as AuthedRequest;
+  const email = authed.user?.email;
+  if (!email) return res.status(401).json({ error: "Bruker ikke autentisert" });
+
+  if (authed.user?.roles?.includes("annonsor")) {
+    return res.status(409).json({ error: "Du er allerede annonsør" });
+  }
+
+  const { navn, telefon } = req.body as { navn?: string; telefon?: string };
+  if (!navn || !navn.trim()) {
+    return res.status(400).json({ error: "Navn/firma må fylles ut" });
+  }
+
+  const existing = await prisma.annonsor.findFirst({ where: { epost: email } });
+  if (existing) {
+    if (existing.status === "pending") {
+      return res.status(409).json({ error: "Du har allerede en ventende søknad" });
+    }
+    if (existing.status === "approved") {
+      return res.status(409).json({ error: "Du er allerede godkjent som annonsør" });
+    }
+    const updated = await prisma.annonsor.update({
+      where: { id: existing.id },
+      data: { navn: navn.trim(), telefon: telefon?.trim() || null, status: "pending" },
+    });
+    return res.status(201).json(updated);
+  }
+
+  const created = await prisma.annonsor.create({
+    data: {
+      navn: navn.trim(),
+      epost: email,
+      telefon: telefon?.trim() || null,
+      status: "pending",
+    },
+  });
+  res.status(201).json(created);
+});
+
+// Innlogget bruker: sjekk egen søknadsstatus
+annonsorRouter.get("/soknad/status", requireAuth, async (req, res) => {
+  const email = (req as AuthedRequest).user?.email;
+  if (!email) return res.status(401).json({ error: "Bruker ikke autentisert" });
+
+  const row = await prisma.annonsor.findFirst({
+    where: { epost: email },
+    select: { id: true, status: true, navn: true, created_at: true },
+  });
+  res.json(row);
+});
 
 async function getCurrentAnnonsor(req: AuthedRequest) {
   const email = req.user?.email;

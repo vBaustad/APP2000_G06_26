@@ -1,12 +1,12 @@
 /**
- * Fil: ExplorePage.tsx
+ * Fil: Turer.tsx
  * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu.
  * Beskrivelse: Utforsk-side som viser tilgjengelige turer med søk, filterpanel og turkort.
  */
 
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import TourForm from "../components/TourForm";
+import TurSkjema from "../components/TurSkjema";
 import { getTours } from "../services/toursApi";
 import type { Tour, Region } from "../utils/mockTours";
 import {
@@ -99,7 +99,7 @@ function WeatherSummary({ region }: { region?: string }) {
   );
 }
 
-export default function ExplorePage() {
+export default function Turer() {
   const [allTours, setAllTours] = useState<Tour[]>([]);
   const [query, setQuery] = useState("");
 
@@ -433,7 +433,7 @@ export default function ExplorePage() {
 
             {showCreate && (
               <div className="mt-5 border-t border-gray-100 pt-5">
-                <TourForm mode="create" onCreate={handleCreate} />
+                <TurSkjema mode="create" onCreate={handleCreate} />
               </div>
             )}
           </div>
@@ -535,7 +535,7 @@ export default function ExplorePage() {
                         </div>
 
                         <Link
-                          to={`/tours/${t.id}`}
+                          to={`/turer/${t.id}`}
                           className="text-sm font-semibold text-emerald-700 hover:underline"
                         >
                           Se mer
