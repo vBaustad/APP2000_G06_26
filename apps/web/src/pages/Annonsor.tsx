@@ -30,7 +30,7 @@ type Ad = {
 
 const API_BASE = `${import.meta.env.VITE_API_URL}/api/annonser`;
 
-export default function AnnonsorPage() {
+export default function Annonsor() {
   const { user, token } = useAuth();
   const isAnnonsor = useMemo(() => user?.roller?.includes("annonsor") ?? false, [user]);
   const [ads, setAds] = useState<Ad[]>([]);
@@ -87,7 +87,7 @@ export default function AnnonsorPage() {
   }
 
   function handleNewAd() {
-    navigate("/create-annonsor");
+    navigate("/opprett-annonsor");
   }
 
   if (!token) {

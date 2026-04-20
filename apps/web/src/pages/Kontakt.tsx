@@ -1,5 +1,5 @@
 /**
- * Fil: ContactPage.tsx
+ * Fil: Kontakt.tsx
  * Utvikler(e): Ramona Cretulescu
  * Beskrivelse:
  * Kontaktside for Utopia. Siden viser kontaktinformasjon og et enkelt
@@ -9,7 +9,7 @@
 
 import { Mail, Phone, MapPin, Clock3, Send } from "lucide-react";
 
-export default function ContactPage() {
+export default function Kontakt() {
   return (
     <main className="bg-slate-100 text-slate-900">
       {/* Toppseksjon */}

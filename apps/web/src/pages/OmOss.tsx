@@ -1,5 +1,5 @@
 /**
- * Fil: AboutPage.tsx
+ * Fil: OmOss.tsx
  * Utvikler(e): Ramona Cretulescu
  * Beskrivelse: Om Utopia-side som presenterer løsningens formål,
  * målgruppe, verdier, visjon og prosjektkontekst.
@@ -17,7 +17,7 @@ import {
   Lightbulb,
 } from "lucide-react";
 
-export default function AboutPage() {
+export default function OmOss() {
   return (
     <main className="min-h-screen bg-gray-50">
       {/* HERO */}
@@ -285,7 +285,7 @@ export default function AboutPage() {
 
           <div className="mt-6">
             <Link
-              to="/explore"
+              to="/turer"
               className="inline-flex rounded-xl bg-white px-6 py-3 text-sm font-semibold text-emerald-800 transition hover:bg-gray-100"
             >
               Utforsk turer →

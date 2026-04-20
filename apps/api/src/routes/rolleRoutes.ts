@@ -20,14 +20,19 @@ rolleRouter.post("/apply", requireAuth, async (req, res) => {
     return res.status(400).json({ error: "Rolle må spesifiseres" });
   }
 
+  if (rolle === "annonsor") {
+    return res.status(400).json({
+      error: "Annonsør-rolle krever godkjenning. Bruk POST /api/annonsorer/soknad.",
+    });
+  }
+
   const rolleRow = await prisma.rolle.findFirst({ where: { kode: rolle } });
   if (!rolleRow) {
     return res.status(400).json({ error: `Ukjent rolle: ${rolle}` });
   }
 
   const userId = (req as AuthedRequest).user?.id;
-  const email = (req as AuthedRequest).user?.email;
-  if (!userId || !email) {
+  if (!userId) {
     return res.status(401).json({ error: "Bruker ikke autentisert" });
   }
 
@@ -48,25 +53,6 @@ rolleRouter.post("/apply", requireAuth, async (req, res) => {
       rolle_id: rolleRow.id,
     },
   });
-
-  if (rolle === "annonsor") {
-    const existingAnnonsor = await prisma.annonsor.findFirst({ where: { epost: email } });
-    if (existingAnnonsor) {
-      await prisma.annonsor.update({
-        where: { id: existingAnnonsor.id },
-        data: {
-          navn: email.split("@")[0],
-        },
-      });
-    } else {
-      await prisma.annonsor.create({
-        data: {
-          navn: email.split("@")[0],
-          epost: email,
-        },
-      });
-    }
-  }
 
   res.status(201).json({ message: `Rolle ${rolle} er lagt til` });
 });

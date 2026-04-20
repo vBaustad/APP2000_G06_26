@@ -1,5 +1,5 @@
 /**
- * Fil: FlexibleTripDetailsPage.tsx
+ * Fil: FleksibelTur.tsx
  * Utvikler(e): Ramona Cretulescu
  * Beskrivelse:
  * Detaljside for en fleksibel fellestur i Utopia.
@@ -85,7 +85,7 @@ const participants = [
   "ekstra.testbruker@usn.no",
 ];
 
-export default function FlexibleTripDetailsPage() {
+export default function FleksibelTur() {
   const [selectedDateId, setSelectedDateId] = useState<number | null>(
     dateOptions.find((option) => option.recommended)?.id ?? null
   );

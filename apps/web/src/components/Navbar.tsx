@@ -19,6 +19,7 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
   const isLoggedIn = !!user;
   const isHytteeier = user?.roller?.includes("hytteeier");
   const isAnnonsor = user?.roller?.includes("annonsor");
+  const isAdmin = user?.roller?.includes("admin");
   const [profileOpen, setProfileOpen] = useState(false);
 
   const topBarClass = isTransparent
@@ -80,32 +81,27 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
               </NavLink>
             </li>
             <li>
-              <NavLink to="/map" className={linkClass}>
+              <NavLink to="/kart" className={linkClass}>
                 Kart
               </NavLink>
             </li>
             <li>
-              <NavLink to="/explore" className={linkClass}>
-                Utforsker
+              <NavLink to="/turer" className={linkClass}>
+                Turer
               </NavLink>
             </li>
-            {isAnnonsor && (
-              <li>
-                <NavLink to="/annonsor" className={linkClass}>
-                  Annonsør
-                </NavLink>
-              </li>
-            )}
-
+            <li>
+              <NavLink to="/hytter" className={linkClass}>Hytter</NavLink>
+            </li>
             {!isLoggedIn ? (
               <>
                 <li>
-                  <NavLink to="/login" className={linkClass}>
+                  <NavLink to="/logg-inn" className={linkClass}>
                     Logg inn
                   </NavLink>
                 </li>
                 <li>
-                  <NavLink to="/signup" className={linkClass}>
+                  <NavLink to="/registrer" className={linkClass}>
                     Registrer
                   </NavLink>
                 </li>
@@ -123,7 +119,7 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
                 {profileOpen && (
                   <div className="absolute right-0 z-[10000] mt-3 w-48 rounded-xl border border-gray-200 bg-white p-2 text-sm shadow-xl">
                     <NavLink
-                      to="/me"
+                      to="/min-side"
                       className={dropdownLinkClass}
                       onClick={() => setProfileOpen(false)}
                     >
@@ -132,7 +128,7 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
 
                     {isHytteeier && (
                       <NavLink
-                        to="/mycabins"
+                        to="/mine-hytter"
                         className={dropdownLinkClass}
                         onClick={() => setProfileOpen(false)}
                       >
@@ -140,11 +136,31 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
                       </NavLink>
                     )}
 
+                    {isAnnonsor && (
+                      <NavLink
+                        to="/annonsor"
+                        className={dropdownLinkClass}
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        Annonsør
+                      </NavLink>
+                    )}
+
+                    {isAdmin && (
+                      <NavLink
+                        to="/admin"
+                        className={dropdownLinkClass}
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        Admin
+                      </NavLink>
+                    )}
+
                     <button
                       onClick={() => {
                         setProfileOpen(false);
                         logout();
-                          navigate("/logged-out"); 
+                          navigate("/logget-ut"); 
                       }}
                       className="mt-1 block w-full rounded-lg px-3 py-2 text-left text-red-600 hover:bg-red-50"
                     >

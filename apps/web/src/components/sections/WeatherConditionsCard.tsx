@@ -104,7 +104,7 @@ export default function WeatherConditionsCard() {
         </span>
 
         <Link
-          to="/map"
+          to="/kart"
           className="inline-flex items-center gap-2 font-semibold text-[#0f3d2e] hover:underline"
         >
           Se vær og forhold

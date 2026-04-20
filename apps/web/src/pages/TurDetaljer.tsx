@@ -1,5 +1,5 @@
 /**
- * Fil: TourDetailsPage.tsx
+ * Fil: TurDetaljer.tsx
  * Utvikler(e): Ramona Cretulescu
  * Beskrivelse: Detaljside for en tur (åpnes "Se mer").
  */
@@ -167,7 +167,7 @@ function pickLatLngFromTour(tour: any): LatLng | null {
   return null;
 }
 
-export default function TourDetailsPage() {
+export default function TurDetaljer() {
   const { id } = useParams();
 
   const [tour, setTour] = useState<Tour | null>(null);
@@ -274,7 +274,7 @@ export default function TourDetailsPage() {
       <main className="min-h-[70vh] bg-gray-50">
         <section className="mx-auto max-w-7xl px-6 py-10">
           <Link
-            to="/explore"
+            to="/turer"
             className="text-sm font-semibold text-emerald-700 hover:underline"
           >
             ← Tilbake til Utforsk
@@ -322,7 +322,7 @@ export default function TourDetailsPage() {
   async function handleSignup() {
     if (!isLoggedIn) {
       alert("Du må logge inn for å melde deg på turen.");
-      window.location.href = "/login";
+      window.location.href = "/logg-inn";
       return;
     }
 
@@ -440,7 +440,7 @@ export default function TourDetailsPage() {
         <div className="relative z-10 h-full">
           <div className="mx-auto flex h-full max-w-7xl flex-col justify-end px-6 pb-10">
             <Link
-              to="/explore"
+              to="/turer"
               className="mb-5 inline-flex w-fit text-sm font-semibold text-white/90 hover:underline"
             >
               ← Tilbake til Utforsk
@@ -677,7 +677,7 @@ export default function TourDetailsPage() {
                 Logg inn for å legge igjen en anmeldelse.
                 <div className="mt-3">
                   <Link
-                    to="/login"
+                    to="/logg-inn"
                     className="inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
                   >
                     Logg inn

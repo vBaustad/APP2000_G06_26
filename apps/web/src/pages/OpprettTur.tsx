@@ -1,5 +1,5 @@
 /**
- * Fil: CreateTripPage.tsx
+ * Fil: OpprettTur.tsx
  * Utvikler(e): Ramona Cretulescu
  * Beskrivelse:
  * Side for oppretting av turer i Utopia. Siden støtter registrering av kjent
@@ -18,7 +18,7 @@ import {
   Bell,
 } from "lucide-react";
 
-export default function CreateTripPage() {
+export default function OpprettTur() {
   const [tripType, setTripType] = useState("known");
   const [trailMethod, setTrailMethod] = useState("map");
   const [dateType, setDateType] = useState("fixed");

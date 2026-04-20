@@ -1,5 +1,5 @@
 /**
- * Fil: SignupPage.tsx
+ * Fil: Registrer.tsx
  * Utvikler(e): Vebjørn Baustad & Parasto Jamshidi
  * Beskrivelse: Fullstendig registreringsside koblet til MariaDB via API med automatisk innlogging.
  */
@@ -9,7 +9,7 @@ import React, { useState } from "react";
 import { useNavigate, NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext"; 
 
-export default function SignupPage() {
+export default function Registrer() {
   const navigate = useNavigate();
   // ENDRING 2: Henter login-funksjonen fra AuthContext
   const { login } = useAuth(); 
@@ -69,10 +69,10 @@ export default function SignupPage() {
           if (login) login(loginData.user, loginData.token);
           
           // Sender deg rett til profil-siden din!
-          navigate("/me"); 
+          navigate("/min-side");
         } else {
           // Backup: Hvis noe feiler med auto-innlogging, send dem til vanlig login-side
-          navigate("/login");
+          navigate("/logg-inn");
         }
       } else {
         setError(data.error || "Noe gikk galt under registrering.");
@@ -164,7 +164,7 @@ export default function SignupPage() {
 
         <p className="mt-8 text-center text-sm text-gray-600">
           Har du allerede en konto?{" "}
-          <NavLink to="/login" className="text-emerald-700 font-bold hover:underline">
+          <NavLink to="/logg-inn" className="text-emerald-700 font-bold hover:underline">
             Logg inn her
           </NavLink>
         </p>
