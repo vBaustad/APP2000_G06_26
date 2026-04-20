@@ -1,5 +1,5 @@
 /**
- * Fil: MapPage.tsx
+ * Fil: Kart.tsx
  * Utvikler(e): Vebjørn Baustad
  * Beskrivelse: Oversikt over turer og hytter med kart som viser lokasjoner 
  */
@@ -40,7 +40,7 @@ function MapViewportUpdater({ coords }: { coords: LatLngExpression }) {
   return null;
 }
 
-export default function MapPage() {
+export default function Kart() {
   const [searchParams, setSearchParams] = useSearchParams(); // --- Henter query-parametre fra URL --
   const activeActivity = searchParams.get("activity"); // f.eks. "skitur"
   

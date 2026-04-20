@@ -1,5 +1,5 @@
 /**
- * Fil: CreateAnnonsorPage.tsx
+ * Fil: OpprettAnnonsor.tsx
  * Beskrivelse: Side for å opprette en ny annonse i annonsørportalen.
  * Utvikler(e): Synne Nilsen Oppberget
  */
@@ -7,8 +7,9 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
-export default function CreateAnnonsorPage() {
-  const { token } = useAuth();
+
+export default function OpprettAnnonsor()
+ {  const { token } = useAuth();
   const [tittel, setTittel] = useState("");
   const [beskrivelse, setBeskrivelse] = useState("");
   const [bildeUrl, setBildeUrl] = useState("");

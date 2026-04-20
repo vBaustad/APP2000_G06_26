@@ -1,5 +1,5 @@
 /**
- * Fil: MyPage.tsx
+ * Fil: MinSide.tsx
  * Utvikler: Parasto Jamshidi (oppdatert videre av Ramona Cretulescu)
  * Beskrivelse:
  * Brukerportal tilpasset Utopia sitt eksisterende design, med profilheader,
@@ -21,7 +21,17 @@ import {
   House,
   Bell,
   MapPinned,
+  Megaphone,
+  X,
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+
+type AnnonsorSoknadStatus = {
+  id: number;
+  status: "pending" | "approved" | "rejected";
+  navn: string;
+  created_at: string;
+} | null;
 
 type TabKey =
   | "oversikt"
@@ -31,10 +41,20 @@ type TabKey =
   | "bookinger"
   | "konto";
 
-export default function MyPage() {
+export default function MinSide() {
+  const { user: authUser, token } = useAuth();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>("oversikt");
+
+  const isAnnonsor = authUser?.roller?.includes("annonsor") ?? false;
+  const isTurleder = authUser?.roller?.includes("turleder") ?? false;
+  const [soknadStatus, setSoknadStatus] = useState<AnnonsorSoknadStatus>(null);
+  const [soknadOpen, setSoknadOpen] = useState(false);
+  const [soknadNavn, setSoknadNavn] = useState("");
+  const [soknadTelefon, setSoknadTelefon] = useState("");
+  const [soknadBusy, setSoknadBusy] = useState(false);
+  const [soknadError, setSoknadError] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -63,6 +83,46 @@ export default function MyPage() {
       });
   }, []);
 
+  useEffect(() => {
+    if (!token || isAnnonsor) {
+      setSoknadStatus(null);
+      return;
+    }
+    fetch(`${import.meta.env.VITE_API_URL}/api/annonsorer/soknad/status`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: AnnonsorSoknadStatus) => setSoknadStatus(data))
+      .catch(() => setSoknadStatus(null));
+  }, [token, isAnnonsor]);
+
+  async function handleSoknad(e: React.FormEvent) {
+    e.preventDefault();
+    if (!token) return;
+    setSoknadBusy(true);
+    setSoknadError(null);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/annonsorer/soknad`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ navn: soknadNavn, telefon: soknadTelefon || undefined }),
+      });
+      if (!res.ok) {
+        const data: { error?: string } = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Kunne ikke sende søknad");
+      }
+      const data: AnnonsorSoknadStatus = await res.json();
+      setSoknadStatus(data);
+      setSoknadOpen(false);
+      setSoknadNavn("");
+      setSoknadTelefon("");
+    } catch (err) {
+      setSoknadError(err instanceof Error ? err.message : "Noe gikk galt");
+    } finally {
+      setSoknadBusy(false);
+    }
+  }
+
   const fullforteTurer =
     user?.tur_pamelding?.filter((t: any) => t.status === "Fullført").length || 0;
 
@@ -80,7 +140,7 @@ export default function MyPage() {
 
   function handleLogout() {
     localStorage.removeItem("token");
-    window.location.href = "/login";
+    window.location.href = "/logg-inn";
   }
 
   if (loading) {
@@ -102,7 +162,7 @@ export default function MyPage() {
             Du må være logget inn for å se dine turer og favoritter.
           </p>
           <NavLink
-            to="/login"
+            to="/logg-inn"
             className="mt-6 inline-flex rounded-xl bg-[#0f8f5b] px-6 py-3 font-medium text-white hover:bg-[#0d7a4e]"
           >
             Logg inn
@@ -153,7 +213,7 @@ export default function MyPage() {
 
             <div className="flex flex-wrap gap-3">
               <NavLink
-                to="/editprofile"
+                to="/rediger-profil"
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 font-medium text-slate-800 hover:bg-slate-50"
               >
                 <Settings className="h-4 w-4" />
@@ -161,20 +221,43 @@ export default function MyPage() {
               </NavLink>
 
               <NavLink
-                to="/create-trip"
+                to="/opprett-tur"
                 className="inline-flex items-center gap-2 rounded-xl bg-[#0f8f5b] px-4 py-3 font-medium text-white hover:bg-[#0d7a4e]"
               >
                 <Plus className="h-4 w-4" />
                 Opprett tur
               </NavLink>
 
-              <NavLink
-                to="/flexible-trip-demo"
-                className="inline-flex items-center gap-2 rounded-xl border border-[#dcebe4] bg-[#eef5f1] px-4 py-3 font-medium text-[#0f3d2e] hover:bg-[#e4efe9]"
-              >
-                <Users className="h-4 w-4" />
-                Ny fellestur
-              </NavLink>
+              {isTurleder && (
+                <NavLink
+                  to="/fleksibel-tur"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[#dcebe4] bg-[#eef5f1] px-4 py-3 font-medium text-[#0f3d2e] hover:bg-[#e4efe9]"
+                >
+                  <Users className="h-4 w-4" />
+                  Ny fellestur
+                </NavLink>
+              )}
+
+              {!isAnnonsor && soknadStatus?.status !== "pending" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSoknadNavn(`${user.fornavn ?? ""} ${user.etternavn ?? ""}`.trim());
+                    setSoknadError(null);
+                    setSoknadOpen(true);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 font-medium text-slate-800 hover:bg-slate-50"
+                >
+                  <Megaphone className="h-4 w-4" />
+                  Bli annonsør
+                </button>
+              )}
+              {!isAnnonsor && soknadStatus?.status === "pending" && (
+                <span className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 font-medium text-amber-800">
+                  <Megaphone className="h-4 w-4" />
+                  Annonsør-søknad sendt
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -243,7 +326,7 @@ export default function MyPage() {
 
             <div className="mt-6 space-y-3 border-t border-slate-200 pt-5">
               <NavLink
-                to="/editprofile"
+                to="/rediger-profil"
                 className="flex items-center gap-3 text-sm font-medium text-[#0f8f5b] hover:text-[#0d7a4e]"
               >
                 <Settings className="h-4 w-4" />
@@ -296,7 +379,7 @@ export default function MyPage() {
 
             <div className="mt-4 space-y-3">
               <NavLink
-                to="/explore"
+                to="/turer"
                 className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-slate-700 hover:bg-slate-50"
               >
                 <MapPinned className="h-4 w-4 text-[#0f8f5b]" />
@@ -304,7 +387,7 @@ export default function MyPage() {
               </NavLink>
 
               <NavLink
-                to="/flexible-trip-demo"
+                to="/fleksibel-tur"
                 className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-slate-700 hover:bg-slate-50"
               >
                 <Users className="h-4 w-4 text-[#0f8f5b]" />
@@ -361,7 +444,7 @@ export default function MyPage() {
                             </span>
 
                             <NavLink
-                              to={`/tours/${pamelding.tur_dato.tur_id}`}
+                              to={`/turer/${pamelding.tur_dato.tur_id}`}
                               className="rounded-xl bg-[#0f3d2e] px-4 py-2 text-sm font-medium text-white hover:bg-[#0c3125]"
                             >
                               Detaljer
@@ -500,7 +583,7 @@ export default function MyPage() {
                           </span>
 
                           <NavLink
-                            to={`/tours/${pamelding.tur_dato.tur_id}`}
+                            to={`/turer/${pamelding.tur_dato.tur_id}`}
                             className="rounded-xl bg-[#0f3d2e] px-4 py-2 text-sm font-medium text-white hover:bg-[#0c3125]"
                           >
                             Detaljer
@@ -540,7 +623,7 @@ export default function MyPage() {
                   </div>
                   <div className="mt-4">
                     <NavLink
-                      to="/flexible-trip-demo"
+                      to="/fleksibel-tur"
                       className="rounded-xl bg-[#0f3d2e] px-4 py-2 text-sm font-medium text-white hover:bg-[#0c3125]"
                     >
                       Se fellestur
@@ -639,7 +722,7 @@ export default function MyPage() {
 
               <div className="mt-6 flex flex-wrap gap-3 border-t border-slate-200 pt-5">
                 <NavLink
-                  to="/editprofile"
+                  to="/rediger-profil"
                   className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 font-medium text-slate-800 hover:bg-slate-50"
                 >
                   <Settings className="h-4 w-4" />
@@ -659,6 +742,83 @@ export default function MyPage() {
           )}
         </section>
       </main>
+
+      {soknadOpen && (
+        <div
+          className="fixed inset-0 z-[10050] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setSoknadOpen(false);
+          }}
+        >
+          <div className="flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0f3d2e]">Søknad</p>
+                <h2 className="mt-1 text-xl font-semibold text-slate-900">Bli annonsør</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSoknadOpen(false)}
+                aria-label="Lukk"
+                className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSoknad} className="flex-1 overflow-y-auto px-6 py-6">
+              <p className="text-sm text-slate-600">
+                Admin vil gjennomgå søknaden og gi deg annonsør-rollen ved godkjenning.
+              </p>
+
+              {soknadError && (
+                <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {soknadError}
+                </div>
+              )}
+
+              <div className="mt-5 space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Navn / firma*</label>
+                  <input
+                    type="text"
+                    value={soknadNavn}
+                    onChange={(e) => setSoknadNavn(e.target.value)}
+                    required
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none transition focus:border-[#0f8f5b] focus:ring-2 focus:ring-[#dcebe4]"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Telefon</label>
+                  <input
+                    type="tel"
+                    value={soknadTelefon}
+                    onChange={(e) => setSoknadTelefon(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none transition focus:border-[#0f8f5b] focus:ring-2 focus:ring-[#dcebe4]"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSoknadOpen(false)}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Avbryt
+                </button>
+                <button
+                  type="submit"
+                  disabled={soknadBusy}
+                  className="rounded-xl bg-[#0f8f5b] px-4 py-2 font-medium text-white hover:bg-[#0d7a4e] disabled:opacity-50"
+                >
+                  {soknadBusy ? "Sender..." : "Send søknad"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

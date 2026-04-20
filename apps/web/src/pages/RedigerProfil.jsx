@@ -1,15 +1,28 @@
 /**
- * Fil: EditProfile.jsx
- * Utvikler(e): Ramona Cretulescu
+ * Fil: RedigerProfil.jsx
+ * Utvikler (Logikk & API-integrasjon): Parasto Jamshidi
+ * Design & UI-oppsett: Ramona Cretulescu
+ * 
  * Beskrivelse:
- * Side for redigering av profilinformasjon, tilpasset Utopia sitt design.
+ * Denne komponenten utgjør brukergrensesnittet for å redigere profilinformasjon i Utopia-portalen.
+ * 
+ * Teknisk funksjonalitet (utviklet av Parasto):
+ * - Henter eksisterende brukerdata fra backenden via REST-API (GET /api/bruker/me) 
+ *   ved bruk av JWT-autentisering.
+ * - Håndterer lokal tilstand (state) for skjemaet og synkronisering av input-felter.
+ * - Sender oppdaterte profilendringer til serveren via PUT-forespørsler.
+ * - Implementerer logikk for visning av statusmeldinger (loading, saving, suksess).
+ * 
+ * Visuelt design (utviklet av Ramona):
+ * - Utforming av layout og stil ved bruk av Tailwind CSS.
+ * - Integrasjon av ikoner og sikring av at siden følger den grafiske profilen til prosjektet.
  */
 
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { Mail, Save, User, CalendarDays, FileText } from "lucide-react";
 
-export default function EditProfile() {
+export default function RedigerProfil() {
   const [form, setForm] = useState({
     fornavn: "",
     etternavn: "",
@@ -130,7 +143,7 @@ export default function EditProfile() {
 
               <div className="mt-5 space-y-4">
                 <NavLink
-                  to="/me"
+                  to="/min-side"
                   className="block rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 >
                   Tilbake til min side

@@ -53,7 +53,7 @@ export default function Footer() {
               <ul className="space-y-4 text-sm text-white/90">
                 <li>
                   <Link
-                    to="/explore"
+                    to="/turer"
                     className="transition hover:text-white hover:underline"
                   >
                     Utforsker
@@ -61,7 +61,7 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link
-                    to="/me"
+                    to="/min-side"
                     className="transition hover:text-white hover:underline"
                   >
                     Mine turer
@@ -69,7 +69,7 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link
-                    to="/map"
+                    to="/kart"
                     className="transition hover:text-white hover:underline"
                   >
                     Kart
@@ -77,7 +77,7 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link
-                    to="/explore"
+                    to="/turer"
                     className="transition hover:text-white hover:underline"
                   >
                     Turforslag
@@ -85,7 +85,7 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link
-                    to="/mycabins"
+                    to="/hytter"
                     className="transition hover:text-white hover:underline"
                   >
                     Hytter
@@ -103,7 +103,7 @@ export default function Footer() {
               <ul className="space-y-4 text-sm text-white/90">
                 <li>
                   <Link
-                    to="/map"
+                    to="/kart"
                     className="transition hover:text-white hover:underline"
                   >
                     Vær og forhold
@@ -111,7 +111,7 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link
-                    to="/explore"
+                    to="/turer"
                     className="transition hover:text-white hover:underline"
                   >
                     Fellesturer
@@ -119,7 +119,7 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link
-                    to="/explore"
+                    to="/turer"
                     className="transition hover:text-white hover:underline"
                   >
                     Turaktiviteter
@@ -127,7 +127,7 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link
-                    to="/about"
+                    to="/om-oss"
                     className="transition hover:text-white hover:underline"
                   >
                     Om prosjektet
@@ -160,7 +160,7 @@ export default function Footer() {
 
                 <li>
                   <Link
-                    to="/contact"
+                    to="/kontakt"
                     className="transition hover:text-white hover:underline"
                   >
                     Kontaktside

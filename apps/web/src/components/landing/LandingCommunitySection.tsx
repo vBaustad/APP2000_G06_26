@@ -134,7 +134,7 @@ export default function LandingCommunitySection({
         </div>
 
         <Link
-          to="/explore"
+          to="/turer"
           className="inline-flex items-center gap-2 font-medium text-[#0f3d2e] hover:underline"
         >
           Se flere turer
@@ -217,7 +217,7 @@ export default function LandingCommunitySection({
 
               <div className="mt-auto border-t border-slate-200 pt-4">
                 <Link
-                  to={`/tours/${tour.id}`}
+                  to={`/turer/${tour.id}`}
                   className="inline-flex items-center gap-2 font-semibold text-[#0f3d2e] hover:underline"
                 >
                   Se tur

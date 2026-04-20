@@ -1,6 +1,6 @@
 
 /**
- * Fil: TourForm.tsx
+ * Fil: TurSkjema.tsx
  * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu.
  * Beskrivelse: Skjema for å opprette og redigere turer.
  */
@@ -59,7 +59,7 @@ const TOUR_IMAGES = [
   { value: "/images/tours/1635176958-noedt-til-aa-loepe.avif", label: "Nødt til å løpe" },
 ];
 
-export default function TourForm(props: Props) {
+export default function TurSkjema(props: Props) {
   const initial = useMemo<Tour>(() => {
     if (props.mode === "edit") return props.initialTour;
 
