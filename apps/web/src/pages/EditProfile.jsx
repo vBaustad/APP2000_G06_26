@@ -1,8 +1,21 @@
 /**
  * Fil: EditProfile.jsx
- * Utvikler(e): Ramona Cretulescu
+ * Utvikler (Logikk & API-integrasjon): Parasto Jamshidi
+ * Design & UI-oppsett: Ramona Cretulescu
+ * 
  * Beskrivelse:
- * Side for redigering av profilinformasjon, tilpasset Utopia sitt design.
+ * Denne komponenten utgjør brukergrensesnittet for å redigere profilinformasjon i Utopia-portalen.
+ * 
+ * Teknisk funksjonalitet (utviklet av Parasto):
+ * - Henter eksisterende brukerdata fra backenden via REST-API (GET /api/bruker/me) 
+ *   ved bruk av JWT-autentisering.
+ * - Håndterer lokal tilstand (state) for skjemaet og synkronisering av input-felter.
+ * - Sender oppdaterte profilendringer til serveren via PUT-forespørsler.
+ * - Implementerer logikk for visning av statusmeldinger (loading, saving, suksess).
+ * 
+ * Visuelt design (utviklet av Ramona):
+ * - Utforming av layout og stil ved bruk av Tailwind CSS.
+ * - Integrasjon av ikoner og sikring av at siden følger den grafiske profilen til prosjektet.
  */
 
 import { useEffect, useState } from "react";

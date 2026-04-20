@@ -1,3 +1,12 @@
+/**
+ * Fil: LoggedOutPage.jsx
+ * Utvikler: Parasto Jamshidi
+ * Beskrivelse: 
+ * En enkel landingsside som vises etter at brukeren har logget ut av Utopia-portalen.
+ * Siden bekrefter utloggingen og gir brukeren raske lenker for å logge inn på nytt 
+ * eller gå tilbake til forsiden.
+ */
+
 import { NavLink } from "react-router-dom";
 
 export default function LoggedOutPage() {
