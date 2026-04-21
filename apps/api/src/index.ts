@@ -14,6 +14,8 @@ import { annonseRouter, annonsorRouter } from "./routes/annonseRoutes";
 import { rolleRouter } from "./routes/rolleRoutes";
 import { userRouter } from "./routes/userRoutes";
 import { adminRouter } from "./routes/adminRoutes";
+import { favorittRouter } from "./routes/favorittRoutes";
+import { turstiRouter } from "./routes/turstiRoutes";
 
 const app = express();
 
@@ -29,8 +31,10 @@ app.use("/api/annonsorer", annonsorRouter);
 app.use("/api/roller", rolleRouter);
 
 app.use("/api/turer", turRouter);
+app.use("/api/turstier", turstiRouter);
 app.use("/api/bruker", userRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/favoritter", favorittRouter);
 
 // Helsesjekk
 app.get('/', (req, res) => {

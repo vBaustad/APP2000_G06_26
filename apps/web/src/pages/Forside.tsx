@@ -20,7 +20,7 @@ import LandingSidebarSection from "../components/landing/LandingSidebarSection";
 import EasterTripsSection from "../components/sections/EasterTripSection";
 import PartnersSection from "../components/sections/PartnerSection";
 import { getTours } from "../services/toursApi";
-import type { Tour } from "../utils/mockTours";
+import type { Tour } from "../types/tour";
 
 export default function Forside() {
   const [tours, setTours] = useState<Tour[]>([]);

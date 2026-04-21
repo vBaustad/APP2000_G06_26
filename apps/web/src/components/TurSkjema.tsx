@@ -6,7 +6,7 @@
  */
 
 import { useMemo, useState, type FormEvent } from "react";
-import type { Tour, Region } from "../utils/mockTours";
+import type { Tour, Region } from "../types/tour";
 
 type Props =
   | { mode: "create"; onCreate: (tour: Tour) => void }

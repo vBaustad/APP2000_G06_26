@@ -21,13 +21,11 @@ import OmOss from "./pages/OmOss";
 import Kontakt from "./pages/Kontakt";
 import OpprettTur from "./pages/OpprettTur";
 import OpprettAnnonsor from "./pages/OpprettAnnonsor";
-import FleksibelTur from "./pages/FleksibelTur";
-import FastGruppeTur from "./pages/FastGruppeTur";
 import Annonsor from "./pages/Annonsor";
 import LoggetUt from "./pages/LoggetUt";
 import Admin from "./pages/Admin";
 import Hytter from "./pages/Hytter";
-
+import HytteDetaljer from "./pages/HytteDetaljer";
 
 export default function App() {
   return (
@@ -43,13 +41,12 @@ export default function App() {
           <Route path="/min-side" element={<MinSide />} />
           <Route path="/mine-hytter" element={<MineHytter />} />
           <Route path="/hytter" element={<Hytter />} />
+          <Route path="/hytter/:id" element={<HytteDetaljer />} />
           <Route path="/rediger-profil" element={<RedigerProfil />} />
           <Route path="/om-oss" element={<OmOss />} />
           <Route path="/kontakt" element={<Kontakt />} />
           <Route path="/opprett-tur" element={<OpprettTur />} />
           <Route path="/opprett-annonsor" element={<OpprettAnnonsor />} />
-          <Route path="/fleksibel-tur" element={<FleksibelTur />} />
-          <Route path="/fast-gruppe-tur" element={<FastGruppeTur />} />
           <Route path="/annonsor" element={<Annonsor />} />
           <Route path="/logget-ut" element={<LoggetUt />} />
           <Route path="/admin" element={<Admin />} />

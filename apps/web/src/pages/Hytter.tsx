@@ -334,9 +334,10 @@ export default function Hytter() {
                   const img = resolveImageUrl(h.bilde_url);
                   const fasiliteter = h.hytte_fasilitet ?? [];
                   return (
-                    <article
+                    <Link
                       key={h.id}
-                      className="group relative overflow-hidden rounded-2xl bg-white shadow transition hover:shadow-lg"
+                      to={`/hytter/${h.id}`}
+                      className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow transition hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     >
                       <div className="relative">
                         {img ? (
@@ -422,15 +423,12 @@ export default function Hytter() {
                             {h.pris_per_natt ? `${h.pris_per_natt} kr/natt` : "Pris ikke satt"}
                           </div>
 
-                          <Link
-                            to={`/hytter/${h.id}`}
-                            className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-                          >
-                            Se detaljer
-                          </Link>
+                          <span className="text-sm font-semibold text-emerald-700 group-hover:underline">
+                            Se detaljer →
+                          </span>
                         </div>
                       </div>
-                    </article>
+                    </Link>
                   );
                 })}
               </div>

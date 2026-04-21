@@ -1,13 +1,15 @@
 /**
  * Fil: TurDetaljer.tsx
- * Utvikler(e): Ramona Cretulescu
- * Beskrivelse: Detaljside for en tur (åpnes "Se mer").
+ * Utvikler(e): Ramona Cretulescu, Vebjørn Baustad
+ * Beskrivelse: Detaljside for en tur. Viser turinfo, kart, kommentarer,
+ * favoritt-toggle, liste over tur-datoer og innlogget brukers egen
+ * påmeldingsstatus på turen.
  */
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getTourById } from "../services/toursApi";
-import type { Tour } from "../utils/mockTours";
+import type { Tour } from "../types/tour";
 import {
   MapPin,
   Route,
@@ -44,25 +46,47 @@ function hashStringToIndex(s: string, mod: number) {
 }
 
 function ensureTourImage(t: Tour): Tour {
-  if ((t as any).imageUrl && String((t as any).imageUrl).trim()) return t;
-  const idx = hashStringToIndex(
-    (t as any).id ?? (t as any).title ?? "tour",
-    TOUR_IMAGES.length
-  );
-  return { ...(t as any), imageUrl: TOUR_IMAGES[idx] } as Tour;
+  if (t.imageUrl && t.imageUrl.trim()) return t;
+  const idx = hashStringToIndex(t.id ?? t.title ?? "tour", TOUR_IMAGES.length);
+  return { ...t, imageUrl: TOUR_IMAGES[idx] };
 }
 
-type Review = {
-  id: string;
-  name: string;
-  rating: number;
-  text: string;
-  createdAt: string;
+type Kommentar = {
+  id: number;
+  body: string | null;
+  created_at: string;
+  bruker: {
+    id: number;
+    fornavn: string | null;
+    etternavn: string | null;
+  } | null;
 };
 
-function clamp(n: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, n));
-}
+type MinPamelding = {
+  id: number;
+  status: "pending" | "binding" | "freed" | "locked";
+  tur_dato: {
+    id: number;
+    start_at: string;
+    end_at: string;
+    tittel: string | null;
+    tur: { id: number; tittel: string };
+  };
+};
+
+const PAMELDING_LABEL: Record<MinPamelding["status"], string> = {
+  pending: "Interesse meldt",
+  binding: "Bindende påmelding",
+  locked: "Dato låst",
+  freed: "Dato fristilt",
+};
+
+const PAMELDING_STYLE: Record<MinPamelding["status"], string> = {
+  pending: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
+  binding: "bg-[#eef5f1] text-[#0f3d2e] ring-1 ring-[#dcebe4]",
+  locked: "bg-blue-100 text-blue-900 ring-1 ring-blue-200",
+  freed: "bg-amber-100 text-amber-900 ring-1 ring-amber-200",
+};
 
 function formatDateNo(iso: string) {
   try {
@@ -76,14 +100,6 @@ function formatDateNo(iso: string) {
   }
 }
 
-function makeId() {
-  try {
-    return crypto.randomUUID();
-  } catch {
-    return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
-  }
-}
-
 function safeGet(key: string) {
   try {
     return localStorage.getItem(key);
@@ -92,78 +108,44 @@ function safeGet(key: string) {
   }
 }
 
-function safeSet(key: string, value: string) {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    // ignore
-  }
-}
-
-function keyReviews(tourId: string) {
-  return `tour_reviews_${tourId}`;
-}
-
-function keySaved(tourId: string) {
-  return `tour_saved_${tourId}`;
-}
-
 function storyForTour(tour: Tour) {
   const fallback =
     "Dette er en tur som gir en tydelig naturopplevelse med god progresjon underveis. Gå jevnt, ta pauser og bruk forholdene til din fordel.";
 
-  const diff = (tour as any).difficulty;
-  const region = (tour as any).region;
-
   const diffLine =
-    diff === "Lett"
+    tour.difficulty === "Lett"
       ? "Passer for en rolig dag og for deg som vil ha en mer tilgjengelig tur."
-      : diff === "Middels"
+      : tour.difficulty === "Middels"
         ? "Gir nok motbakke og lengde til at turen føles ordentlig, uten å bli for ekstrem."
-        : diff === "Krevende"
+        : tour.difficulty === "Krevende"
           ? "Her bør du ha gode sko, litt erfaring og være forberedt på en mer fysisk tur."
           : "Dette er en tur for sterke bein og god dømmekraft.";
 
   const regionLine =
-    region === "Vestlandet"
+    tour.region === "Vestlandet"
       ? "Vestlandet kan skifte vær fort, så det lønner seg å pakke for mer enn bare sol."
-      : region === "Nord-Norge"
+      : tour.region === "Nord-Norge"
         ? "Nord-Norge gir store naturopplevelser, men krever også respekt for vær og avstander."
-        : region === "Østlandet"
+        : tour.region === "Østlandet"
           ? "Østlandet gir ofte fine og stabile forhold, men våte stier og værskifter må fortsatt tas på alvor."
-          : region === "Trøndelag"
+          : tour.region === "Trøndelag"
             ? "Trøndelag byr ofte på variert terreng og turer som kan overraske underveis."
             : "Sørlandet kan gi rolige og fine turer med gode stopp underveis.";
 
-  const typeLine =
-    (tour as any).type
-      ? `Turtypen er ${(tour as any).type.toLowerCase()}, så det er lurt å tilpasse tempo og utstyr deretter.`
-      : "Tilpass turen etter forholdene og formen din den dagen.";
+  const typeLine = tour.type
+    ? `Turtypen er ${tour.type.toLowerCase()}, så det er lurt å tilpasse tempo og utstyr deretter.`
+    : "Tilpass turen etter forholdene og formen din den dagen.";
 
   return `${fallback} ${diffLine} ${regionLine} ${typeLine}`;
 }
 
-function pickLatLngFromTour(tour: any): LatLng | null {
-  const center = tour?.mapCenter;
+function pickLatLngFromTour(tour: Tour): LatLng | null {
+  const center = tour.mapCenter;
   if (Array.isArray(center) && center.length === 2) {
     const lat = Number(center[0]);
     const lng = Number(center[1]);
     if (Number.isFinite(lat) && Number.isFinite(lng)) return [lat, lng];
   }
-
-  const lat =
-    tour?.lat ??
-    tour?.latitude ??
-    tour?.coords?.lat ??
-    tour?.coordinates?.lat;
-  const lng =
-    tour?.lng ??
-    tour?.lon ??
-    tour?.longitude ??
-    tour?.coords?.lng ??
-    tour?.coordinates?.lng;
-
-  if (typeof lat === "number" && typeof lng === "number") return [lat, lng];
   return null;
 }
 
@@ -173,29 +155,34 @@ export default function TurDetaljer() {
   const [tour, setTour] = useState<Tour | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [saved, setSaved] = useState(false);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [reviewName, setReviewName] = useState("");
-  const [reviewText, setReviewText] = useState("");
-  const [reviewRating, setReviewRating] = useState(5);
+  const [favorittId, setFavorittId] = useState<number | null>(null);
+  const [favorittBusy, setFavorittBusy] = useState(false);
+
+  const [kommentarer, setKommentarer] = useState<Kommentar[]>([]);
+  const [kommentarTekst, setKommentarTekst] = useState("");
+  const [kommentarBusy, setKommentarBusy] = useState(false);
+  const [kommentarFeil, setKommentarFeil] = useState<string | null>(null);
+
+  const [minePameldinger, setMinePameldinger] = useState<MinPamelding[]>([]);
 
   const [signupLoading, setSignupLoading] = useState(false);
   const [signupMessage, setSignupMessage] = useState("");
 
-  const tid = String((tour as any)?.id ?? id ?? "");
+  const [avmeldKandidat, setAvmeldKandidat] = useState<MinPamelding | null>(null);
+  const [avmeldBusy, setAvmeldBusy] = useState(false);
+  const [avmeldFeil, setAvmeldFeil] = useState<string | null>(null);
+
+  const tid = String(tour?.id ?? id ?? "");
 
   const mapCenter = useMemo<LatLng>(() => {
     if (!tour) return [60.472, 8.468];
-    const fromTour = pickLatLngFromTour(tour as any);
-    if (fromTour) return fromTour;
-    return [60.472, 8.468];
+    return pickLatLngFromTour(tour) ?? [60.472, 8.468];
   }, [tour]);
 
-  const gear: string[] = useMemo(() => {
-    if (!tour) return [];
-    const g = (tour as any).gear;
-    return Array.isArray(g) ? g : [];
-  }, [tour]);
+  const gear: string[] = useMemo(
+    () => (Array.isArray(tour?.gear) ? tour!.gear : []),
+    [tour],
+  );
 
   const isLoggedIn = useMemo(() => {
     const token = safeGet("token") || safeGet("auth_token");
@@ -238,24 +225,94 @@ export default function TurDetaljer() {
   }, [id]);
 
   useEffect(() => {
-    if (!tour) return;
+    if (!tour || !tid) return;
+    let active = true;
 
-    setSaved(safeGet(keySaved(tid)) === "1");
+    fetch(`${import.meta.env.VITE_API_URL}/api/turer/${tid}/kommentarer`)
+      .then((res) => (res.ok ? (res.json() as Promise<Kommentar[]>) : []))
+      .then((data) => {
+        if (active) setKommentarer(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (active) setKommentarer([]);
+      });
 
-    const raw = safeGet(keyReviews(tid));
-    try {
-      const parsed = raw ? (JSON.parse(raw) as Review[]) : [];
-      setReviews(Array.isArray(parsed) ? parsed : []);
-    } catch {
-      setReviews([]);
-    }
+    return () => {
+      active = false;
+    };
   }, [tour, tid]);
 
-  const avgRating = useMemo(() => {
-    if (reviews.length === 0) return null;
-    const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
-    return Math.round((sum / reviews.length) * 10) / 10;
-  }, [reviews]);
+  useEffect(() => {
+    if (!tid) return;
+    const token = safeGet("token") || safeGet("auth_token");
+    if (!token) {
+      setFavorittId(null);
+      setMinePameldinger([]);
+      return;
+    }
+    let active = true;
+
+    fetch(`${import.meta.env.VITE_API_URL}/api/favoritter`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) =>
+        res.ok
+          ? (res.json() as Promise<Array<{ id: number; tur_id: number | null }>>)
+          : [],
+      )
+      .then((data) => {
+        if (!active) return;
+        const hit = Array.isArray(data)
+          ? data.find((f) => f.tur_id === Number(tid))
+          : undefined;
+        setFavorittId(hit ? hit.id : null);
+      })
+      .catch(() => {
+        if (active) setFavorittId(null);
+      });
+
+    fetch(`${import.meta.env.VITE_API_URL}/api/bruker/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) =>
+        res.ok
+          ? (res.json() as Promise<{ tur_pamelding?: MinPamelding[] }>)
+          : { tur_pamelding: [] as MinPamelding[] },
+      )
+      .then((data) => {
+        if (!active) return;
+        const alle = Array.isArray(data.tur_pamelding) ? data.tur_pamelding : [];
+        setMinePameldinger(
+          alle.filter((p) => p.tur_dato?.tur?.id === Number(tid)),
+        );
+      })
+      .catch(() => {
+        if (active) setMinePameldinger([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [tid]);
+
+  useEffect(() => {
+    if (!avmeldKandidat) return;
+    const forrigeOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape" && !avmeldBusy) {
+        setAvmeldKandidat(null);
+        setAvmeldFeil(null);
+      }
+    }
+
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = forrigeOverflow;
+    };
+  }, [avmeldKandidat, avmeldBusy]);
 
   if (loading) {
     return (
@@ -298,13 +355,15 @@ export default function TurDetaljer() {
     );
   }
 
-  const imageUrl = (tour as any).imageUrl || "/images/trip-card-placeholder.jpg";
+  const imageUrl = tour.imageUrl || "/images/trip-card-placeholder.jpg";
+  const datoer = tour.datoer ?? [];
+  const pameldteDatoIds = new Set(minePameldinger.map((p) => p.tur_dato.id));
 
   async function handleShare() {
     const url = window.location.href;
     try {
       if (navigator.share) {
-        await navigator.share({ title: (tour as any).title, url });
+        await navigator.share({ title: tour!.title, url });
         return;
       }
     } catch {
@@ -319,7 +378,7 @@ export default function TurDetaljer() {
     }
   }
 
-  async function handleSignup() {
+  async function handleSignup(turDatoId: number) {
     if (!isLoggedIn) {
       alert("Du må logge inn for å melde deg på turen.");
       window.location.href = "/logg-inn";
@@ -342,20 +401,43 @@ export default function TurDetaljer() {
         {
           method: "POST",
           headers: {
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
+          body: JSON.stringify({ tur_dato_id: turDatoId }),
         }
       );
 
-      const data = await res.json().catch(() => null);
+      const data = (await res.json().catch(() => null)) as
+        | {
+            error?: string;
+            pamelding?: { id: number; status: MinPamelding["status"] };
+          }
+        | null;
 
       if (!res.ok) {
         setSignupMessage(data?.error || "Kunne ikke melde deg på turen.");
         return;
       }
 
+      const dato = datoer.find((d) => d.id === turDatoId);
+      if (tour && data?.pamelding && dato) {
+        const ny: MinPamelding = {
+          id: data.pamelding.id,
+          status: data.pamelding.status ?? "pending",
+          tur_dato: {
+            id: dato.id,
+            start_at: dato.startAt,
+            end_at: dato.endAt,
+            tittel: dato.tittel,
+            tur: { id: Number(tour.id), tittel: tour.title },
+          },
+        };
+        setMinePameldinger((prev) => [...prev, ny]);
+      }
+
       setSignupMessage(
-        "Du er nå meldt på turen. Sjekk Min side for oversikt."
+        "Du er nå meldt på turdatoen. Sjekk Min side for oversikt.",
       );
     } catch (error) {
       console.error("Feil ved turpåmelding:", error);
@@ -365,14 +447,129 @@ export default function TurDetaljer() {
     }
   }
 
-  function handleToggleSave() {
-    const next = !saved;
-    setSaved(next);
-    safeSet(keySaved(tid), next ? "1" : "0");
+  function scrollToDatoer() {
+    const el = document.getElementById("datoalternativer");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function handleToggleSave() {
+    const token = safeGet("token") || safeGet("auth_token");
+    if (!token) {
+      alert("Du må være innlogget for å favorisere turen.");
+      return;
+    }
+    if (!tid || favorittBusy) return;
+    setFavorittBusy(true);
+    try {
+      if (favorittId) {
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/favoritter/${favorittId}`,
+          { method: "DELETE", headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (res.ok) setFavorittId(null);
+      } else {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/favoritter`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ tur_id: Number(tid) }),
+        });
+        if (res.ok) {
+          const data = (await res.json()) as { id: number };
+          setFavorittId(data.id);
+        }
+      }
+    } finally {
+      setFavorittBusy(false);
+    }
+  }
+
+  async function handleSubmitKommentar() {
+    if (!isLoggedIn) {
+      alert("Du må være innlogget for å kommentere.");
+      return;
+    }
+    const token = safeGet("token") || safeGet("auth_token");
+    if (!token || !tid) return;
+
+    const tekst = kommentarTekst.trim();
+    if (tekst.length < 3) {
+      setKommentarFeil("Kommentar må ha minst 3 tegn.");
+      return;
+    }
+
+    setKommentarBusy(true);
+    setKommentarFeil(null);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/turer/${tid}/kommentarer`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ body: tekst }),
+        },
+      );
+      const data = (await res.json().catch(() => null)) as
+        | (Kommentar & { error?: string })
+        | null;
+      if (!res.ok) {
+        setKommentarFeil(data?.error ?? "Kunne ikke lagre kommentar.");
+        return;
+      }
+      if (data && typeof data.id === "number") {
+        setKommentarer((prev) => [data, ...prev]);
+      }
+      setKommentarTekst("");
+    } catch {
+      setKommentarFeil("Nettverksfeil. Prøv igjen.");
+    } finally {
+      setKommentarBusy(false);
+    }
   }
 
   function handleReport() {
     alert("Rapportering er en demo her. (Koble til backend senere)");
+  }
+
+  function handleAvbrytAvmeld() {
+    if (avmeldBusy) return;
+    setAvmeldKandidat(null);
+    setAvmeldFeil(null);
+  }
+
+  async function handleBekreftAvmeld() {
+    if (!avmeldKandidat) return;
+    const token = safeGet("token") || safeGet("auth_token");
+    if (!token) {
+      setAvmeldFeil("Fant ikke gyldig innlogging.");
+      return;
+    }
+
+    setAvmeldBusy(true);
+    setAvmeldFeil(null);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/turer/pamelding/${avmeldKandidat.id}`,
+        { method: "DELETE", headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!res.ok) {
+        setAvmeldFeil("Kunne ikke melde deg av. Prøv igjen.");
+        return;
+      }
+      setMinePameldinger((prev) =>
+        prev.filter((p) => p.id !== avmeldKandidat.id),
+      );
+      setAvmeldKandidat(null);
+    } catch {
+      setAvmeldFeil("Nettverksfeil. Prøv igjen.");
+    } finally {
+      setAvmeldBusy(false);
+    }
   }
 
   function handleDownloadGpx() {
@@ -381,50 +578,17 @@ export default function TurDetaljer() {
     const gpx = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="Utopia TiU">
   <wpt lat="${lat}" lon="${lon}">
-    <name>${(tour as any).title}</name>
+    <name>${tour!.title}</name>
   </wpt>
 </gpx>`;
 
     const blob = new Blob([gpx], { type: "application/gpx+xml" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `${String((tour as any).title).replaceAll(" ", "_")}.gpx`;
+    a.download = `${tour!.title.replaceAll(" ", "_")}.gpx`;
     document.body.appendChild(a);
     a.click();
     a.remove();
-  }
-
-  function submitReview() {
-    if (!isLoggedIn) {
-      alert("Du må logge inn for å legge igjen anmeldelse.");
-      return;
-    }
-
-    const name = reviewName.trim() || "Anonym";
-    const text = reviewText.trim();
-
-    if (text.length < 10) {
-      alert("Skriv litt mer (minst 10 tegn).");
-      return;
-    }
-
-    const rating = clamp(reviewRating, 1, 5);
-
-    const nextReview: Review = {
-      id: makeId(),
-      name,
-      rating,
-      text,
-      createdAt: new Date().toISOString(),
-    };
-
-    const next = [nextReview, ...reviews];
-    setReviews(next);
-    safeSet(keyReviews(tid), JSON.stringify(next));
-
-    setReviewName("");
-    setReviewText("");
-    setReviewRating(5);
   }
 
   return (
@@ -432,7 +596,7 @@ export default function TurDetaljer() {
       <section className="relative h-[38vh] min-h-[320px]">
         <img
           src={imageUrl}
-          alt={(tour as any).title}
+          alt={tour.title}
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-black/45" />
@@ -448,34 +612,87 @@ export default function TurDetaljer() {
 
             <div className="flex flex-wrap items-center gap-3">
               <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 shadow-sm">
-                {(tour as any).difficulty}
+                {tour.difficulty}
               </span>
 
               <span className="rounded-full bg-white/90 px-3 py-1 text-sm font-medium text-gray-900">
-                {(tour as any).region}
+                {tour.region}
               </span>
 
-              {(tour as any).type && (
+              {tour.type && (
                 <span className="rounded-full bg-white/90 px-3 py-1 text-sm font-medium text-gray-900">
-                  {(tour as any).type}
+                  {tour.type}
                 </span>
               )}
 
-              {avgRating !== null && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-sm font-semibold text-gray-900">
-                  <Star className="h-4 w-4" /> {avgRating}
-                </span>
-              )}
             </div>
 
             <h1 className="mt-3 text-4xl font-semibold text-white md:text-5xl">
-              {(tour as any).title}
+              {tour.title}
             </h1>
 
             <div className="mt-2 flex items-center gap-2 text-white/85">
               <MapPin className="h-4 w-4" />
-              <p className="text-sm">{(tour as any).location}</p>
+              <p className="text-sm">{tour.location}</p>
             </div>
+
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              {datoer.length === 1 ? (
+                <button
+                  type="button"
+                  onClick={() => handleSignup(datoer[0].id)}
+                  disabled={signupLoading || pameldteDatoIds.has(datoer[0].id)}
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  <Calendar className="h-4 w-4" />
+                  {pameldteDatoIds.has(datoer[0].id)
+                    ? "Du er påmeldt"
+                    : signupLoading
+                      ? "Melder på..."
+                      : "Meld meg på"}
+                </button>
+              ) : datoer.length > 1 ? (
+                <button
+                  type="button"
+                  onClick={scrollToDatoer}
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Velg dato ({datoer.length} alternativer)
+                </button>
+              ) : null}
+
+              {isLoggedIn && (
+                <button
+                  type="button"
+                  onClick={handleToggleSave}
+                  disabled={favorittBusy}
+                  className={`inline-flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold shadow-sm transition disabled:opacity-60 ${
+                    favorittId
+                      ? "border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600"
+                      : "border-white/40 bg-white/10 text-white hover:bg-white/20"
+                  }`}
+                >
+                  <Heart className={`h-4 w-4 ${favorittId ? "fill-white" : ""}`} />
+                  {favorittId ? "Favoritt" : "Legg til favoritt"}
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={handleShare}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/40 bg-white/10 px-4 py-3 text-sm font-semibold text-white hover:bg-white/20"
+              >
+                <Share2 className="h-4 w-4" />
+                Del
+              </button>
+            </div>
+
+            {signupMessage && (
+              <div className="mt-3 inline-block rounded-xl bg-white/90 px-4 py-2 text-sm text-slate-800 shadow-sm">
+                {signupMessage}
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -489,7 +706,7 @@ export default function TurDetaljer() {
                 <span>Distanse</span>
               </div>
               <div className="mt-1 text-2xl font-semibold text-gray-900">
-                {(tour as any).distanceKm} km
+                {tour.distanceKm} km
               </div>
             </div>
 
@@ -499,7 +716,7 @@ export default function TurDetaljer() {
                 <span>Varighet</span>
               </div>
               <div className="mt-1 text-2xl font-semibold text-gray-900">
-                {(tour as any).durationHours} t
+                {tour.durationHours} t
               </div>
             </div>
 
@@ -509,21 +726,144 @@ export default function TurDetaljer() {
                 <span>Stigning</span>
               </div>
               <div className="mt-1 text-2xl font-semibold text-gray-900">
-                {(tour as any).elevationM} m
+                {tour.elevationM} m
               </div>
             </div>
 
             <div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Star className="h-4 w-4 text-emerald-700" />
-                <span>Vurdering</span>
+                <span>Kommentarer</span>
               </div>
               <div className="mt-1 text-2xl font-semibold text-gray-900">
-                {avgRating ?? "N/A"}
+                {kommentarer.length}
               </div>
             </div>
           </div>
         </div>
+
+        {minePameldinger.length > 0 && (
+          <div className="mt-6 rounded-2xl border border-emerald-200 bg-[#eef5f1] p-5 shadow">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-[#0f3d2e]" />
+              <h2 className="text-lg font-semibold text-[#0f3d2e]">
+                Din påmelding på denne turen
+              </h2>
+            </div>
+
+            <ul className="mt-3 space-y-2">
+              {minePameldinger.map((p) => (
+                <li
+                  key={p.id}
+                  className="flex flex-col gap-2 rounded-xl bg-white p-3 text-sm sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="text-slate-800">
+                    {p.tur_dato.tittel && (
+                      <span className="font-semibold">{p.tur_dato.tittel} · </span>
+                    )}
+                    {formatDateNo(p.tur_dato.start_at)} –{" "}
+                    {formatDateNo(p.tur_dato.end_at)}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${PAMELDING_STYLE[p.status]}`}
+                    >
+                      {PAMELDING_LABEL[p.status]}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAvmeldFeil(null);
+                        setAvmeldKandidat(p);
+                      }}
+                      className="rounded-lg border border-red-300 bg-white px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50"
+                    >
+                      Meld av
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {datoer.length > 0 && (
+          <div
+            id="datoalternativer"
+            className="mt-6 scroll-mt-24 rounded-2xl border border-gray-100 bg-white p-6 shadow"
+          >
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-emerald-700" />
+              <h2 className="text-lg font-semibold">Datoalternativer</h2>
+              <span className="ml-2 rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700">
+                {datoer.length} {datoer.length === 1 ? "dato" : "datoer"}
+              </span>
+            </div>
+
+            {datoer.length > 1 && (
+              <p className="mt-2 text-sm text-gray-600">
+                Meld deg på én eller flere datoer. Er du på flere, låses den
+                datoen som til slutt får nok deltakere.
+              </p>
+            )}
+
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+              {datoer.map((d) => {
+                const erPameldt = pameldteDatoIds.has(d.id);
+                const kanMelde = isLoggedIn && !erPameldt && d.status === "planned";
+                return (
+                  <li
+                    key={d.id}
+                    className="flex flex-col gap-3 rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm"
+                  >
+                    <div>
+                      <div className="font-semibold text-gray-900">
+                        {d.tittel ?? "Dato"}
+                      </div>
+                      <div className="text-gray-700">
+                        {formatDateNo(d.startAt)} – {formatDateNo(d.endAt)}
+                      </div>
+                      <div className="mt-1 text-xs uppercase tracking-wider text-gray-500">
+                        {d.status}
+                      </div>
+                    </div>
+
+                    <div className="mt-auto">
+                      {erPameldt ? (
+                        <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-200">
+                          <Calendar className="h-3.5 w-3.5" />
+                          Du er påmeldt
+                        </span>
+                      ) : !isLoggedIn ? (
+                        <Link
+                          to="/logg-inn"
+                          className="inline-flex items-center gap-2 rounded-xl border border-emerald-600 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50"
+                        >
+                          Logg inn for å melde deg på
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleSignup(d.id)}
+                          disabled={signupLoading || !kanMelde}
+                          title={
+                            d.status !== "planned"
+                              ? "Denne datoen er ikke åpen for påmelding."
+                              : undefined
+                          }
+                          className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <Calendar className="h-3.5 w-3.5" />
+                          {signupLoading ? "Melder på..." : "Meld meg på"}
+                        </button>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
 
         <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
@@ -539,9 +879,9 @@ export default function TurDetaljer() {
                 <div className="flex items-start gap-3">
                   <MapPin className="mt-0.5 h-5 w-5 text-emerald-700" />
                   <div>
-                    <div className="font-semibold">{(tour as any).location}</div>
+                    <div className="font-semibold">{tour.location}</div>
                     <div className="text-sm text-gray-500">
-                      {(tour as any).region}
+                      {tour.region}
                     </div>
                   </div>
                 </div>
@@ -550,10 +890,10 @@ export default function TurDetaljer() {
                   <Footprints className="h-5 w-5 text-emerald-700" />
                   <div>
                     <div className="font-semibold">
-                      {(tour as any).type || "Fottur"}
+                      {tour.type || "Fottur"}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {(tour as any).difficulty}
+                      {tour.difficulty}
                     </div>
                   </div>
                 </div>
@@ -580,7 +920,7 @@ export default function TurDetaljer() {
               </div>
 
               <p className="mt-6 leading-relaxed text-gray-700">
-                {(tour as any).description || storyForTour(tour)}
+                {tour.description || storyForTour(tour)}
               </p>
 
               <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
@@ -652,7 +992,7 @@ export default function TurDetaljer() {
               </div>
             </div>
 
-            <TurMap center={mapCenter} title={(tour as any).title} />
+            <TurMap center={mapCenter} title={tour.title} />
           </div>
         </div>
 
@@ -660,21 +1000,17 @@ export default function TurDetaljer() {
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <Star className="h-5 w-5 text-emerald-700" />
-              <h2 className="text-xl font-semibold">Anmeldelser</h2>
+              <h2 className="text-xl font-semibold">Kommentarer</h2>
               <span className="ml-2 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
-                {reviews.length}
+                {kommentarer.length}
               </span>
             </div>
           </div>
 
           <div className="mt-6">
-            <div className="text-sm font-semibold text-gray-900">
-              Skriv en anmeldelse
-            </div>
-
             {!isLoggedIn ? (
-              <div className="mt-3 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-gray-600">
-                Logg inn for å legge igjen en anmeldelse.
+              <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-gray-600">
+                Logg inn for å legge igjen en kommentar.
                 <div className="mt-3">
                   <Link
                     to="/logg-inn"
@@ -685,52 +1021,38 @@ export default function TurDetaljer() {
                 </div>
               </div>
             ) : (
-              <>
-                <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
-                  <input
-                    value={reviewName}
-                    onChange={(e) => setReviewName(e.target.value)}
-                    placeholder="Navn (valgfritt)"
-                    className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
+              <div className="space-y-3">
+                <textarea
+                  value={kommentarTekst}
+                  onChange={(e) => {
+                    setKommentarTekst(e.target.value);
+                    setKommentarFeil(null);
+                  }}
+                  placeholder="Skriv kort om opplevelsen din..."
+                  maxLength={500}
+                  className="min-h-[100px] w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
+                />
 
-                  <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm">
-                    <span className="text-gray-600">Rating</span>
-                    <div className="flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <button
-                          key={n}
-                          type="button"
-                          onClick={() => setReviewRating(n)}
-                          title={`${n} stjerner`}
-                          className="p-1"
-                        >
-                          <Star
-                            className={`h-4 w-4 ${
-                              n <= reviewRating ? "text-amber-500" : "text-gray-300"
-                            }`}
-                          />
-                        </button>
-                      ))}
-                    </div>
+                {kommentarFeil && (
+                  <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-900">
+                    {kommentarFeil}
                   </div>
+                )}
 
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-500">
+                    {kommentarTekst.length}/500
+                  </span>
                   <button
                     type="button"
-                    onClick={submitReview}
-                    className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
+                    onClick={handleSubmitKommentar}
+                    disabled={kommentarBusy}
+                    className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
                   >
-                    Publiser
+                    {kommentarBusy ? "Publiserer..." : "Publiser kommentar"}
                   </button>
                 </div>
-
-                <textarea
-                  value={reviewText}
-                  onChange={(e) => setReviewText(e.target.value)}
-                  placeholder="Skriv kort om opplevelsen din… (minst 10 tegn)"
-                  className="mt-3 min-h-[110px] w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-              </>
+              </div>
             )}
           </div>
 
@@ -739,101 +1061,113 @@ export default function TurDetaljer() {
               Hva andre sier
             </div>
 
-            {reviews.length === 0 ? (
+            {kommentarer.length === 0 ? (
               <div className="mt-3 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-gray-600">
-                Ingen anmeldelser ennå. Bli den første til å dele din opplevelse!
+                Ingen kommentarer ennå. Bli den første til å dele!
               </div>
             ) : (
               <div className="mt-4 space-y-4">
-                {reviews.map((r) => (
-                  <div
-                    key={r.id}
-                    className="rounded-2xl border border-gray-100 bg-white p-5"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="font-semibold text-gray-900">{r.name}</div>
-                        <div className="mt-1 text-xs text-gray-500">
-                          {formatDateNo(r.createdAt)}
+                {kommentarer.map((k) => {
+                  const navn = k.bruker
+                    ? `${k.bruker.fornavn ?? ""} ${k.bruker.etternavn ?? ""}`.trim() ||
+                      "Bruker"
+                    : "Bruker";
+                  return (
+                    <div
+                      key={k.id}
+                      className="rounded-2xl border border-gray-100 bg-white p-5"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="font-semibold text-gray-900">{navn}</div>
+                          <div className="mt-1 text-xs text-gray-500">
+                            {formatDateNo(k.created_at)}
+                          </div>
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((n) => (
-                          <Star
-                            key={n}
-                            className={`h-4 w-4 ${
-                              n <= r.rating ? "text-amber-500" : "text-gray-200"
-                            }`}
-                          />
-                        ))}
-                      </div>
+                      <p className="mt-3 text-sm leading-relaxed text-gray-700">
+                        {k.body}
+                      </p>
                     </div>
-
-                    <p className="mt-3 text-sm leading-relaxed text-gray-700">
-                      {r.text}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
 
           <div className="mt-8 flex flex-col gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-xs text-gray-500">
-              Lagret lokalt (demo) • Tur-ID: {tid}
-            </div>
+            <div className="text-xs text-gray-500">Tur-ID: {tid}</div>
 
-            <div className="inline-flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleReport}
+              className="inline-flex items-center gap-2 self-start rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
+            >
+              <Flag className="h-4 w-4 text-red-600" />
+              Rapporter
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {avmeldKandidat && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="avmeld-tittel"
+          onClick={handleAvbrytAvmeld}
+          className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/60 p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+          >
+            <h3
+              id="avmeld-tittel"
+              className="text-lg font-semibold text-slate-900"
+            >
+              Meld deg av turdato?
+            </h3>
+
+            <p className="mt-2 text-sm text-slate-600">
+              Du er i ferd med å melde deg av{" "}
+              <span className="font-semibold text-slate-800">
+                {avmeldKandidat.tur_dato.tittel
+                  ? `${avmeldKandidat.tur_dato.tittel} · `
+                  : ""}
+                {formatDateNo(avmeldKandidat.tur_dato.start_at)} –{" "}
+                {formatDateNo(avmeldKandidat.tur_dato.end_at)}
+              </span>
+              . Du kan melde deg på igjen senere hvis det fortsatt er plass.
+            </p>
+
+            {avmeldFeil && (
+              <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-900">
+                {avmeldFeil}
+              </div>
+            )}
+
+            <div className="mt-6 flex items-center justify-end gap-3">
               <button
                 type="button"
-                onClick={handleSignup}
-                disabled={signupLoading}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#0f8f5b] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0d7a4e] disabled:cursor-not-allowed disabled:opacity-70"
+                onClick={handleAvbrytAvmeld}
+                disabled={avmeldBusy}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
               >
-                {signupLoading ? "Melder på..." : "Meld meg på"}
+                Avbryt
               </button>
-
               <button
                 type="button"
-                onClick={handleToggleSave}
-                className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold hover:bg-gray-50 ${
-                  saved
-                    ? "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700"
-                    : "border-gray-200 bg-white"
-                }`}
+                onClick={handleBekreftAvmeld}
+                disabled={avmeldBusy}
+                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <Heart className="h-4 w-4" />
-                {saved ? "Lagret" : "Lagre"}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleShare}
-                className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
-              >
-                <Share2 className="h-4 w-4" />
-                Del
-              </button>
-
-              <button
-                type="button"
-                onClick={handleReport}
-                className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
-              >
-                <Flag className="h-4 w-4 text-red-600" />
-                Rapporter
+                {avmeldBusy ? "Melder av..." : "Meld av"}
               </button>
             </div>
           </div>
-
-          {signupMessage && (
-            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-              {signupMessage}
-            </div>
-          )}
         </div>
-      </section>
+      )}
     </main>
   );
 }
