@@ -13,8 +13,11 @@ import "leaflet/dist/leaflet.css";
 import {
   Banknote,
   Bed,
+  CalendarDays,
+  CheckCircle2,
   House,
   Image as ImageIcon,
+  Mail,
   MapPin,
   Mountain,
   Pencil,
@@ -23,6 +26,7 @@ import {
   Trash2,
   Users,
   X,
+  XCircle,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -42,6 +46,59 @@ const BETJENT_LABELS: Record<BetjentValue, string> = {
   selvbetjent: "Selvbetjent",
   ubetjent: "Ubetjent",
 };
+
+type BookingStatus = "pending" | "confirmed" | "cancelled";
+
+type OwnerBooking = {
+  id: number;
+  start_dato: string;
+  slutt_dato: string;
+  status: BookingStatus;
+  antall_gjester: number | null;
+  total_pris: number | string | null;
+  created_at: string;
+  hytte: { id: number; navn: string };
+  bruker: {
+    id: number;
+    fornavn: string | null;
+    etternavn: string | null;
+    epost: string;
+  };
+};
+
+const BOOKING_STATUS_LABEL: Record<BookingStatus, string> = {
+  pending: "Ventende",
+  confirmed: "Godkjent",
+  cancelled: "Avslått",
+};
+
+const BOOKING_STATUS_STYLE: Record<BookingStatus, string> = {
+  pending: "bg-amber-50 text-amber-900 ring-1 ring-amber-200",
+  confirmed: "bg-emerald-50 text-emerald-900 ring-1 ring-emerald-200",
+  cancelled: "bg-slate-100 text-slate-600 ring-1 ring-slate-200",
+};
+
+function formatBookingDato(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString("nb-NO", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function antallNetter(start: string, slutt: string): number {
+  const s = new Date(start);
+  const e = new Date(slutt);
+  if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return 0;
+  return Math.max(
+    0,
+    Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)),
+  );
+}
 
 type Cabin = {
   id: number;
@@ -174,6 +231,10 @@ export default function MineHytter() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFasiliteter, setSelectedFasiliteter] = useState<string[]>([])
 
+  const [bookinger, setBookinger] = useState<OwnerBooking[]>([]);
+  const [bookingBusyId, setBookingBusyId] = useState<number | null>(null);
+  const [bookingFilter, setBookingFilter] = useState<"aktive" | "alle">("aktive");
+
   useEffect(() => {
     if (selectedFile) {
       const url = URL.createObjectURL(selectedFile);
@@ -186,6 +247,7 @@ export default function MineHytter() {
   useEffect(() => {
     if (token && isHytteeier) {
       loadCabins();
+      loadBookinger();
     }
   }, [token, isHytteeier]);
 
@@ -216,6 +278,56 @@ export default function MineHytter() {
       setCabins(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Noe gikk galt");
+    }
+  }
+
+  async function loadBookinger() {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE}/mine/bookinger`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as OwnerBooking[];
+      setBookinger(data);
+    } catch {
+      // ignore
+    }
+  }
+
+  async function oppdaterBookingStatus(
+    id: number,
+    status: "confirmed" | "cancelled",
+  ) {
+    if (!token) return;
+    setBookingBusyId(id);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch(`${API_BASE}/bookinger/${id}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) {
+        const msg = await res.json().catch(() => null);
+        setError(msg?.error || "Kunne ikke oppdatere booking");
+        return;
+      }
+      const oppdatert = (await res.json()) as OwnerBooking;
+      setBookinger((prev) =>
+        prev.map((b) => (b.id === id ? oppdatert : b)),
+      );
+      setSuccess(
+        status === "confirmed" ? "Booking godkjent" : "Booking avslått",
+      );
+    } catch {
+      setError("Nettverksfeil. Prøv igjen.");
+    } finally {
+      setBookingBusyId(null);
     }
   }
 
@@ -448,6 +560,199 @@ export default function MineHytter() {
             {success}
           </div>
         )}
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+            <div>
+              <h2 className="text-2xl font-semibold text-slate-900">
+                Bookingforespørsler
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Godkjenn eller avslå forespørsler fra gjester.
+              </p>
+            </div>
+
+            {(() => {
+              const antallVentende = bookinger.filter(
+                (b) => b.status === "pending",
+              ).length;
+              if (antallVentende === 0) return null;
+              return (
+                <span className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-900 ring-1 ring-amber-200">
+                  <CalendarDays className="h-4 w-4" />
+                  {antallVentende} ventende
+                </span>
+              );
+            })()}
+          </div>
+
+          <div className="mt-4 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setBookingFilter("aktive")}
+              className={`rounded-full px-3 py-1 text-sm font-medium transition ${
+                bookingFilter === "aktive"
+                  ? "bg-[#0f3d2e] text-white"
+                  : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              Aktive
+            </button>
+            <button
+              type="button"
+              onClick={() => setBookingFilter("alle")}
+              className={`rounded-full px-3 py-1 text-sm font-medium transition ${
+                bookingFilter === "alle"
+                  ? "bg-[#0f3d2e] text-white"
+                  : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              Alle ({bookinger.length})
+            </button>
+          </div>
+
+          <div className="mt-4">
+            {(() => {
+              const synlige = bookinger
+                .filter(
+                  (b) =>
+                    bookingFilter === "alle" || b.status !== "cancelled",
+                )
+                .sort((a, b) => {
+                  const orden: Record<BookingStatus, number> = {
+                    pending: 0,
+                    confirmed: 1,
+                    cancelled: 2,
+                  };
+                  const d = orden[a.status] - orden[b.status];
+                  if (d !== 0) return d;
+                  return (
+                    new Date(a.start_dato).getTime() -
+                    new Date(b.start_dato).getTime()
+                  );
+                });
+
+              if (synlige.length === 0) {
+                return (
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+                    <CalendarDays className="mx-auto h-8 w-8 text-slate-400" />
+                    <p className="mt-3 text-slate-600">
+                      {bookingFilter === "aktive"
+                        ? "Ingen aktive bookinger akkurat nå."
+                        : "Ingen bookinger registrert ennå."}
+                    </p>
+                  </div>
+                );
+              }
+
+              return (
+                <ul className="space-y-3">
+                  {synlige.map((b) => {
+                    const gjestNavn =
+                      `${b.bruker.fornavn ?? ""} ${b.bruker.etternavn ?? ""}`.trim() ||
+                      "Ukjent gjest";
+                    const netter = antallNetter(b.start_dato, b.slutt_dato);
+                    const busy = bookingBusyId === b.id;
+                    return (
+                      <li
+                        key={b.id}
+                        className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <House className="h-4 w-4 text-[#0f8f5b]" />
+                              <span className="font-semibold text-slate-900">
+                                {b.hytte.navn}
+                              </span>
+                            </div>
+                            <div className="mt-1 text-sm text-slate-600">
+                              {gjestNavn}
+                            </div>
+                            <a
+                              href={`mailto:${b.bruker.epost}`}
+                              className="mt-0.5 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-[#0f3d2e] hover:underline"
+                            >
+                              <Mail className="h-3 w-3" />
+                              {b.bruker.epost}
+                            </a>
+                          </div>
+
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${BOOKING_STATUS_STYLE[b.status]}`}
+                          >
+                            {BOOKING_STATUS_LABEL[b.status]}
+                          </span>
+                        </div>
+
+                        <div className="mt-3 grid gap-3 text-sm text-slate-700 sm:grid-cols-3">
+                          <div className="flex items-center gap-1.5">
+                            <CalendarDays className="h-4 w-4 text-[#0f8f5b]" />
+                            <span>
+                              {formatBookingDato(b.start_dato)} –{" "}
+                              {formatBookingDato(b.slutt_dato)}
+                              {netter > 0 && (
+                                <span className="ml-1 text-xs text-slate-500">
+                                  ({netter} {netter === 1 ? "natt" : "netter"})
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Users className="h-4 w-4 text-[#0f8f5b]" />
+                            <span>
+                              {b.antall_gjester ?? "—"}{" "}
+                              {b.antall_gjester === 1 ? "gjest" : "gjester"}
+                            </span>
+                          </div>
+                          {b.total_pris !== null && (
+                            <div className="flex items-center gap-1.5 font-medium text-[#0f3d2e]">
+                              <Banknote className="h-4 w-4" />
+                              {Number(b.total_pris).toLocaleString("no-NO")} kr
+                            </div>
+                          )}
+                        </div>
+
+                        {b.status !== "cancelled" && (
+                          <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+                            {b.status === "pending" && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  oppdaterBookingStatus(b.id, "confirmed")
+                                }
+                                disabled={busy}
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-[#0f8f5b] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#0d7a4e] disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                <CheckCircle2 className="h-4 w-4" />
+                                {busy ? "Jobber..." : "Godkjenn"}
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                oppdaterBookingStatus(b.id, "cancelled")
+                              }
+                              disabled={busy}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              <XCircle className="h-4 w-4" />
+                              {busy
+                                ? "Jobber..."
+                                : b.status === "confirmed"
+                                  ? "Kanseller"
+                                  : "Avslå"}
+                            </button>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              );
+            })()}
+          </div>
+        </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-200 pb-3">

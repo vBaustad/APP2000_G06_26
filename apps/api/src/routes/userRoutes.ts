@@ -21,7 +21,15 @@ userRouter.get('/me', requireAuth, async (req: AuthedRequest, res: Response) => 
       where: { id: req.user.id },
       include: {
         favoritt: { include: { tur: true, hytte: true } },
-        tur_pamelding: { include: { tur_dato: { include: { tur: true } } } }
+        tur_pamelding: { include: { tur_dato: { include: { tur: true } } } },
+        hytte_booking: {
+          include: { hytte: true },
+          orderBy: { start_dato: "desc" },
+        },
+        tur_kommentar: {
+          include: { tur: { select: { id: true, tittel: true } } },
+          orderBy: { created_at: "desc" },
+        },
       }
     });
     

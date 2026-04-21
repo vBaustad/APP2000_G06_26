@@ -4,6 +4,8 @@
  * Beskrivelse: Henter turer fra backend-API og mapper dataene til formatet som brukes i frontend.
  */
 
+import type { Difficulty, Region, Tour } from "../types/tour";
+
 type ApiTurstiPunkt = {
   rekkefolge: number;
   lat?: string | number | null;
@@ -27,6 +29,16 @@ type ApiTurTursti = {
   tursti: ApiTursti;
 };
 
+type ApiTurDato = {
+  id: number;
+  tittel?: string | null;
+  start_at: string;
+  end_at: string;
+  status: string;
+  tidlig_pamelding_frist?: string | null;
+  rabatt_prosent?: number | null;
+};
+
 type ApiTour = {
   id: number;
   tittel: string;
@@ -43,9 +55,10 @@ type ApiTour = {
   created_at?: string;
   updated_at?: string;
   tur_tursti?: ApiTurTursti[];
+  tur_dato?: ApiTurDato[];
 };
 
-function getRegionFromOmrade(omrade?: string | null) {
+function getRegionFromOmrade(omrade?: string | null): Region {
   const value = (omrade ?? "").toLowerCase();
 
   if (
@@ -92,7 +105,7 @@ function getRegionFromOmrade(omrade?: string | null) {
   return "Østlandet";
 }
 
-function mapDifficulty(value?: string | null) {
+function mapDifficulty(value?: string | null): Difficulty {
   const normalized = (value ?? "").toLowerCase();
 
   if (normalized === "lett") return "Lett";
@@ -103,7 +116,7 @@ function mapDifficulty(value?: string | null) {
   return "Middels";
 }
 
-function mapTourType(value?: string | null) {
+function mapTourType(value?: string | null): string {
   const normalized = (value ?? "").toLowerCase();
 
   if (normalized === "fottur") return "Fottur";
@@ -164,7 +177,7 @@ function getMapCenterFromTurstier(turstier?: ApiTurTursti[]) {
   return [lat, lng] as [number, number];
 }
 
-function mapTour(tour: ApiTour) {
+function mapTour(tour: ApiTour): Tour {
   return {
     id: String(tour.id),
     title: tour.tittel ?? "Ukjent tur",
@@ -179,6 +192,15 @@ function mapTour(tour: ApiTour) {
     gear: [],
     imageUrl: getOverrideImage(tour.tittel, tour.bilde_url),
     mapCenter: getMapCenterFromTurstier(tour.tur_tursti),
+    datoer: Array.isArray(tour.tur_dato)
+      ? tour.tur_dato.map((d) => ({
+          id: d.id,
+          tittel: d.tittel ?? null,
+          startAt: d.start_at,
+          endAt: d.end_at,
+          status: d.status,
+        }))
+      : [],
   };
 }
 

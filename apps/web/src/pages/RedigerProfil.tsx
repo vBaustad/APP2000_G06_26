@@ -1,29 +1,39 @@
 /**
- * Fil: RedigerProfil.jsx
+ * Fil: RedigerProfil.tsx
  * Utvikler (Logikk & API-integrasjon): Parasto Jamshidi
  * Design & UI-oppsett: Ramona Cretulescu
- * 
+ *
  * Beskrivelse:
  * Denne komponenten utgjør brukergrensesnittet for å redigere profilinformasjon i Utopia-portalen.
- * 
+ *
  * Teknisk funksjonalitet (utviklet av Parasto):
- * - Henter eksisterende brukerdata fra backenden via REST-API (GET /api/bruker/me) 
+ * - Henter eksisterende brukerdata fra backenden via REST-API (GET /api/bruker/me)
  *   ved bruk av JWT-autentisering.
  * - Håndterer lokal tilstand (state) for skjemaet og synkronisering av input-felter.
  * - Sender oppdaterte profilendringer til serveren via PUT-forespørsler.
  * - Implementerer logikk for visning av statusmeldinger (loading, saving, suksess).
- * 
+ *
  * Visuelt design (utviklet av Ramona):
  * - Utforming av layout og stil ved bruk av Tailwind CSS.
  * - Integrasjon av ikoner og sikring av at siden følger den grafiske profilen til prosjektet.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { NavLink } from "react-router-dom";
 import { Mail, Save, User, CalendarDays, FileText } from "lucide-react";
 
+type ProfilSkjema = {
+  fornavn: string;
+  etternavn: string;
+  epost: string;
+  fodselsdato: string;
+  omMeg: string;
+};
+
+type ProfilRespons = Partial<ProfilSkjema>;
+
 export default function RedigerProfil() {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<ProfilSkjema>({
     fornavn: "",
     etternavn: "",
     epost: "",
@@ -50,7 +60,7 @@ export default function RedigerProfil() {
     })
       .then((res) => {
         if (!res.ok) throw new Error("Kunne ikke hente profil");
-        return res.json();
+        return res.json() as Promise<ProfilRespons>;
       })
       .then((data) => {
         setForm({
@@ -68,7 +78,7 @@ export default function RedigerProfil() {
       });
   }, []);
 
-  function handleChange(e) {
+  function handleChange(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
@@ -77,7 +87,7 @@ export default function RedigerProfil() {
     setSavedMessage("");
   }
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const token = localStorage.getItem("token");
     if (!token) return;

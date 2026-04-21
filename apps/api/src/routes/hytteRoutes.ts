@@ -37,6 +37,27 @@ hytteRouter.get("/mine", requireAuth, requireRole("hytteeier"), async (req, res)
   res.json(hytter);
 });
 
+// Hytteeier: Alle bookinger på egne hytter (til godkjenningsliste)
+hytteRouter.get(
+  "/mine/bookinger",
+  requireAuth,
+  requireRole("hytteeier"),
+  async (req, res) => {
+    const ownerId = (req as AuthedRequest).user!.id;
+    const bookinger = await prisma.hytte_booking.findMany({
+      where: { hytte: { eier_bruker_id: ownerId } },
+      orderBy: [{ created_at: "desc" }],
+      include: {
+        hytte: { select: { id: true, navn: true } },
+        bruker: {
+          select: { id: true, fornavn: true, etternavn: true, epost: true },
+        },
+      },
+    });
+    res.json(bookinger);
+  },
+);
+
 // Hytteeier: Create cabin
 hytteRouter.post("/", requireAuth, requireRole("hytteeier"), async (req, res) => {
   const { navn, beskrivelse, omrade, adresse, kapasitet_senger, maks_gjester, pris_per_natt, regler, lat, lng, hoyde_m, betjent, bilde_url } = req.body;
@@ -172,6 +193,150 @@ hytteRouter.get("/:id", async (req, res) => {
   if(!hytte) return res.status(404).json({ error: "Cabin not found" });
   res.json(hytte);
 });
+
+// PUBLIC: Opptatte datoer for en hytte (kun datoer, ingen personopplysninger)
+hytteRouter.get("/:id/bookinger", async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: "Ugyldig id" });
+
+  const bookinger = await prisma.hytte_booking.findMany({
+    where: {
+      hytte_id: id,
+      status: { in: ["pending", "confirmed"] },
+    },
+    select: { start_dato: true, slutt_dato: true, status: true },
+    orderBy: { start_dato: "asc" },
+  });
+  res.json(bookinger);
+});
+
+// Innlogget bruker: Opprett bookingforespørsel
+hytteRouter.post("/:id/bookinger", requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: "Ugyldig id" });
+
+  const brukerId = (req as AuthedRequest).user!.id;
+  const { start_dato, slutt_dato, antall_gjester } = req.body as {
+    start_dato?: string;
+    slutt_dato?: string;
+    antall_gjester?: number | string;
+  };
+
+  if (!start_dato || !slutt_dato) {
+    return res.status(400).json({ error: "start_dato og slutt_dato er påkrevd" });
+  }
+
+  const start = new Date(start_dato);
+  const slutt = new Date(slutt_dato);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(slutt.getTime())) {
+    return res.status(400).json({ error: "Ugyldig datoformat" });
+  }
+  if (start >= slutt) {
+    return res.status(400).json({ error: "Sluttdato må være etter startdato" });
+  }
+  const idag = new Date();
+  idag.setHours(0, 0, 0, 0);
+  if (start < idag) {
+    return res.status(400).json({ error: "Startdato kan ikke være i fortiden" });
+  }
+
+  const hytte = await prisma.hytte.findUnique({ where: { id } });
+  if (!hytte) return res.status(404).json({ error: "Cabin not found" });
+
+  const gjester =
+    antall_gjester !== undefined && antall_gjester !== ""
+      ? Number(antall_gjester)
+      : null;
+  if (gjester !== null && (!Number.isFinite(gjester) || gjester < 1)) {
+    return res.status(400).json({ error: "Ugyldig antall gjester" });
+  }
+  if (gjester !== null && hytte.maks_gjester && gjester > hytte.maks_gjester) {
+    return res.status(400).json({
+      error: `Maks ${hytte.maks_gjester} gjester for denne hytta`,
+    });
+  }
+
+  // Sjekk overlapp mot pending/confirmed bookinger
+  const overlappende = await prisma.hytte_booking.findFirst({
+    where: {
+      hytte_id: id,
+      status: { in: ["pending", "confirmed"] },
+      start_dato: { lt: slutt },
+      slutt_dato: { gt: start },
+    },
+    select: { id: true },
+  });
+  if (overlappende) {
+    return res.status(409).json({ error: "Hytta er opptatt i valgt periode" });
+  }
+
+  const netter = Math.max(
+    1,
+    Math.round((slutt.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)),
+  );
+  const prisPerNatt = hytte.pris_per_natt !== null ? Number(hytte.pris_per_natt) : 0;
+  const totalPris = Number.isFinite(prisPerNatt) ? prisPerNatt * netter : 0;
+
+  const booking = await prisma.hytte_booking.create({
+    data: {
+      hytte_id: id,
+      bruker_id: brukerId,
+      start_dato: start,
+      slutt_dato: slutt,
+      antall_gjester: gjester,
+      total_pris: totalPris,
+    },
+  });
+  res.status(201).json(booking);
+});
+
+// Hytteeier: Godkjenn eller avslå en booking (pending → confirmed | cancelled)
+hytteRouter.patch(
+  "/bookinger/:id/status",
+  requireAuth,
+  requireRole("hytteeier"),
+  async (req, res) => {
+    const id = Number(req.params.id);
+    const ownerId = (req as AuthedRequest).user!.id;
+    const { status } = req.body as { status?: string };
+
+    if (!Number.isFinite(id)) return res.status(400).json({ error: "Ugyldig id" });
+    if (status !== "confirmed" && status !== "cancelled") {
+      return res.status(400).json({
+        error: "Status må være 'confirmed' eller 'cancelled'.",
+      });
+    }
+
+    const booking = await prisma.hytte_booking.findUnique({
+      where: { id },
+      include: { hytte: { select: { eier_bruker_id: true } } },
+    });
+    if (!booking || booking.hytte.eier_bruker_id !== ownerId) {
+      return res.status(404).json({ error: "Booking ikke funnet" });
+    }
+    if (booking.status === "cancelled") {
+      return res.status(409).json({ error: "Booking er allerede avslått." });
+    }
+    if (status === "confirmed" && booking.status !== "pending") {
+      return res.status(409).json({
+        error: "Kun ventende bookinger kan godkjennes.",
+      });
+    }
+
+    const updated = await prisma.hytte_booking.update({
+      where: { id },
+      data: { status },
+      include: {
+        hytte: { select: { id: true, navn: true } },
+        bruker: {
+          select: { id: true, fornavn: true, etternavn: true, epost: true },
+        },
+      },
+    });
+
+    res.json(updated);
+  },
+);
 
 // Hytteeier: Delete cabin
 hytteRouter.delete("/:id", requireAuth, requireRole("hytteeier"), async (req, res) => {

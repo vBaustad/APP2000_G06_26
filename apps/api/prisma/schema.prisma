@@ -163,6 +163,7 @@ model hytte {
   hytte_kommentar  hytte_kommentar[]
   hytte_rating     hytte_rating[]
   tur_dato_hytte   tur_dato_hytte[]
+  tur_hytte        tur_hytte[]
 
   @@index([eier_bruker_id], map: "fk_hytte_eier")
   @@index([lat, lng], map: "idx_hytte_coords")
@@ -270,6 +271,7 @@ model tur {
   omrade            String?         @db.VarChar(255)
   bilde_url         String?         @db.VarChar(500)
   er_selvgaende     Boolean         @default(false)
+  antall_netter     Int?
   min_deltakere     Int?
   max_deltakere     Int?
   status            TurStatus       @default(draft)
@@ -280,6 +282,7 @@ model tur {
   chat              chat[]
   favoritt          favoritt[]
   tur_dato          tur_dato[]
+  tur_hytte         tur_hytte[]
   tur_kommentar     tur_kommentar[]
   tur_rating        tur_rating[]
   tur_tursti        tur_tursti[]
@@ -297,6 +300,18 @@ model tur_tursti {
   @@id([tur_id, tursti_id])
   @@unique([tur_id, rekkefolge], map: "uq_tur_tursti_rekkefolge")
   @@index([tursti_id], map: "fk_tur_tursti_tursti")
+}
+
+model tur_hytte {
+  tur_id     Int
+  hytte_id   Int
+  rekkefolge Int
+  tur        tur   @relation(fields: [tur_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_tur_hytte_tur")
+  hytte      hytte @relation(fields: [hytte_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_tur_hytte_hytte")
+
+  @@id([tur_id, hytte_id])
+  @@unique([tur_id, rekkefolge], map: "uq_tur_hytte_rekkefolge")
+  @@index([hytte_id], map: "fk_tur_hytte_hytte")
 }
 
 model tur_dato {

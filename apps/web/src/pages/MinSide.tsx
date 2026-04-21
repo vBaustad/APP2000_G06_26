@@ -1,10 +1,11 @@
 /**
  * Fil: MinSide.tsx
- * Utvikler: Parasto Jamshidi (oppdatert videre av Ramona Cretulescu)
+ * Utvikler(e): Parasto Jamshidi, Ramona Cretulescu, Vebjørn Baustad
  * Beskrivelse:
- * Brukerportal tilpasset Utopia sitt eksisterende design, med profilheader,
- * faner, venstre informasjonskolonne og høyre hovedinnhold for turer,
- * fellesturer, favoritter, bookinger og konto.
+ * Brukerportal med profilheader, faner, venstre informasjonskolonne og
+ * høyre hovedinnhold for mine turer, favoritter, kommentarer, bookinger
+ * og konto. Henter bruker, favoritter, turpåmeldinger og hyttebookinger
+ * fra /api/bruker/me.
  */
 
 import { useEffect, useState } from "react";
@@ -36,10 +37,73 @@ type AnnonsorSoknadStatus = {
 type TabKey =
   | "oversikt"
   | "mineTurer"
-  | "fellesturer"
   | "favoritter"
   | "bookinger"
   | "konto";
+
+type MinKommentar = {
+  id: number;
+  body: string | null;
+  created_at: string;
+  tur: { id: number; tittel: string } | null;
+};
+
+type PameldingStatus = "pending" | "binding" | "freed" | "locked";
+
+const PAMELDING_LABEL: Record<PameldingStatus, string> = {
+  pending: "Interesse meldt",
+  binding: "Bindende påmelding",
+  locked: "Dato låst",
+  freed: "Dato fristilt",
+};
+
+const PAMELDING_STYLE: Record<PameldingStatus, string> = {
+  pending: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
+  binding: "bg-[#eef5f1] text-[#0f3d2e] ring-1 ring-[#dcebe4]",
+  locked: "bg-blue-100 text-blue-900 ring-1 ring-blue-200",
+  freed: "bg-amber-100 text-amber-900 ring-1 ring-amber-200",
+};
+
+type BookingStatus = "pending" | "confirmed" | "cancelled";
+
+type HytteBooking = {
+  id: number;
+  start_dato: string;
+  slutt_dato: string;
+  status: BookingStatus;
+  antall_gjester: number | null;
+  total_pris: number | string | null;
+  hytte: {
+    id: number;
+    navn: string;
+    omrade: string | null;
+    bilde_url: string | null;
+  } | null;
+};
+
+const BOOKING_STATUS_LABEL: Record<BookingStatus, string> = {
+  pending: "Venter på bekreftelse",
+  confirmed: "Bekreftet",
+  cancelled: "Kansellert",
+};
+
+const BOOKING_STATUS_STYLE: Record<BookingStatus, string> = {
+  pending: "bg-amber-100 text-amber-900 ring-1 ring-amber-200",
+  confirmed: "bg-[#eef5f1] text-[#0f3d2e] ring-1 ring-[#dcebe4]",
+  cancelled: "bg-slate-100 text-slate-600 ring-1 ring-slate-200",
+};
+
+function formatBookingDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString("no-NO", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return iso;
+  }
+}
 
 export default function MinSide() {
   const { user: authUser, token } = useAuth();
@@ -174,6 +238,13 @@ export default function MinSide() {
 
   const favoriteItems = Array.isArray(user?.favoritt) ? user.favoritt : [];
   const tripItems = Array.isArray(user?.tur_pamelding) ? user.tur_pamelding : [];
+  const bookingItems: HytteBooking[] = Array.isArray(user?.hytte_booking)
+    ? (user.hytte_booking as HytteBooking[])
+    : [];
+  const aktiveBookinger = bookingItems.filter((b) => b.status !== "cancelled").length;
+  const kommentarItems: MinKommentar[] = Array.isArray(user?.tur_kommentar)
+    ? (user.tur_kommentar as MinKommentar[])
+    : [];
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -230,7 +301,7 @@ export default function MinSide() {
 
               {isTurleder && (
                 <NavLink
-                  to="/fleksibel-tur"
+                  to="/opprett-tur"
                   className="inline-flex items-center gap-2 rounded-xl border border-[#dcebe4] bg-[#eef5f1] px-4 py-3 font-medium text-[#0f3d2e] hover:bg-[#e4efe9]"
                 >
                   <Users className="h-4 w-4" />
@@ -268,7 +339,6 @@ export default function MinSide() {
           {[
             { key: "oversikt", label: "Oversikt" },
             { key: "mineTurer", label: "Mine turer" },
-            { key: "fellesturer", label: "Fellesturer" },
             { key: "favoritter", label: "Favoritter" },
             { key: "bookinger", label: "Bookinger" },
             { key: "konto", label: "Konto" },
@@ -387,15 +457,7 @@ export default function MinSide() {
               </NavLink>
 
               <NavLink
-                to="/fleksibel-tur"
-                className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-slate-700 hover:bg-slate-50"
-              >
-                <Users className="h-4 w-4 text-[#0f8f5b]" />
-                Finn fellesturer
-              </NavLink>
-
-              <NavLink
-                to="/my-cabins"
+                to="/hytter"
                 className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-slate-700 hover:bg-slate-50"
               >
                 <House className="h-4 w-4 text-[#0f8f5b]" />
@@ -427,20 +489,26 @@ export default function MinSide() {
                             </h3>
                             <p className="mt-2 flex items-center gap-2 text-slate-500">
                               <CalendarDays className="h-4 w-4" />
-                              Start:{" "}
                               {new Date(pamelding.tur_dato.start_at).toLocaleDateString("no-NO")}
+                              {" – "}
+                              {new Date(pamelding.tur_dato.end_at).toLocaleDateString("no-NO")}
                             </p>
+                            {pamelding.tur_dato.tittel && (
+                              <p className="mt-1 text-sm text-slate-400">
+                                {pamelding.tur_dato.tittel}
+                              </p>
+                            )}
                           </div>
 
                           <div className="flex flex-wrap items-center gap-2">
                             <span
                               className={`rounded-full px-3 py-1 text-sm font-medium ${
-                                pamelding.status === "pending"
-                                  ? "bg-slate-100 text-slate-700 ring-1 ring-slate-200"
-                                  : "bg-[#eef5f1] text-[#0f3d2e] ring-1 ring-[#dcebe4]"
+                                PAMELDING_STYLE[pamelding.status as PameldingStatus] ??
+                                "bg-slate-100 text-slate-700 ring-1 ring-slate-200"
                               }`}
                             >
-                              {pamelding.status === "pending" ? "Påmeldt" : pamelding.status}
+                              {PAMELDING_LABEL[pamelding.status as PameldingStatus] ??
+                                pamelding.status}
                             </span>
 
                             <NavLink
@@ -459,57 +527,32 @@ export default function MinSide() {
                 </div>
               </section>
 
-              <section className="grid gap-6 xl:grid-cols-2">
-                <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                    <h2 className="text-2xl font-semibold text-slate-900">Fellesturer</h2>
-                  </div>
+              <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                  <h2 className="text-2xl font-semibold text-slate-900">Varsler</h2>
+                </div>
 
-                  <div className="mt-5 space-y-3">
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <h3 className="text-xl font-semibold text-slate-900">
-                        Hardangervidda på tvers
-                      </h3>
-                      <p className="mt-2 text-slate-500">
-                        Fleksibel startdato · Foreløpig aktiv
+                <div className="mt-5 grid gap-3 md:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-start gap-3">
+                      <Bell className="mt-0.5 h-4 w-4 text-[#0f8f5b]" />
+                      <p className="text-slate-700">
+                        Du har {pameldteTurer} aktiv(e) turpåmelding(er).
                       </p>
-                      <div className="mt-4 flex gap-2">
-                        <span className="rounded-full bg-[#eef5f1] px-3 py-1 text-sm font-medium text-[#0f3d2e]">
-                          8 interesserte
-                        </span>
-                        <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
-                          Ikke låst
-                        </span>
-                      </div>
                     </div>
                   </div>
-                </section>
 
-                <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                    <h2 className="text-2xl font-semibold text-slate-900">Varsler</h2>
-                  </div>
-
-                  <div className="mt-5 space-y-3">
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="flex items-start gap-3">
-                        <Bell className="mt-0.5 h-4 w-4 text-[#0f8f5b]" />
-                        <p className="text-slate-700">
-                          Du har {pameldteTurer} aktiv(e) turpåmelding(er).
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="flex items-start gap-3">
-                        <Bell className="mt-0.5 h-4 w-4 text-[#0f8f5b]" />
-                        <p className="text-slate-700">
-                          Ingen nye bookingoppdateringer akkurat nå.
-                        </p>
-                      </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-start gap-3">
+                      <Bell className="mt-0.5 h-4 w-4 text-[#0f8f5b]" />
+                      <p className="text-slate-700">
+                        {aktiveBookinger > 0
+                          ? `Du har ${aktiveBookinger} aktiv${aktiveBookinger === 1 ? "" : "e"} hyttebooking${aktiveBookinger === 1 ? "" : "er"}.`
+                          : "Ingen aktive hyttebookinger akkurat nå."}
+                      </p>
                     </div>
                   </div>
-                </section>
+                </div>
               </section>
 
               <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -543,6 +586,56 @@ export default function MinSide() {
                   )}
                 </div>
               </section>
+
+              <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                  <h2 className="text-2xl font-semibold text-slate-900">Mine kommentarer</h2>
+                  <span className="text-sm text-slate-500">
+                    {kommentarItems.length} totalt
+                  </span>
+                </div>
+
+                <div className="mt-5 space-y-3">
+                  {kommentarItems.length > 0 ? (
+                    kommentarItems.slice(0, 5).map((k) => (
+                      <div
+                        key={k.id}
+                        className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm text-slate-500">
+                              På tur:{" "}
+                              {k.tur ? (
+                                <NavLink
+                                  to={`/turer/${k.tur.id}`}
+                                  className="font-semibold text-[#0f8f5b] hover:underline"
+                                >
+                                  {k.tur.tittel}
+                                </NavLink>
+                              ) : (
+                                <span className="text-slate-600">(slettet tur)</span>
+                              )}
+                            </p>
+                            <p className="mt-2 text-slate-800">{k.body}</p>
+                            <p className="mt-2 text-xs text-slate-400">
+                              {new Date(k.created_at).toLocaleDateString("no-NO", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="mt-2 text-slate-500">
+                      Du har ikke skrevet kommentarer ennå.
+                    </p>
+                  )}
+                </div>
+              </section>
             </>
           )}
 
@@ -566,20 +659,26 @@ export default function MinSide() {
                           </h3>
                           <p className="mt-2 flex items-center gap-2 text-slate-500">
                             <CalendarDays className="h-4 w-4" />
-                            Start:{" "}
                             {new Date(pamelding.tur_dato.start_at).toLocaleDateString("no-NO")}
+                            {" – "}
+                            {new Date(pamelding.tur_dato.end_at).toLocaleDateString("no-NO")}
                           </p>
+                          {pamelding.tur_dato.tittel && (
+                            <p className="mt-1 text-sm text-slate-400">
+                              {pamelding.tur_dato.tittel}
+                            </p>
+                          )}
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
                           <span
                             className={`rounded-full px-3 py-1 text-sm font-medium ${
-                              pamelding.status === "pending"
-                                ? "bg-slate-100 text-slate-700 ring-1 ring-slate-200"
-                                : "bg-[#eef5f1] text-[#0f3d2e] ring-1 ring-[#dcebe4]"
+                              PAMELDING_STYLE[pamelding.status as PameldingStatus] ??
+                              "bg-slate-100 text-slate-700 ring-1 ring-slate-200"
                             }`}
                           >
-                            {pamelding.status === "pending" ? "Påmeldt" : pamelding.status}
+                            {PAMELDING_LABEL[pamelding.status as PameldingStatus] ??
+                              pamelding.status}
                           </span>
 
                           <NavLink
@@ -595,41 +694,6 @@ export default function MinSide() {
                 ) : (
                   <p className="mt-5 text-slate-500">Du er ikke påmeldt noen turer.</p>
                 )}
-              </div>
-            </section>
-          )}
-
-          {activeTab === "fellesturer" && (
-            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                <h2 className="text-2xl font-semibold text-slate-900">Fellesturer</h2>
-              </div>
-
-              <div className="mt-5 space-y-3">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <h3 className="text-xl font-semibold text-slate-900">
-                    Hardangervidda på tvers
-                  </h3>
-                  <p className="mt-2 text-slate-500">
-                    Finse – Krækkja – Tuva
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <span className="rounded-full bg-[#eef5f1] px-3 py-1 text-sm font-medium text-[#0f3d2e]">
-                      8 interesserte
-                    </span>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
-                      Foreløpig aktiv
-                    </span>
-                  </div>
-                  <div className="mt-4">
-                    <NavLink
-                      to="/fleksibel-tur"
-                      className="rounded-xl bg-[#0f3d2e] px-4 py-2 text-sm font-medium text-white hover:bg-[#0c3125]"
-                    >
-                      Se fellestur
-                    </NavLink>
-                  </div>
-                </div>
               </div>
             </section>
           )}
@@ -672,20 +736,75 @@ export default function MinSide() {
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                 <h2 className="text-2xl font-semibold text-slate-900">Bookinger</h2>
+                <span className="text-sm text-slate-500">
+                  {bookingItems.length} totalt
+                </span>
               </div>
 
               <div className="mt-5 space-y-3">
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5">
-                  <p className="text-slate-600">
-                    Ingen aktive hyttebookinger ennå.
-                  </p>
-                  <NavLink
-                    to="/my-cabins"
-                    className="mt-4 inline-flex rounded-xl bg-[#0f8f5b] px-4 py-2 text-sm font-medium text-white hover:bg-[#0d7a4e]"
-                  >
-                    Finn hytter
-                  </NavLink>
-                </div>
+                {bookingItems.length > 0 ? (
+                  bookingItems.map((b) => (
+                    <div
+                      key={b.id}
+                      className="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300"
+                    >
+                      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div>
+                          <h3 className="text-xl font-semibold text-slate-900">
+                            {b.hytte?.navn ?? "Ukjent hytte"}
+                          </h3>
+                          {b.hytte?.omrade && (
+                            <p className="mt-1 text-sm text-slate-500">{b.hytte.omrade}</p>
+                          )}
+                          <p className="mt-2 flex items-center gap-2 text-slate-600">
+                            <CalendarDays className="h-4 w-4" />
+                            {formatBookingDate(b.start_dato)} – {formatBookingDate(b.slutt_dato)}
+                          </p>
+                          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
+                            {b.antall_gjester !== null && (
+                              <span>
+                                {b.antall_gjester}{" "}
+                                {b.antall_gjester === 1 ? "gjest" : "gjester"}
+                              </span>
+                            )}
+                            {b.total_pris !== null && (
+                              <span>Total: {b.total_pris} kr</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={`rounded-full px-3 py-1 text-sm font-medium ${BOOKING_STATUS_STYLE[b.status]}`}
+                          >
+                            {BOOKING_STATUS_LABEL[b.status]}
+                          </span>
+
+                          {b.hytte?.id && (
+                            <NavLink
+                              to={`/hytter/${b.hytte.id}`}
+                              className="rounded-xl bg-[#0f3d2e] px-4 py-2 text-sm font-medium text-white hover:bg-[#0c3125]"
+                            >
+                              Detaljer
+                            </NavLink>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5">
+                    <p className="text-slate-600">
+                      Ingen hyttebookinger ennå.
+                    </p>
+                    <NavLink
+                      to="/hytter"
+                      className="mt-4 inline-flex rounded-xl bg-[#0f8f5b] px-4 py-2 text-sm font-medium text-white hover:bg-[#0d7a4e]"
+                    >
+                      Finn hytter
+                    </NavLink>
+                  </div>
+                )}
               </div>
             </section>
           )}

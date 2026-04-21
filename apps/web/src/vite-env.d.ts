@@ -14,12 +14,3 @@ declare module "*.jpeg";
 declare module "*.webp";
 declare module "*.avif";
 declare module "*.svg";
-
-declare module "./pages/RedigerProfil" {
-  const RedigerProfil: unknown;
-  export default RedigerProfil;
-}
-declare module "./pages/RedigerProfil.jsx" {
-  const RedigerProfil: unknown;
-  export default RedigerProfil;
-}

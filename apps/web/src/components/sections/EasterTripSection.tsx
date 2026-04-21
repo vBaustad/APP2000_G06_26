@@ -9,7 +9,7 @@
 
 import { Link } from "react-router-dom";
 import { ArrowRight, Clock3, Route as RouteIcon, SunMedium } from "lucide-react";
-import type { Tour } from "../../utils/mockTours";
+import type { Tour } from "../../types/tour";
 
 type EasterTripsSectionProps = {
   tours: Tour[];

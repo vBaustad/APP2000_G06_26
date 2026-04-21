@@ -6,9 +6,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import TurSkjema from "../components/TurSkjema";
 import { getTours } from "../services/toursApi";
-import type { Tour, Region } from "../utils/mockTours";
+import type { Tour, Region } from "../types/tour";
 import {
   MapPin,
   Mountain,
@@ -17,6 +16,7 @@ import {
   CloudSun,
   Wind,
   Droplets,
+  Users,
 } from "lucide-react";
 import { getMockWeather } from "../utils/weatherMock";
 
@@ -107,10 +107,10 @@ export default function Turer() {
   const [lengths, setLengths] = useState<LengthBucket[]>([]);
   const [durations, setDurations] = useState<DurationBucket[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
+  const [kunFellestur, setKunFellestur] = useState(false);
 
   const [sort, setSort] = useState<SortKey>("newest");
 
-  const [showCreate, setShowCreate] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
@@ -137,7 +137,8 @@ export default function Turer() {
     };
   }, []);
 
-  const activeFilterCount = diffs.length + lengths.length + durations.length + regions.length;
+  const activeFilterCount =
+    diffs.length + lengths.length + durations.length + regions.length + (kunFellestur ? 1 : 0);
 
   const visibleTours = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -154,8 +155,16 @@ export default function Turer() {
       const matchesDur =
         durations.length === 0 || durations.some((b) => inDurationBucket(t.durationHours, b));
       const matchesRegion = regions.length === 0 || regions.includes(t.region);
+      const matchesFellestur = !kunFellestur || (t.datoer?.length ?? 0) > 0;
 
-      return matchesQuery && matchesDiff && matchesLen && matchesDur && matchesRegion;
+      return (
+        matchesQuery &&
+        matchesDiff &&
+        matchesLen &&
+        matchesDur &&
+        matchesRegion &&
+        matchesFellestur
+      );
     });
 
     if (sort === "distanceAsc") {
@@ -171,13 +180,7 @@ export default function Turer() {
     }
 
     return next;
-  }, [allTours, query, diffs, lengths, durations, regions, sort]);
-
-  function handleCreate(newTour: Tour) {
-    const safe = ensureTourImage(newTour);
-    setAllTours((prev) => [safe, ...prev]);
-    setShowCreate(false);
-  }
+  }, [allTours, query, diffs, lengths, durations, regions, sort, kunFellestur]);
 
   function clearAllFilters() {
     setQuery("");
@@ -185,6 +188,7 @@ export default function Turer() {
     setLengths([]);
     setDurations([]);
     setRegions([]);
+    setKunFellestur(false);
     setSort("newest");
   }
 
@@ -223,6 +227,15 @@ export default function Turer() {
       label: r,
       onRemove: () => setRegions((prev) => prev.filter((x) => x !== r)),
     })),
+    ...(kunFellestur
+      ? [
+          {
+            key: "fellestur",
+            label: "Kun fellesturer",
+            onRemove: () => setKunFellestur(false),
+          },
+        ]
+      : []),
   ];
 
   const totalVisibleCount = visibleTours.length;
@@ -320,16 +333,12 @@ export default function Turer() {
                   )}
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowCreate((v) => !v);
-                    setFiltersOpen(false);
-                  }}
-                  className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
+                <Link
+                  to="/opprett-tur"
+                  className="rounded-xl bg-emerald-600 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-emerald-700"
                 >
-                  {showCreate ? "Lukk" : "Legg til tur"}
-                </button>
+                  Opprett tur
+                </Link>
               </div>
             </div>
 
@@ -409,6 +418,19 @@ export default function Turer() {
                       </label>
                     ))}
                   </div>
+
+                  <div>
+                    <h3 className="mb-3 text-lg font-semibold">Type</h3>
+                    <label className="flex items-center gap-3 py-2 text-base">
+                      <input
+                        type="checkbox"
+                        checked={kunFellestur}
+                        onChange={() => setKunFellestur((v) => !v)}
+                        className="h-5 w-5"
+                      />
+                      <span>Kun fellesturer (med satte datoer)</span>
+                    </label>
+                  </div>
                 </div>
 
                 <div className="mt-6 flex items-center justify-between">
@@ -431,11 +453,6 @@ export default function Turer() {
               </div>
             )}
 
-            {showCreate && (
-              <div className="mt-5 border-t border-gray-100 pt-5">
-                <TurSkjema mode="create" onCreate={handleCreate} />
-              </div>
-            )}
           </div>
         </section>
 
@@ -463,87 +480,103 @@ export default function Turer() {
               </div>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {visibleTours.map((t) => (
-                  <article
-                    key={t.id}
-                    className="group relative overflow-hidden rounded-2xl bg-white shadow transition hover:shadow-lg"
-                  >
-                    <div className="relative">
-                      <img
-                        src={t.imageUrl || "/images/trip-card-placeholder.jpg"}
-                        alt={t.title}
-                        className="h-56 w-full object-cover"
-                        loading="lazy"
-                      />
+                {visibleTours.map((t) => {
+                  const erFellestur = (t.datoer?.length ?? 0) > 0;
+                  return (
+                    <Link
+                      key={t.id}
+                      to={`/turer/${t.id}`}
+                      className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow transition hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    >
+                      <div className="relative">
+                        <img
+                          src={t.imageUrl || "/images/trip-card-placeholder.jpg"}
+                          alt={t.title}
+                          className="h-56 w-full object-cover"
+                          loading="lazy"
+                        />
 
-                      <span className="absolute left-4 top-4 rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 shadow-sm">
-                        {t.difficulty}
-                      </span>
-                    </div>
+                        <span className="absolute left-4 top-4 rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 shadow-sm">
+                          {t.difficulty}
+                        </span>
 
-                    <div className="flex flex-col p-5">
-                      <h3 className="text-2xl font-semibold tracking-tight text-gray-900">
-                        {t.title}
-                      </h3>
-
-                      <div className="mt-2 flex items-center gap-2 text-gray-600">
-                        <MapPin className="h-4 w-4" />
-                        <p className="text-sm">
-                          {t.location}
-                          <span className="mx-2">•</span>
-                          {t.region}
-                        </p>
+                        {erFellestur && (
+                          <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-emerald-600 px-3 py-1 text-sm font-semibold text-white shadow-sm">
+                            <Users className="h-3.5 w-3.5" />
+                            Fellestur
+                          </span>
+                        )}
                       </div>
 
-                      <div className="mt-5 grid grid-cols-3 gap-4 border-t border-gray-100 pt-4">
-                        <div className="text-sm text-gray-600">
-                          <div className="flex items-center gap-2">
-                            <Route className="h-4 w-4" />
-                            <span>Distanse</span>
+                      <div className="flex flex-1 flex-col p-5">
+                        <h3 className="text-2xl font-semibold tracking-tight text-gray-900">
+                          {t.title}
+                        </h3>
+
+                        <div className="mt-2 flex items-center gap-2 text-gray-600">
+                          <MapPin className="h-4 w-4" />
+                          <p className="text-sm">
+                            {t.location}
+                            <span className="mx-2">•</span>
+                            {t.region}
+                          </p>
+                        </div>
+
+                        <div className="mt-5 grid grid-cols-3 gap-4 border-t border-gray-100 pt-4">
+                          <div className="text-sm text-gray-600">
+                            <div className="flex items-center gap-2">
+                              <Route className="h-4 w-4" />
+                              <span>Distanse</span>
+                            </div>
+                            <div className="mt-1 text-lg font-semibold text-gray-900">
+                              {t.distanceKm} km
+                            </div>
                           </div>
-                          <div className="mt-1 text-lg font-semibold text-gray-900">
-                            {t.distanceKm} km
+
+                          <div className="text-sm text-gray-600">
+                            <div className="flex items-center gap-2">
+                              <Mountain className="h-4 w-4" />
+                              <span>Høydemeter</span>
+                            </div>
+                            <div className="mt-1 text-lg font-semibold text-gray-900">
+                              {t.elevationM} m
+                            </div>
+                          </div>
+
+                          <div className="text-sm text-gray-600">
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4" />
+                              <span>Tid</span>
+                            </div>
+                            <div className="mt-1 text-lg font-semibold text-gray-900">
+                              {t.durationHours} t
+                            </div>
                           </div>
                         </div>
 
-                        <div className="text-sm text-gray-600">
-                          <div className="flex items-center gap-2">
-                            <Mountain className="h-4 w-4" />
-                            <span>Høydemeter</span>
-                          </div>
-                          <div className="mt-1 text-lg font-semibold text-gray-900">
-                            {t.elevationM} m
-                          </div>
-                        </div>
+                        <WeatherSummary region={t.region} />
 
-                        <div className="text-sm text-gray-600">
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4" />
-                            <span>Tid</span>
+                        {erFellestur && (
+                          <div className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+                            {t.datoer?.length === 1
+                              ? "1 dato tilgjengelig — meld deg på"
+                              : `${t.datoer?.length} datoer — meld deg på`}
                           </div>
-                          <div className="mt-1 text-lg font-semibold text-gray-900">
-                            {t.durationHours} t
+                        )}
+
+                        <div className="mt-auto flex items-center justify-between gap-3 border-t border-gray-100 pt-4">
+                          <div className="text-sm text-gray-500">
+                            Type: {t.type || "Ukjent"}
                           </div>
+
+                          <span className="text-sm font-semibold text-emerald-700 group-hover:underline">
+                            Se mer →
+                          </span>
                         </div>
                       </div>
-
-                      <WeatherSummary region={t.region} />
-
-                      <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="text-sm text-gray-500">
-                          Type: {t.type || "Ukjent"}
-                        </div>
-
-                        <Link
-                          to={`/turer/${t.id}`}
-                          className="text-sm font-semibold text-emerald-700 hover:underline"
-                        >
-                          Se mer
-                        </Link>
-                      </div>
-                    </div>
-                  </article>
-                ))}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           )}

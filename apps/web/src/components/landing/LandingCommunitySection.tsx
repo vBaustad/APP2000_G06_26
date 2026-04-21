@@ -17,7 +17,7 @@ import {
   Route as RouteIcon,
   Star,
 } from "lucide-react";
-import type { Tour } from "../../utils/mockTours";
+import type { Tour } from "../../types/tour";
 
 type LandingCommunitySectionProps = {
   tours: Tour[];
