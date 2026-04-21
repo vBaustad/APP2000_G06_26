@@ -116,9 +116,9 @@ export default function OpprettAnnonsor()
   }, [previewUrl]);
 
   async function handleSubmit(event: React.FormEvent) {
+     console.log("SUBMIT KJØRER");
     event.preventDefault();
-    setError(null);
-    setSubmitted(false);
+    setError(null);    setSubmitted(false);
 
     if (!tittel.trim()) {
       setError("Du må skrive inn en tittel.");
@@ -394,7 +394,7 @@ export default function OpprettAnnonsor()
 
             {submitted && (
               <p className="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-                Annonsen er registrert (simulert). Du kan nå tilbake til annonsørportalen.
+                Annonsen er registrert. Du kan nå tilbake til annonsørportalen.
               </p>
             )}
           </form>

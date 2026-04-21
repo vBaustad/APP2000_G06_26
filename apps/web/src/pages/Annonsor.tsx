@@ -33,9 +33,38 @@ const API_BASE = `${import.meta.env.VITE_API_URL}/api/annonser`;
 export default function Annonsor() {
   const { user, token } = useAuth();
   const isAnnonsor = useMemo(() => user?.roller?.includes("annonsor") ?? false, [user]);
+ 
   const [ads, setAds] = useState<Ad[]>([]);
+   const handleDelete = async (id: number) => {
+  try {
+    const response = await fetch(`${API_BASE}/${id}`, {
+      method: "DELETE",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+
+    if (!response.ok) {
+      console.error("Kunne ikke slette annonsen");
+      return;
+    }
+
+    setAds((prev) => prev.filter((ad) => ad.id !== id));
+  } catch (error) {
+    console.error("Feil ved sletting:", error);
+  }
+};
   const [loading, setLoading] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
+if (loading) {
+  return <p className="text-slate-500">Laster annonser...</p>;
+}
+
+if (error) {
+  return <p className="text-red-500">{error}</p>;
+}
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "paused" | "ended">("all");
 
@@ -306,7 +335,17 @@ export default function Annonsor() {
                         >
                           Åpne annonse
                         </button>
+                        
                       ) : null}
+                      <button
+  type="button"
+  onClick={() => handleDelete(ad.id)}
+  className="rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-600"
+>
+  Slett
+</button>
+
+
                       <span className="ml-auto rounded-full bg-slate-100 px-3 py-2 text-sm text-slate-700">
                         Budsjett brukt: {ad.budget_spent} kr
                       </span>
