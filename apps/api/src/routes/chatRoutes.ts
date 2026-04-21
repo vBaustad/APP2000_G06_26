@@ -266,16 +266,15 @@ function mapChatDetail(
           const godkjenninger = Array.isArray(bilde.melding_bilde_godkjenning)
             ? bilde.melding_bilde_godkjenning
             : [];
-          const erEier = melding.sender_id === brukerId;
           const harGodkjent = godkjenninger.some(
             (godkjenning) => godkjenning.bruker_id === brukerId,
           );
 
           return {
             id: bilde.id,
-            imageUrl: erEier || harGodkjent ? bilde.bilde_url : null,
-            isVisibleToCurrentUser: erEier || harGodkjent,
-            requiresApproval: !erEier && !harGodkjent,
+            imageUrl: harGodkjent ? bilde.bilde_url : null,
+            isVisibleToCurrentUser: harGodkjent,
+            requiresApproval: !harGodkjent,
             approvedCount: godkjenninger.length,
           };
         }),
@@ -701,11 +700,6 @@ chatRouter.post(
             melding_id: melding.id,
             bilde_url: blob.url,
             godkjent_av_alle: false,
-            melding_bilde_godkjenning: {
-              create: {
-                bruker_id: brukerId,
-              },
-            },
           },
           include: {
             melding_bilde_godkjenning: {
@@ -736,9 +730,9 @@ chatRouter.post(
           bilder: [
             {
               id: bilde.id,
-              imageUrl: blob.url,
-              isVisibleToCurrentUser: true,
-              requiresApproval: false,
+              imageUrl: null,
+              isVisibleToCurrentUser: false,
+              requiresApproval: true,
               approvedCount: bilde.melding_bilde_godkjenning.length,
             },
           ],
@@ -804,10 +798,6 @@ chatRouter.post("/:chatId/images/:imageId/approve", requireAuth, async (req: Aut
 
     if (!bilde) {
       return res.status(404).json({ error: "Fant ikke bildet." });
-    }
-
-    if (bilde.melding.sender_id === brukerId) {
-      return res.status(400).json({ error: "Du har allerede tilgang til ditt eget bilde." });
     }
 
     await prisma.melding_bilde_godkjenning.upsert({
