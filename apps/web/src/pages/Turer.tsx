@@ -69,6 +69,31 @@ function ensureTourImage(t: Tour): Tour {
   return { ...t, imageUrl: TOUR_IMAGES[idx] };
 }
 
+function buildMapSearchParams({
+  query,
+  diffs,
+  regions,
+  kunFellestur,
+  tourId,
+}: {
+  query: string;
+  diffs: Tour["difficulty"][];
+  regions: Region[];
+  kunFellestur: boolean;
+  tourId?: string;
+}) {
+  const params = new URLSearchParams();
+
+  if (query.trim()) params.set("q", query.trim());
+  if (diffs.length === 1) params.set("difficulty", diffs[0]);
+  if (regions.length === 1) params.set("region", regions[0]);
+  if (kunFellestur) params.set("fellestur", "1");
+  if (tourId) params.set("tourId", tourId);
+
+  const value = params.toString();
+  return value ? `?${value}` : "";
+}
+
 function WeatherSummary({ region }: { region?: string }) {
   const weather = getMockWeather(region);
 
@@ -240,6 +265,7 @@ export default function Turer() {
 
   const totalVisibleCount = visibleTours.length;
   const totalCount = allTours.length;
+  const mapSearch = buildMapSearchParams({ query, diffs, regions, kunFellestur });
 
   return (
     <main>
@@ -332,6 +358,13 @@ export default function Turer() {
                     </span>
                   )}
                 </button>
+
+                <Link
+                  to={`/kart${mapSearch}`}
+                  className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
+                >
+                  Vis resultatene i kart
+                </Link>
 
                 <Link
                   to="/opprett-tur"
@@ -482,19 +515,28 @@ export default function Turer() {
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {visibleTours.map((t) => {
                   const erFellestur = (t.datoer?.length ?? 0) > 0;
+                  const tourMapSearch = buildMapSearchParams({
+                    query,
+                    diffs,
+                    regions,
+                    kunFellestur,
+                    tourId: t.id,
+                  });
+
                   return (
-                    <Link
+                    <article
                       key={t.id}
-                      to={`/turer/${t.id}`}
-                      className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow transition hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow transition hover:-translate-y-0.5 hover:shadow-lg"
                     >
                       <div className="relative">
-                        <img
-                          src={t.imageUrl || "/images/trip-card-placeholder.jpg"}
-                          alt={t.title}
-                          className="h-56 w-full object-cover"
-                          loading="lazy"
-                        />
+                        <Link to={`/turer/${t.id}`} className="block focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                          <img
+                            src={t.imageUrl || "/images/trip-card-placeholder.jpg"}
+                            alt={t.title}
+                            className="h-56 w-full object-cover"
+                            loading="lazy"
+                          />
+                        </Link>
 
                         <span className="absolute left-4 top-4 rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 shadow-sm">
                           {t.difficulty}
@@ -509,9 +551,14 @@ export default function Turer() {
                       </div>
 
                       <div className="flex flex-1 flex-col p-5">
-                        <h3 className="text-2xl font-semibold tracking-tight text-gray-900">
-                          {t.title}
-                        </h3>
+                        <Link
+                          to={`/turer/${t.id}`}
+                          className="focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        >
+                          <h3 className="text-2xl font-semibold tracking-tight text-gray-900">
+                            {t.title}
+                          </h3>
+                        </Link>
 
                         <div className="mt-2 flex items-center gap-2 text-gray-600">
                           <MapPin className="h-4 w-4" />
@@ -569,12 +616,26 @@ export default function Turer() {
                             Type: {t.type || "Ukjent"}
                           </div>
 
-                          <span className="text-sm font-semibold text-emerald-700 group-hover:underline">
-                            Se mer →
-                          </span>
+                          <div className="flex items-center gap-4">
+                            {t.mapCenter && (
+                              <Link
+                                to={`/kart${tourMapSearch}`}
+                                className="text-sm font-semibold text-slate-600 hover:underline"
+                              >
+                                Vis i kart
+                              </Link>
+                            )}
+
+                            <Link
+                              to={`/turer/${t.id}`}
+                              className="text-sm font-semibold text-emerald-700 group-hover:underline"
+                            >
+                              Se mer →
+                            </Link>
+                          </div>
                         </div>
                       </div>
-                    </Link>
+                    </article>
                   );
                 })}
               </div>

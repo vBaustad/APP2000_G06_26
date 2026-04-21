@@ -1,3 +1,8 @@
+/**
+ * Fil: Meldinger.tsx
+ * Beskrivelse: Meldingssiden for direktemeldinger og gruppechatter knyttet til turer.
+ */
+
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Check, ImagePlus, MessageCircle, PenSquare, Search, Send, Users, X } from "lucide-react";
