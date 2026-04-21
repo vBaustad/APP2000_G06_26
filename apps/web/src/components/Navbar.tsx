@@ -126,6 +126,14 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
                       Min side
                     </NavLink>
 
+                    <NavLink
+                      to="/meldinger"
+                      className={dropdownLinkClass}
+                      onClick={() => setProfileOpen(false)}
+                    >
+                      Meldinger
+                    </NavLink>
+
                     {isHytteeier && (
                       <NavLink
                         to="/mine-hytter"

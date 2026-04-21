@@ -16,6 +16,7 @@ import { userRouter } from "./routes/userRoutes";
 import { adminRouter } from "./routes/adminRoutes";
 import { favorittRouter } from "./routes/favorittRoutes";
 import { turstiRouter } from "./routes/turstiRoutes";
+import { chatRouter } from "./routes/chatRoutes";
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use("/api/turstier", turstiRouter);
 app.use("/api/bruker", userRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/favoritter", favorittRouter);
+app.use("/api/chats", chatRouter);
 
 // Helsesjekk
 app.get('/', (req, res) => {

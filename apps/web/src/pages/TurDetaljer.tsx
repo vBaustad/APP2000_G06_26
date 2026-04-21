@@ -22,6 +22,7 @@ import {
   Calendar,
   Repeat,
   Footprints,
+  MessageCircle,
 } from "lucide-react";
 import TurMap from "../components/TurMap";
 
@@ -164,6 +165,7 @@ export default function TurDetaljer() {
   const [kommentarFeil, setKommentarFeil] = useState<string | null>(null);
 
   const [minePameldinger, setMinePameldinger] = useState<MinPamelding[]>([]);
+  const [chatLenker, setChatLenker] = useState<Record<number, number>>({});
 
   const [signupLoading, setSignupLoading] = useState(false);
   const [signupMessage, setSignupMessage] = useState("");
@@ -189,6 +191,14 @@ export default function TurDetaljer() {
     const user = safeGet("user") || safeGet("auth_user");
     return Boolean(token || user);
   }, []);
+
+  const datoer = tour?.datoer ?? [];
+  const pameldteDatoIds = new Set(minePameldinger.map((p) => p.tur_dato.id));
+  const token = safeGet("token") || safeGet("auth_token");
+  const lasedeChatPameldinger = minePameldinger.filter((pamelding) => {
+    const dato = datoer.find((item) => item.id === pamelding.tur_dato.id);
+    return dato?.status === "locked" && pamelding.status !== "freed";
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -314,6 +324,57 @@ export default function TurDetaljer() {
     };
   }, [avmeldKandidat, avmeldBusy]);
 
+  useEffect(() => {
+    if (!token || lasedeChatPameldinger.length === 0) {
+      setChatLenker({});
+      return;
+    }
+
+    let active = true;
+
+    async function loadChatLenker() {
+      try {
+        const entries = await Promise.all(
+          lasedeChatPameldinger.map(async (pamelding) => {
+            const res = await fetch(
+              `${import.meta.env.VITE_API_URL}/api/turer/datoer/${pamelding.tur_dato.id}/chat`,
+              {
+                headers: { Authorization: `Bearer ${token}` },
+              },
+            );
+
+            const data = (await res.json().catch(() => null)) as
+              | { chatId?: number }
+              | null;
+
+            if (!res.ok || !data?.chatId) {
+              return null;
+            }
+
+            return [pamelding.tur_dato.id, data.chatId] as const;
+          }),
+        );
+
+        if (!active) return;
+
+        setChatLenker(
+          Object.fromEntries(entries.filter((entry): entry is readonly [number, number] => entry !== null)),
+        );
+      } catch (error) {
+        console.error("Feil ved henting av chat-lenker:", error);
+        if (active) {
+          setChatLenker({});
+        }
+      }
+    }
+
+    void loadChatLenker();
+
+    return () => {
+      active = false;
+    };
+  }, [lasedeChatPameldinger, token]);
+
   if (loading) {
     return (
       <main className="min-h-[70vh] bg-gray-50">
@@ -356,8 +417,6 @@ export default function TurDetaljer() {
   }
 
   const imageUrl = tour.imageUrl || "/images/trip-card-placeholder.jpg";
-  const datoer = tour.datoer ?? [];
-  const pameldteDatoIds = new Set(minePameldinger.map((p) => p.tur_dato.id));
 
   async function handleShare() {
     const url = window.location.href;
@@ -781,6 +840,66 @@ export default function TurDetaljer() {
                       Meld av
                     </button>
                   </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {lasedeChatPameldinger.length > 0 && (
+          <div className="mt-6 rounded-2xl border border-sky-100 bg-white p-5 shadow">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5 text-sky-700" />
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    Gruppesamtale i meldinger
+                  </h2>
+                </div>
+                <p className="mt-1 text-sm text-slate-600">
+                  Du har {lasedeChatPameldinger.length} låst{" "}
+                  {lasedeChatPameldinger.length === 1 ? "turdato" : "turdatoer"} med
+                  egen gruppesamtale. Åpne dem i meldingssiden.
+                </p>
+              </div>
+              <Link
+                to={
+                  lasedeChatPameldinger[0] && chatLenker[lasedeChatPameldinger[0].tur_dato.id]
+                    ? `/meldinger?chat=${chatLenker[lasedeChatPameldinger[0].tur_dato.id]}`
+                    : "/meldinger"
+                }
+                className="inline-flex items-center gap-2 self-start rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Åpne riktig chat
+              </Link>
+            </div>
+
+            <ul className="mt-4 space-y-2 text-sm text-slate-600">
+              {lasedeChatPameldinger.map((pamelding) => (
+                <li
+                  key={pamelding.id}
+                  className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div>
+                    <span className="font-semibold text-slate-800">
+                      {pamelding.tur_dato.tittel ?? "Turdato"}
+                    </span>
+                    {" · "}
+                    {formatDateNo(pamelding.tur_dato.start_at)} –{" "}
+                    {formatDateNo(pamelding.tur_dato.end_at)}
+                  </div>
+                  <Link
+                    to={
+                      chatLenker[pamelding.tur_dato.id]
+                        ? `/meldinger?chat=${chatLenker[pamelding.tur_dato.id]}`
+                        : "/meldinger"
+                    }
+                    className="inline-flex items-center gap-2 self-start rounded-xl border border-sky-200 bg-white px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    {chatLenker[pamelding.tur_dato.id] ? "Åpne chat" : "Gå til meldinger"}
+                  </Link>
                 </li>
               ))}
             </ul>

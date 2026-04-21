@@ -17,12 +17,283 @@
  */
 
 import { Router, Request, Response } from "express";
-import { TurType, TurStatus } from "@prisma/client";
+import { Prisma, TurType, TurStatus } from "@prisma/client";
 import { prisma } from "../prisma";
 import { requireAuth, requireRole } from "../middleware/auth";
 import type { AuthedRequest } from "../middleware/auth";
 
 export const turRouter = Router();
+
+const CHAT_TILGANG_STATUS = ["pending", "binding", "locked"] as const;
+
+type TurDatoChatError = {
+  ok: false;
+  error: string;
+  statusCode: number;
+};
+
+type TurDatoChatSuccess = {
+  ok: true;
+  chatId: number;
+  turDatoId: number;
+  title: string;
+  subtitle: string;
+  medlemmer: Array<{
+    id: number;
+    fornavn: string | null;
+    etternavn: string | null;
+  }>;
+  meldinger: Array<{
+    id: number;
+    body: string;
+    created_at: Date;
+    sender: {
+      id: number;
+      fornavn: string | null;
+      etternavn: string | null;
+    } | null;
+  }>;
+};
+
+function buildTurDatoChatKey(turDatoId: number) {
+  return `tur_dato:${turDatoId}`;
+}
+
+function formatChatDateRange(startAt: Date, endAt: Date) {
+  const formatter = new Intl.DateTimeFormat("nb-NO", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+
+  return `${formatter.format(startAt)} - ${formatter.format(endAt)}`;
+}
+
+async function ensureTurDatoChat(
+  db: typeof prisma | Prisma.TransactionClient,
+  turDatoId: number,
+  brukerId: number,
+): Promise<TurDatoChatError | TurDatoChatSuccess> {
+  const turDato = await db.tur_dato.findUnique({
+    where: { id: turDatoId },
+    select: {
+      id: true,
+      tur_id: true,
+      tittel: true,
+      start_at: true,
+      end_at: true,
+      status: true,
+      tur: {
+        select: {
+          id: true,
+          tittel: true,
+        },
+      },
+      tur_pamelding: {
+        where: {
+          status: { in: [...CHAT_TILGANG_STATUS] },
+        },
+        select: {
+          bruker_id: true,
+          bruker: {
+            select: {
+              id: true,
+              fornavn: true,
+              etternavn: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!turDato) {
+    return { ok: false, error: "Fant ikke turdatoen.", statusCode: 404 };
+  }
+
+  if (turDato.status !== "locked") {
+    return {
+      ok: false,
+      error: "Gruppesamtalen åpnes først når turdatoen er låst.",
+      statusCode: 403,
+    };
+  }
+
+  const medlemIds = turDato.tur_pamelding.map((pamelding) => pamelding.bruker_id);
+
+  if (!medlemIds.includes(brukerId)) {
+    return {
+      ok: false,
+      error: "Du har ikke tilgang til denne turchatten.",
+      statusCode: 403,
+    };
+  }
+
+  let chat = await db.chat.findFirst({
+    where: {
+      tur_id: turDato.tur_id,
+      type: "group",
+      tittel: buildTurDatoChatKey(turDato.id),
+    },
+    select: { id: true },
+  });
+
+  if (!chat) {
+    chat = await db.chat.create({
+      data: {
+        tur_id: turDato.tur_id,
+        type: "group",
+        tittel: buildTurDatoChatKey(turDato.id),
+        chat_medlem: {
+          create: medlemIds.map((id) => ({
+            bruker_id: id,
+          })),
+        },
+      },
+      select: { id: true },
+    });
+  } else {
+    await db.chat_medlem.createMany({
+      data: medlemIds.map((id) => ({
+        chat_id: chat!.id,
+        bruker_id: id,
+      })),
+      skipDuplicates: true,
+    });
+
+    await db.chat_medlem.deleteMany({
+      where: {
+        chat_id: chat.id,
+        bruker_id: {
+          notIn: medlemIds,
+        },
+      },
+    });
+  }
+
+  const meldinger = await db.melding.findMany({
+    where: { chat_id: chat.id },
+    orderBy: { created_at: "asc" },
+    take: 200,
+    include: {
+      bruker: {
+        select: {
+          id: true,
+          fornavn: true,
+          etternavn: true,
+        },
+      },
+    },
+  });
+
+  return {
+    ok: true,
+    chatId: chat.id,
+    turDatoId: turDato.id,
+    title:
+      turDato.tittel?.trim() ||
+      `${turDato.tur.tittel} · ${formatChatDateRange(turDato.start_at, turDato.end_at)}`,
+    subtitle: `${turDato.tur.tittel} · ${formatChatDateRange(turDato.start_at, turDato.end_at)}`,
+    medlemmer: turDato.tur_pamelding.map((pamelding) => pamelding.bruker),
+    meldinger: meldinger.map((melding) => ({
+      id: melding.id,
+      body: melding.body,
+      created_at: melding.created_at,
+      sender: melding.bruker,
+    })),
+  };
+}
+
+turRouter.get("/datoer/:turDatoId/chat", requireAuth, async (req: AuthedRequest, res) => {
+  const turDatoId = Number(req.params.turDatoId);
+  const brukerId = req.user?.id;
+
+  if (isNaN(turDatoId)) {
+    return res.status(400).json({ error: "Ugyldig turdato-id." });
+  }
+
+  if (!brukerId) {
+    return res.status(401).json({ error: "Du må være logget inn." });
+  }
+
+  try {
+    const chat = await ensureTurDatoChat(prisma, turDatoId, brukerId);
+
+    if (!chat.ok) {
+      return res.status(chat.statusCode).json({ error: chat.error });
+    }
+
+    return res.json(chat);
+  } catch (error) {
+    console.error("Feil i GET /api/turer/datoer/:turDatoId/chat:", error);
+    return res.status(500).json({ error: "Intern serverfeil." });
+  }
+});
+
+turRouter.post(
+  "/datoer/:turDatoId/chat/meldinger",
+  requireAuth,
+  async (req: AuthedRequest, res) => {
+    const turDatoId = Number(req.params.turDatoId);
+    const brukerId = req.user?.id;
+    const body = typeof req.body?.body === "string" ? req.body.body.trim() : "";
+
+    if (isNaN(turDatoId)) {
+      return res.status(400).json({ error: "Ugyldig turdato-id." });
+    }
+
+    if (!brukerId) {
+      return res.status(401).json({ error: "Du må være logget inn." });
+    }
+
+    if (!body) {
+      return res.status(400).json({ error: "Meldingen kan ikke være tom." });
+    }
+
+    try {
+      const resultat = await prisma.$transaction(async (tx) => {
+        const chat = await ensureTurDatoChat(tx, turDatoId, brukerId);
+
+        if (!chat.ok) {
+          return chat;
+        }
+
+        const melding = await tx.melding.create({
+          data: {
+            chat_id: chat.chatId,
+            sender_id: brukerId,
+            body,
+          },
+          include: {
+            bruker: {
+              select: {
+                id: true,
+                fornavn: true,
+                etternavn: true,
+              },
+            },
+          },
+        });
+
+        return {
+          id: melding.id,
+          body: melding.body,
+          created_at: melding.created_at,
+          sender: melding.bruker,
+        };
+      });
+
+      if ("ok" in resultat && !resultat.ok) {
+        return res.status(resultat.statusCode).json({ error: resultat.error });
+      }
+
+      return res.status(201).json(resultat);
+    } catch (error) {
+      console.error("Feil i POST /api/turer/datoer/:turDatoId/chat/meldinger:", error);
+      return res.status(500).json({ error: "Intern serverfeil." });
+    }
+  },
+);
 
 // PUBLIC: Se alle turer.
 turRouter.get("/", async (_req, res) => {

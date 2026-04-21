@@ -20,3 +20,9 @@ export const uploadCabinImage = multer({
   fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 },
 }).single("bilde");
+
+export const uploadChatImage = multer({
+  storage: multer.memoryStorage(),
+  fileFilter,
+  limits: { fileSize: 8 * 1024 * 1024 },
+}).single("bilde");

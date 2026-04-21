@@ -26,6 +26,7 @@ import LoggetUt from "./pages/LoggetUt";
 import Admin from "./pages/Admin";
 import Hytter from "./pages/Hytter";
 import HytteDetaljer from "./pages/HytteDetaljer";
+import Meldinger from "./pages/Meldinger";
 
 export default function App() {
   return (
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="/turer/:id" element={<TurDetaljer />} />
           <Route path="/kart" element={<Kart />} />
           <Route path="/min-side" element={<MinSide />} />
+          <Route path="/meldinger" element={<Meldinger />} />
           <Route path="/mine-hytter" element={<MineHytter />} />
           <Route path="/hytter" element={<Hytter />} />
           <Route path="/hytter/:id" element={<HytteDetaljer />} />
