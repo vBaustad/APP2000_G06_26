@@ -1,14 +1,78 @@
 /**
  * Fil: annonseRoutes.ts
- * Beskrivelse: CRUD-operasjoner for annonser med rollebasert tilgang for annonsører.
+ * Beskrivelse: CRUD-operasjoner for annonser med rollebasert tilgang for annonsører. CRUD operasjoner for annonser er 
+ * laget med støtte og hjelp av ChatGPT. 
  */
 
 import { Router } from "express";
 import { prisma } from "../prisma";
 import { requireAuth, requireRole, AuthedRequest } from "../middleware/auth";
 
+
 export const annonseRouter = Router();
+
 export const annonsorRouter = Router();
+
+annonseRouter.post("/", requireAuth, async (req, res) => {
+  try {
+    const authed = req as AuthedRequest;
+    const email = authed.user?.email;
+
+    if (!email) {
+      return res.status(401).json({ error: "Bruker ikke autentisert" });
+    }
+
+    const annonsor = await prisma.annonsor.findFirst({
+      where: { epost: email },
+    });
+
+    if (!annonsor) {
+      return res.status(404).json({ error: "Fant ikke annonsør" });
+    }
+
+    const {
+      tittel,
+      beskrivelse,
+      bilde_url,
+      lenke_url,
+      kategori,
+      keywords,
+      annonsetype,
+      start_at,
+      end_at,
+      daily_budget,
+      pris_per_visning,
+      pris_per_klikk,
+    } = req.body;
+
+    const nyAnnonse = await prisma.annonse.create({
+      data: {
+        annonsor_id: annonsor.id,
+        tittel,
+        beskrivelse: beskrivelse || null,
+        bilde_url: bilde_url || null,
+        lenke_url: lenke_url || null,
+        kategori: kategori || null,
+        keywords: keywords || null,
+        annonsetype: annonsetype || null,
+        start_at: start_at ? new Date(start_at) : null,
+        end_at: end_at ? new Date(end_at) : null,
+        daily_budget: daily_budget ? Number(daily_budget) : 0,
+        pris_per_visning: pris_per_visning ? Number(pris_per_visning) : 0,
+        pris_per_klikk: pris_per_klikk ? Number(pris_per_klikk) : 0,
+        budget_spent: 0,
+        visninger: 0,
+        klikk: 0,
+        status: "pending",
+      },
+    });
+
+    res.status(201).json(nyAnnonse);
+  } catch (error) {
+    console.error("Feil ved oppretting av annonse:", error);
+    res.status(500).json({ error: "Kunne ikke opprette annonse" });
+  }
+});
 
 // Innlogget bruker: søk om å bli annonsør. Oppretter pending annonsør-rad,
 // men gir IKKE rollen — det gjør admin ved godkjenning.
@@ -121,11 +185,13 @@ annonseRouter.get(
 );
 
 // Annonsør: create annonse
-annonseRouter.post(
-  "/",
-  requireAuth,
-  requireRole("annonsor"),
-  async (req, res) => {
+annonseRouter.post("/", requireAuth, async (req, res) => {
+  console.log("POST /annonser traff backend");
+
+  try {
+    
+
+
     const annonsor = await getCurrentAnnonsor(req as AuthedRequest);
     if (!annonsor) {
       return res.status(404).json({ error: "Annonsørprofil ikke funnet" });
@@ -171,10 +237,12 @@ annonseRouter.post(
         pris_per_klikk: pris_per_klikk ? Number(pris_per_klikk) : 0,
       },
     });
-
-    res.status(201).json(created);
+res.status(201).json(created);
+  } catch (error) {
+    console.error("Feil ved oppretting av annonse:", error);
+    res.status(500).json({ error: "Kunne ikke opprette annonse" });
   }
-);
+});
 
 // Annonsør: update egen annonse
 annonseRouter.put(
