@@ -1,6 +1,6 @@
 /**
  * Fil: LandingCommunitySection.tsx
- * Utvikler(e): Ramona Cretulescu
+ * Utvikler(e): Ramona Cretulescu. Copilot er brukt som guide og lærer i utviklingen av denne siden.
  * Beskrivelse:
  * Seksjon på landingssiden som viser brukeromtaler og anbefalte turer.
  * Komponenten støtter oppgavens sosiale del ved å synliggjøre delte
@@ -22,59 +22,6 @@ import type { Tour } from "../../types/tour";
 type LandingCommunitySectionProps = {
   tours: Tour[];
 };
-
-type CommunityMeta = {
-  userName: string;
-  postedAgo: string;
-  rating: number;
-  likes: number;
-  comments: number;
-};
-
-const communityMeta: CommunityMeta[] = [
-  {
-    userName: "Ingrid Nilsen",
-    postedAgo: "2 timer siden",
-    rating: 4.8,
-    likes: 47,
-    comments: 8,
-  },
-  {
-    userName: "Emma Johansen",
-    postedAgo: "1 dag siden",
-    rating: 4.7,
-    likes: 89,
-    comments: 15,
-  },
-  {
-    userName: "Sofie Hansen",
-    postedAgo: "3 dager siden",
-    rating: 4.5,
-    likes: 34,
-    comments: 6,
-  },
-  {
-    userName: "Lars Berg",
-    postedAgo: "2 dager siden",
-    rating: 4.9,
-    likes: 156,
-    comments: 19,
-  },
-  {
-    userName: "Ole Andersen",
-    postedAgo: "4 dager siden",
-    rating: 4.8,
-    likes: 203,
-    comments: 24,
-  },
-  {
-    userName: "Erik Solberg",
-    postedAgo: "1 uke siden",
-    rating: 4.6,
-    likes: 112,
-    comments: 11,
-  },
-];
 
 const fallbackImages = [
   "/images/tours/fjell3.jpg",
@@ -106,10 +53,69 @@ function buildReview(tour: Tour) {
   return "Fin tur med gode opplevelser underveis. Se turdetaljer for mer informasjon.";
 }
 
+function formatPostedAgo(dateString?: string | null) {
+  if (!dateString) return null;
+
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const diffMs = Date.now() - date.getTime();
+  const diffHours = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60)));
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffHours < 1) return "Nylig";
+  if (diffHours < 24) return `${diffHours} timer siden`;
+  if (diffDays === 1) return "1 dag siden";
+  if (diffDays < 7) return `${diffDays} dager siden`;
+
+  return "For en stund siden";
+}
+
+function getDisplayName(tour: Tour) {
+  const comments = tour.social?.commentCount ?? 0;
+  const rating = tour.social?.averageRating ?? null;
+
+  if (comments > 0 && tour.social?.latestCommentFirstName) {
+    return tour.social.latestCommentFirstName;
+  }
+
+  if (rating !== null && tour.social?.ownerFirstName) {
+    return tour.social.ownerFirstName;
+  }
+
+  return null;
+}
+
+function hasDisplayableSocialProof(tour: Tour) {
+  const hasName =
+    Boolean(tour.social?.ownerFirstName) ||
+    Boolean(tour.social?.latestCommentFirstName);
+
+  const comments = tour.social?.commentCount ?? 0;
+  const rating = tour.social?.averageRating ?? null;
+  const likes = tour.social?.likeCount ?? 0;
+
+  return hasName && (comments > 0 || rating !== null || likes > 0);
+}
+
+function getSubtitleText(tour: Tour) {
+  const comments = tour.social?.commentCount ?? 0;
+
+  if (comments > 0) {
+    return formatPostedAgo(tour.social?.latestCommentCreatedAt) ?? "Nylig";
+  }
+
+  if ((tour.social?.averageRating ?? null) !== null) {
+    return "Har gitt vurdering";
+  }
+
+  return null;
+}
+
 export default function LandingCommunitySection({
   tours,
 }: LandingCommunitySectionProps) {
-  const recommendedTours = tours.slice(0, 6);
+  const recommendedTours = tours.filter(hasDisplayableSocialProof).slice(0, 6);
 
   if (recommendedTours.length === 0) {
     return null;
@@ -144,10 +150,17 @@ export default function LandingCommunitySection({
 
       <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
         {recommendedTours.map((tour, index) => {
-          const meta = communityMeta[index % communityMeta.length];
           const image = tour.imageUrl?.trim()
             ? tour.imageUrl
             : getFallbackImage(index);
+
+          const userName = getDisplayName(tour);
+          if (!userName) return null;
+
+          const subtitleText = getSubtitleText(tour) || "Nylig";
+          const averageRating = tour.social?.averageRating ?? null;
+          const likes = tour.social?.likeCount ?? 0;
+          const comments = tour.social?.commentCount ?? 0;
 
           return (
             <article
@@ -157,18 +170,18 @@ export default function LandingCommunitySection({
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#dcebe4] text-sm font-semibold text-[#0f3d2e]">
-                    {getInitials(meta.userName)}
+                    {getInitials(userName)}
                   </div>
 
                   <div>
-                    <p className="font-medium text-slate-900">{meta.userName}</p>
-                    <p className="text-sm text-slate-500">{meta.postedAgo}</p>
+                    <p className="font-medium text-slate-900">{userName}</p>
+                    <p className="text-sm text-slate-500">{subtitleText}</p>
                   </div>
                 </div>
 
                 <div className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-sm font-medium text-amber-700">
                   <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
-                  {meta.rating}
+                  {averageRating !== null ? averageRating.toFixed(1) : "–"}
                 </div>
               </div>
 
@@ -207,11 +220,11 @@ export default function LandingCommunitySection({
               <div className="mb-5 flex items-center gap-5 text-slate-600">
                 <span className="inline-flex items-center gap-2">
                   <Heart className="h-5 w-5 text-[#0f3d2e]" />
-                  {meta.likes}
+                  {likes}
                 </span>
                 <span className="inline-flex items-center gap-2">
                   <MessageCircle className="h-5 w-5 text-[#0f3d2e]" />
-                  {meta.comments}
+                  {comments}
                 </span>
               </div>
 

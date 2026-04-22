@@ -2,8 +2,9 @@
  * Fil: LandingActivities.tsx
  * Utvikler(e): Ramona Cretulescu
  * Beskrivelse:
- * Seksjon på denne landingssiden som viser ulike aktivitet-kategorier.
- * (Med kort og ikon, navn og antall turer og blått for vinteraktiviteter, dummydat for nå.)
+ * Seksjon på landingssiden som viser ulike aktivitetskategorier.
+ * Hver kategori sender brukeren videre til relevant side for utforsking
+ * eller kartvisning med tilpasset filtrering.
  */
 
 import { useNavigate } from "react-router-dom";
@@ -81,6 +82,14 @@ const activityCards: ActivityCard[] = [
 export default function LandingActivities() {
   const navigate = useNavigate();
 
+  function handleGoToTours() {
+    navigate("/turer");
+  }
+
+  function handleActivityClick(query: string) {
+    navigate(`/kart?activity=${encodeURIComponent(query)}`);
+  }
+
   return (
     <section className="rounded-[2rem] border border-[#d8e6de] bg-[#eef5f1] px-6 py-10 md:px-8 md:py-12">
       <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -101,8 +110,8 @@ export default function LandingActivities() {
 
         <button
           type="button"
-          onClick={() => navigate("/turer")}
-          className="inline-flex items-center gap-2 font-medium text-[#0f3d2e] hover:underline"
+          onClick={handleGoToTours}
+          className="inline-flex items-center gap-2 font-medium text-[#0f3d2e] transition hover:underline"
         >
           Gå til turer
           <ArrowRight className="h-4 w-4" />
@@ -117,7 +126,7 @@ export default function LandingActivities() {
             <button
               key={activity.title}
               type="button"
-              onClick={() => navigate(`/map?activity=${activity.query}`)}
+              onClick={() => handleActivityClick(activity.query)}
               className="group rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm transition duration-200 hover:-translate-y-1 hover:border-[#b7d1c3] hover:shadow-lg"
             >
               <div

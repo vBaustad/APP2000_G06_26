@@ -313,9 +313,39 @@ turRouter.get("/", async (_req, res) => {
         max_deltakere: true,
         status: true,
         leder_bruker_id: true,
+        bruker: {
+          select: {
+            fornavn: true,
+            etternavn: true,
+          },
+        },
         created_at: true,
         updated_at: true,
         antall_netter: true,
+        tur_rating: {
+          select: {
+            rating: true,
+          },
+        },
+        tur_kommentar: {
+          select: {
+            id: true,
+            body: true,
+            created_at: true,
+            bruker: {
+              select: {
+                fornavn: true,
+                etternavn: true,
+              },
+            },
+          },
+          orderBy: { created_at: "desc" },
+        },
+        favoritt: {
+          select: {
+            id: true,
+          },
+        },
         tur_tursti: {
           select: {
             rekkefolge: true,
@@ -398,6 +428,12 @@ turRouter.get("/:id", async (req, res) => {
         max_deltakere: true,
         status: true,
         leder_bruker_id: true,
+        bruker: {
+          select: {
+            fornavn: true,
+            etternavn: true,
+          },
+        },
         created_at: true,
         updated_at: true,
         tur_dato: {
