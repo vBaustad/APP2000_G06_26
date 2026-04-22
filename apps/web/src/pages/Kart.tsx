@@ -10,7 +10,14 @@
  * f.eks.("/map?activity=skytur") viser kun skyturer.
  * Filteret kombineres med eksisterende søk. Hvis ingen aktivitet er valgt i URL-en, vises alle turer som før.
  * Viser aktivt filter øverst i sidemenyen med mulighet for å fjerne det.
+ *
+ * Videreutviklet av: Aleksandra Cudakiewicz
+ * Endringer:
+ * Koblet kartet til turer og hytter fra backend/databasen i stedet for hardkodede data.
+ * Viser turer og hytter med ulike markører i kartet.
+ * La til popup med bilde og informasjon for valgt tur eller hytte.
  */
+
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -86,6 +93,8 @@ type MapCabin = Cabin & {
   coords: [number, number];
   imageUrl: string | null;
 };
+
+type ViewTab = "all" | "tours" | "cabins";
 
 function MapViewportUpdater({ coords, zoom }: { coords: LatLngExpression; zoom: number }) {
   const map = useMap();
@@ -230,6 +239,7 @@ export default function Kart() {
 
   const selectedTourId = searchParams.get("tourId");
   const selectedCabinId = searchParams.get("cabinId");
+  const currentView = (searchParams.get("view") as ViewTab | null) ?? "all";
   const difficultyFilter = searchParams.get("difficulty");
   const regionFilter = searchParams.get("region");
   const fellesturOnly = searchParams.get("fellestur") === "1";
@@ -269,10 +279,20 @@ export default function Kart() {
       });
   }, [allCabins, query]);
 
-  useEffect(() => {
-    if (selectedCabinId) return;
+  const displayedTrips = currentView === "cabins" ? [] : filteredTrips;
+  const displayedCabins = currentView === "tours" ? [] : visibleCabins;
 
-    if (filteredTrips.length === 0) {
+  useEffect(() => {
+    if (selectedCabinId || currentView === "cabins") return;
+
+    if (displayedTrips.length === 0) {
+      if (selectedTrip !== null) {
+        setSelectedTrip(null);
+      }
+      return;
+    }
+
+    if (!selectedTourId) {
       if (selectedTrip !== null) {
         setSelectedTrip(null);
       }
@@ -280,14 +300,19 @@ export default function Kart() {
     }
 
     const preferredTrip =
-      filteredTrips.find((tour) => tour.id === selectedTourId) ??
-      filteredTrips.find((tour) => tour.id === selectedTrip?.id) ??
-      filteredTrips[0];
+      displayedTrips.find((tour) => tour.id === selectedTourId) ??
+      displayedTrips.find((tour) => tour.id === selectedTrip?.id) ??
+      null;
+
+    if (!preferredTrip) {
+      setSelectedTrip(null);
+      return;
+    }
 
     if (!selectedTrip || preferredTrip.id !== selectedTrip.id) {
       setSelectedTrip(preferredTrip);
     }
-  }, [filteredTrips, selectedCabinId, selectedTourId, selectedTrip]);
+  }, [currentView, displayedTrips, selectedCabinId, selectedTourId, selectedTrip]);
 
   useEffect(() => {
     if (!selectedCabinId) {
@@ -298,8 +323,8 @@ export default function Kart() {
     }
 
     const preferredCabin =
-      visibleCabins.find((cabin) => String(cabin.id) === selectedCabinId) ??
-      visibleCabins.find((cabin) => cabin.id === selectedCabin?.id) ??
+      displayedCabins.find((cabin) => String(cabin.id) === selectedCabinId) ??
+      displayedCabins.find((cabin) => cabin.id === selectedCabin?.id) ??
       null;
 
     if (!preferredCabin) {
@@ -310,7 +335,7 @@ export default function Kart() {
     if (!selectedCabin || preferredCabin.id !== selectedCabin.id) {
       setSelectedCabin(preferredCabin);
     }
-  }, [selectedCabin, selectedCabinId, visibleCabins]);
+  }, [displayedCabins, selectedCabin, selectedCabinId]);
 
   useEffect(() => {
     if (!selectedTrip) return;
@@ -360,6 +385,16 @@ export default function Kart() {
     setSearchParams(next, { replace: true });
   }
 
+  function clearSelection() {
+    setSelectedTrip(null);
+    setSelectedCabin(null);
+
+    const next = new URLSearchParams(searchParams);
+    next.delete("tourId");
+    next.delete("cabinId");
+    setSearchParams(next, { replace: true });
+  }
+
   function clearFilters() {
     const next = new URLSearchParams(searchParams);
     next.delete("difficulty");
@@ -370,41 +405,69 @@ export default function Kart() {
     setSearchParams(next);
   }
 
+  function handleViewChange(view: ViewTab) {
+    const next = new URLSearchParams(searchParams);
+
+    if (view === "all") {
+      next.delete("view");
+    } else {
+      next.set("view", view);
+    }
+
+    if (view === "tours") {
+      next.delete("cabinId");
+      setSelectedCabin(null);
+    }
+
+    if (view === "cabins") {
+      next.delete("tourId");
+      setSelectedTrip(null);
+    }
+
+    setSearchParams(next, { replace: true });
+  }
+
   const activeFilters = collectActiveFilters(searchParams);
   const mapCenter: LatLngExpression =
-    selectedCabin?.coords ?? selectedTrip?.coords ?? filteredTrips[0]?.coords ?? visibleCabins[0]?.coords ?? [61.5049, 8.8143];
+    selectedCabin?.coords ?? selectedTrip?.coords ?? displayedTrips[0]?.coords ?? displayedCabins[0]?.coords ?? [61.5049, 8.8143];
   const selectedZoom = selectedCabin ? 13 : selectedTrip ? 12 : 6;
 
   return (
     <div className="flex min-h-[calc(100vh-64px)] flex-col bg-slate-50 lg:h-[calc(100vh-64px)] lg:flex-row lg:overflow-hidden">
       <aside className="flex w-full flex-col bg-white p-6 lg:flex-[0.6] lg:overflow-y-auto">
-        <h1 className="text-2xl font-semibold text-slate-900">Finn din neste tur i kartet</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">Planlegg neste opplevelse i kartet</h1>
         <p className="mb-6 text-sm text-slate-500">
-          Kartet bruker de samme turene som i Utforsk, så du kan gå sømløst mellom liste og kart.
+          Bruk kartet til å oppdage turer, hytter eller begge deler, og få rask oversikt over området.
         </p>
 
-        <div className="mb-4 flex flex-wrap gap-3 text-xs font-medium text-slate-600">
-          <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1">
-            <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
-            Turer
-          </span>
-          <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-emerald-800">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">
-              H
-            </span>
-            Hytter
-          </span>
+        <div className="mb-6">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Vis i kart
+          </p>
+          <div className="grid grid-cols-3 rounded-2xl bg-slate-100 p-1">
+            {([
+              { key: "tours", label: "Turer" },
+              { key: "cabins", label: "Hytter" },
+              { key: "all", label: "Begge" },
+            ] as { key: ViewTab; label: string }[]).map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => handleViewChange(tab.key)}
+                className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+                  currentView === tab.key
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="mb-6 flex flex-wrap items-center gap-3">
-          <Link
-            to={`/turer${searchParams.toString() ? `?${searchParams.toString()}` : ""}`}
-            className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:border-slate-400"
-          >
-            Tilbake til Utforsk
-          </Link>
-
-          {activeFilters.length > 0 && (
+        {activeFilters.length > 0 && (
+          <div className="mb-6 flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={clearFilters}
@@ -412,8 +475,8 @@ export default function Kart() {
             >
               Fjern kartfiltre
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         {activeFilters.length > 0 && (
           <div className="mb-6 flex flex-wrap gap-2">
@@ -445,72 +508,92 @@ export default function Kart() {
           />
         </div>
 
-        {selectedCabin || selectedTrip ? (
-          <>
-            {selectedCabin ? (
-              <div className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
+        <>
+          {selectedCabin ? (
+            <div className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
+              <div className="flex items-start justify-between gap-3">
                 <p className="text-xs uppercase tracking-wider text-emerald-700">Valgt hytte</p>
-                <h2 className="text-xl font-semibold text-slate-900">{selectedCabin.navn}</h2>
-                <p className="text-sm text-slate-600">
-                  {selectedCabin.omrade || selectedCabin.adresse || "Ukjent område"}
-                </p>
-                <div className="flex flex-wrap gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className="rounded-full px-2 py-1 text-sm font-semibold text-slate-500 hover:bg-white/70 hover:text-slate-800"
+                  aria-label="Lukk valgt hytte"
+                >
+                  ×
+                </button>
+              </div>
+              <h2 className="text-xl font-semibold text-slate-900">{selectedCabin.navn}</h2>
+              <p className="text-sm text-slate-600">
+                {selectedCabin.omrade || selectedCabin.adresse || "Ukjent område"}
+              </p>
+              <div className="flex flex-wrap gap-2 pt-2">
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600">
+                  {selectedCabin.kapasitet_senger} senger
+                </span>
+                {selectedCabin.pris_per_natt && (
                   <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600">
-                    {selectedCabin.kapasitet_senger} senger
+                    {selectedCabin.pris_per_natt} kr/natt
                   </span>
-                  {selectedCabin.pris_per_natt && (
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600">
-                      {selectedCabin.pris_per_natt} kr/natt
-                    </span>
-                  )}
-                </div>
-                <Link
-                  to={`/hytter/${selectedCabin.id}`}
-                  className="inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-                >
-                  Se hyttedetaljer
-                </Link>
+                )}
               </div>
-            ) : selectedTrip ? (
-              <div className="space-y-2 rounded-xl border border-slate-200 p-4">
-                <img
-                  src={selectedTrip.imageUrl || "/images/trip-card-placeholder.jpg"}
-                  alt={selectedTrip.title}
-                  className="mb-3 h-40 w-full rounded-xl object-cover"
-                />
-                <p className="text-xs uppercase tracking-wider text-slate-400">{selectedTrip.dateLabel}</p>
-                <h2 className="text-xl font-semibold text-slate-900">{selectedTrip.title}</h2>
-                <p className="text-sm text-slate-600">
-                  {selectedTrip.location} • {selectedTrip.region}
-                </p>
-                <p className="text-sm text-slate-700">
-                  {selectedTrip.description || "Se turdetaljer for mer informasjon om denne ruten."}
-                </p>
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {selectedTrip.highlights.map((highlight) => (
-                    <span
-                      key={highlight}
-                      className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600"
-                    >
-                      {highlight}
-                    </span>
-                  ))}
-                </div>
-                <Link
-                  to={`/turer/${selectedTrip.id}`}
-                  className="inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+              <Link
+                to={`/hytter/${selectedCabin.id}`}
+                className="inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+              >
+                Se hyttedetaljer
+              </Link>
+            </div>
+          ) : selectedTrip ? (
+            <div className="space-y-2 rounded-xl border border-slate-200 p-4">
+              <div className="flex items-start justify-end">
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className="rounded-full px-2 py-1 text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                  aria-label="Lukk valgt tur"
                 >
-                  Se turdetaljer
-                </Link>
+                  ×
+                </button>
               </div>
-            ) : null}
+              <img
+                src={selectedTrip.imageUrl || "/images/trip-card-placeholder.jpg"}
+                alt={selectedTrip.title}
+                className="mb-3 h-28 w-full rounded-xl object-cover"
+              />
+              <p className="text-xs uppercase tracking-wider text-slate-400">{selectedTrip.dateLabel}</p>
+              <h2 className="text-xl font-semibold text-slate-900">{selectedTrip.title}</h2>
+              <p className="text-sm text-slate-600">
+                {selectedTrip.location} • {selectedTrip.region}
+              </p>
+              <p className="text-sm text-slate-700">
+                {selectedTrip.description || "Se turdetaljer for mer informasjon om denne ruten."}
+              </p>
+              <div className="flex flex-wrap gap-2 pt-2">
+                {selectedTrip.highlights.map((highlight) => (
+                  <span
+                    key={highlight}
+                    className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600"
+                  >
+                    {highlight}
+                  </span>
+                ))}
+              </div>
+              <Link
+                to={`/turer/${selectedTrip.id}`}
+                className="inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+              >
+                Se turdetaljer
+              </Link>
+            </div>
+          ) : null}
 
+          {currentView !== "cabins" && (displayedTrips.length > 0 || currentView !== "tours") && (
             <div className="mt-6 space-y-3">
               <p className="text-xs uppercase tracking-wider text-slate-500">
-                Turer i kartresultatet ({filteredTrips.length})
+                Turer i kartresultatet ({displayedTrips.length})
               </p>
               <div className="space-y-2">
-                {filteredTrips.map((trip) => {
+                {displayedTrips.map((trip) => {
                   const isActive = selectedTrip?.id === trip.id;
                   return (
                     <button
@@ -532,13 +615,15 @@ export default function Kart() {
                 })}
               </div>
             </div>
+          )}
 
+          {(displayedCabins.length > 0 || currentView !== "cabins") && (
             <div className="mt-6 space-y-3">
               <p className="text-xs uppercase tracking-wider text-slate-500">
-                Hytter i kartresultatet ({visibleCabins.length})
+                Hytter i kartresultatet ({displayedCabins.length})
               </p>
               <div className="space-y-2">
-                {visibleCabins.map((cabin) => {
+                {displayedCabins.map((cabin) => {
                   const isActive = selectedCabin?.id === cabin.id;
                   return (
                     <button
@@ -560,12 +645,18 @@ export default function Kart() {
                 })}
               </div>
             </div>
-          </>
-        ) : (
-          <div className="mt-10 flex flex-1 items-center justify-center rounded-xl border border-dashed border-slate-300 p-6 text-center text-slate-500">
-            Ingen turer eller hytter med kartkoordinater matcher filtrene dine akkurat nå.
-          </div>
-        )}
+          )}
+
+          {displayedTrips.length === 0 && displayedCabins.length === 0 && (
+            <div className="mt-10 flex flex-1 items-center justify-center rounded-xl border border-dashed border-slate-300 p-6 text-center text-slate-500">
+            {currentView === "tours"
+              ? "Ingen turer med kartkoordinater matcher filtrene dine akkurat nå."
+              : currentView === "cabins"
+                ? "Ingen hytter med kartkoordinater matcher filtrene dine akkurat nå."
+                : "Ingen turer eller hytter med kartkoordinater matcher filtrene dine akkurat nå."}
+            </div>
+          )}
+        </>
       </aside>
 
       <section className="min-h-80 flex-1 lg:flex-[1.4] lg:h-full">
@@ -580,7 +671,7 @@ export default function Kart() {
               zoom={selectedZoom}
             />
           )}
-          {filteredTrips.map((trip) => (
+          {displayedTrips.map((trip) => (
             <Marker
               key={trip.id}
               icon={defaultIcon}
@@ -608,7 +699,7 @@ export default function Kart() {
               </Popup>
             </Marker>
           ))}
-          {visibleCabins.map((cabin) => (
+          {displayedCabins.map((cabin) => (
             <Marker
               key={`cabin-${cabin.id}`}
               icon={cabinIcon}
