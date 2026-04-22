@@ -31,42 +31,19 @@ type Ad = {
 const API_BASE = `${import.meta.env.VITE_API_URL}/api/annonser`;
 
 export default function Annonsor() {
+  // All hooks MUST be at the top of the component
   const { user, token } = useAuth();
-  const isAnnonsor = useMemo(() => user?.roller?.includes("annonsor") ?? false, [user]);
- 
+  const navigate = useNavigate();
+
+  // State declarations
   const [ads, setAds] = useState<Ad[]>([]);
-   const handleDelete = async (id: number) => {
-  try {
-    const response = await fetch(`${API_BASE}/${id}`, {
-      method: "DELETE",
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-    });
-
-    if (!response.ok) {
-      console.error("Kunne ikke slette annonsen");
-      return;
-    }
-
-    setAds((prev) => prev.filter((ad) => ad.id !== id));
-  } catch (error) {
-    console.error("Feil ved sletting:", error);
-  }
-};
   const [loading, setLoading] = useState(false);
-
   const [error, setError] = useState<string | null>(null);
-if (loading) {
-  return <p className="text-slate-500">Laster annonser...</p>;
-}
-
-if (error) {
-  return <p className="text-red-500">{error}</p>;
-}
-  
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "paused" | "ended">("all");
+
+  // Memoized values
+  const isAnnonsor = useMemo(() => user?.roller?.includes("annonsor") ?? false, [user]);
 
   const filteredAds = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -90,16 +67,65 @@ if (error) {
     });
   }, [ads, searchQuery, statusFilter]);
 
+  const totalViews = useMemo(() => ads.reduce((sum, ad) => sum + ad.visninger, 0), [ads]);
+  const totalClicks = useMemo(() => ads.reduce((sum, ad) => sum + ad.klikk, 0), [ads]);
+
+  // Effects
   useEffect(() => {
     if (token && isAnnonsor) {
       loadAds();
     }
   }, [token, isAnnonsor]);
 
-  const navigate = useNavigate();
+  // Handler functions
+  async function loadAds() {
+    setError(null);
+    setLoading(true);
 
-  const totalViews = useMemo(() => ads.reduce((sum, ad) => sum + ad.visninger, 0), [ads]);
-  const totalClicks = useMemo(() => ads.reduce((sum, ad) => sum + ad.klikk, 0), [ads]);
+    try {
+      const res = await fetch(`${API_BASE}/mine`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null);
+        throw new Error(payload?.error || "Kunne ikke hente annonser");
+      }
+      const data = (await res.json()) as Ad[];
+      setAds(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Noe gikk galt");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handleDelete = async (id: number) => {
+    try {
+      const response = await fetch(`${API_BASE}/${id}`, {
+        method: "DELETE",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!response.ok) {
+        console.error("Kunne ikke slette annonsen");
+        return;
+      }
+
+      setAds((prev) => prev.filter((ad) => ad.id !== id));
+    } catch (error) {
+      console.error("Feil ved sletting:", error);
+    }
+  };
+
+const handleEdit = (ad: Ad) => {
+  navigate("/opprett-annonsor", { state: { ad } });
+};
+
+  function handleNewAd() {
+    navigate("/opprett-annonsor");
+  }
 
   function getStatusBadgeClasses(status: string | null) {
     const value = status?.toLowerCase() ?? "";
@@ -132,31 +158,8 @@ if (error) {
     window.open(ad.lenke_url, "_blank", "noopener,noreferrer");
   }
 
-  async function loadAds() {
-    setError(null);
-    setLoading(true);
 
-    try {
-      const res = await fetch(`${API_BASE}/mine`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => null);
-        throw new Error(payload?.error || "Kunne ikke hente annonser");
-      }
-      const data = (await res.json()) as Ad[];
-      setAds(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Noe gikk galt");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function handleNewAd() {
-    navigate("/opprett-annonsor");
-  }
-
+  // Conditional early returns (after all hooks and functions)
   if (!token) {
     return (
       <div className="mx-auto max-w-4xl px-6 py-12">
@@ -175,6 +178,7 @@ if (error) {
     );
   }
 
+  // Main render
   return (
     <div className="mx-auto max-w-6xl px-6 py-10 space-y-8">
       <div className="rounded-2xl bg-white p-6 shadow">
@@ -339,12 +343,22 @@ if (error) {
                       ) : null}
                       <button
   type="button"
-  onClick={() => handleDelete(ad.id)}
-  className="rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-600"
+  onClick={() => handleEdit(ad)}
+  className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900"
+>
+  Rediger
+</button>
+<button
+  type="button"
+  onClick={() => {
+    if (confirm("Er du sikker på at du vil slette annonsen?")) {
+      handleDelete(ad.id);
+    }
+  }}
+  className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900"
 >
   Slett
 </button>
-
 
                       <span className="ml-auto rounded-full bg-slate-100 px-3 py-2 text-sm text-slate-700">
                         Budsjett brukt: {ad.budget_spent} kr

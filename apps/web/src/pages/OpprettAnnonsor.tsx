@@ -6,12 +6,20 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function OpprettAnnonsor()
  {  const { token } = useAuth();
+ const navigate = useNavigate();
+const location = useLocation();
+const editingAd = (location.state as { ad?: any })?.ad;
+console.log("editingAd:", editingAd);
+
   const [tittel, setTittel] = useState("");
   const [beskrivelse, setBeskrivelse] = useState("");
+
+
+  
   const [bildeUrl, setBildeUrl] = useState("");
   const [bildeFile, setBildeFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -37,6 +45,21 @@ export default function OpprettAnnonsor()
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+useEffect(() => {
+  if (editingAd) {
+    setTittel(editingAd.tittel || "");
+    setBeskrivelse(editingAd.beskrivelse || "");
+    setLenkeUrl(editingAd.lenke_url || "");
+    setKategori(editingAd.kategori || "turutstyr");
+    setDailyBudget(String(editingAd.daily_budget || "300"));
+
+    setPrisPerVisning(String(editingAd.pris_per_visning || "0"));
+    setPrisPerKlikk(String(editingAd.pris_per_klikk || "5"));
+    setAnnonseType(editingAd.annonsetype || "standard");
+    setStartAt(editingAd.start_at || "");
+    setEndAt(editingAd.end_at || "");
+  }
+}, [editingAd]);
   const planRecommendations = {
     basic: {
       title: "Basic",
@@ -130,29 +153,34 @@ export default function OpprettAnnonsor()
       return;
     }
 
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/annonser`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          tittel,
-          beskrivelse: beskrivelse || null,
-          bilde_url: bildeUrl || null,
-          lenke_url: lenkeUrl || null,
-          kategori,
-          keywords: keywords.length ? keywords.join(",") : null,
-          annonsetype: annonseType,
-          start_at: startAt || null,
-          end_at: endAt || null,
-          daily_budget: dailyBudget ? Number(dailyBudget) : 0,
-          pris_per_visning: prisPerVisning ? Number(prisPerVisning) : 0,
-          pris_per_klikk: prisPerKlikk ? Number(prisPerKlikk) : 0,
-        }),
-      });
+   try {
+  const url = editingAd
+    ? `${import.meta.env.VITE_API_URL}/api/annonser/${editingAd.id}`
+    : `${import.meta.env.VITE_API_URL}/api/annonser`;
 
+  const method = editingAd ? "PUT" : "POST";
+
+  const response = await fetch(url, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({
+      tittel,
+      beskrivelse: beskrivelse || null,
+      bilde_url: bildeUrl || null,
+      lenke_url: lenkeUrl || null,
+      kategori,
+      keywords: keywords.length ? keywords.join(",") : null,
+      annonsetype: annonseType,
+      start_at: startAt || null,
+      end_at: endAt || null,
+      daily_budget: Number(dailyBudget),
+      pris_per_visning: Number(prisPerVisning),
+      pris_per_klikk: Number(prisPerKlikk),
+    }),
+  });
       if (!response.ok) {
         const body = await response.json().catch(() => null);
         setError(body?.error || "Kunne ikke lagre annonsen.");
@@ -160,6 +188,7 @@ export default function OpprettAnnonsor()
       }
 
       setSubmitted(true);
+     navigate("/annonsor");
       setTittel("");
       setBeskrivelse("");
       setBildeUrl("");
