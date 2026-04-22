@@ -24,6 +24,12 @@ export type TourDato = {
   status: string;
 };
 
+export type TourPoint = {
+  lat: number;
+  lng: number;
+  rekkefolge: number;
+};
+
 export type Tour = {
   id: string;
   title: string;
@@ -39,5 +45,6 @@ export type Tour = {
   description?: string;
   type?: TourType | string;
   mapCenter?: [number, number] | null;
+  routePoints?: TourPoint[];
   datoer?: TourDato[];
 };

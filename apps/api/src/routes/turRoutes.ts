@@ -326,6 +326,15 @@ turRouter.get("/", async (_req, res) => {
                 hoydemeter: true,
                 lengde_km: true,
                 omrade: true,
+                tursti_punkt: {
+                  select: {
+                    rekkefolge: true,
+                    lat: true,
+                    lng: true,
+                    hoyde_m: true,
+                  },
+                  orderBy: { rekkefolge: "asc" },
+                },
               },
             },
           },

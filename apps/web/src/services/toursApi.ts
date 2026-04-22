@@ -4,7 +4,7 @@
  * Beskrivelse: Henter turer fra backend-API og mapper dataene til formatet som brukes i frontend.
  */
 
-import type { Difficulty, Region, Tour } from "../types/tour";
+import type { Difficulty, Region, Tour, TourPoint } from "../types/tour";
 
 type ApiTurstiPunkt = {
   rekkefolge: number;
@@ -177,6 +177,28 @@ function getMapCenterFromTurstier(turstier?: ApiTurTursti[]) {
   return [lat, lng] as [number, number];
 }
 
+function getRoutePointsFromTurstier(turstier?: ApiTurTursti[]): TourPoint[] {
+  if (!Array.isArray(turstier) || turstier.length === 0) return [];
+
+  return turstier.flatMap((item) =>
+    (item.tursti?.tursti_punkt ?? [])
+      .map((point) => {
+        const lat = Number(point.lat);
+        const lng = Number(point.lng);
+
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+
+        return {
+          lat,
+          lng,
+          rekkefolge: point.rekkefolge,
+        } satisfies TourPoint;
+      })
+      .filter((point): point is TourPoint => point !== null)
+      .sort((a, b) => a.rekkefolge - b.rekkefolge),
+  );
+}
+
 function mapTour(tour: ApiTour): Tour {
   return {
     id: String(tour.id),
@@ -192,6 +214,7 @@ function mapTour(tour: ApiTour): Tour {
     gear: [],
     imageUrl: getOverrideImage(tour.tittel, tour.bilde_url),
     mapCenter: getMapCenterFromTurstier(tour.tur_tursti),
+    routePoints: getRoutePointsFromTurstier(tour.tur_tursti),
     datoer: Array.isArray(tour.tur_dato)
       ? tour.tur_dato.map((d) => ({
           id: d.id,
