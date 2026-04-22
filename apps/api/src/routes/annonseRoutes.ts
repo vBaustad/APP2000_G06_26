@@ -1,6 +1,7 @@
 /**
  * Fil: annonseRoutes.ts
- * Beskrivelse: CRUD-operasjoner for annonser med rollebasert tilgang for annonsører.
+ * Beskrivelse: CRUD-operasjoner for annonser med rollebasert tilgang for annonsører. CRUD operasjoner for annonser er 
+ * laget med støtte og hjelp av ChatGPT. 
  */
 
 import { Router } from "express";

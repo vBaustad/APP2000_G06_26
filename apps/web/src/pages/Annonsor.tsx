@@ -1,6 +1,6 @@
 /**
  * Fil: annonsor.tsx
- * Utvikler(e): Vebjørn Baustad, Synne Nilsen Oppberget
+ * Utvikler(e): Vebjørn Baustad, Synne Nilsen Oppberget. Copilot og ChatGPt er brukt som guide og lærer i utviklingen av denne siden. 
  * Beskrivelse: Annonsørside og tilgangssjekk for annonsørroller.
  */
 

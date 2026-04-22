@@ -1,7 +1,7 @@
 /**
  * Fil: OpprettAnnonsor.tsx
  * Beskrivelse: Side for å opprette en ny annonse i annonsørportalen.
- * Utvikler(e): Synne Nilsen Oppberget
+ * Utvikler(e): Synne Nilsen Oppberget. Koden er laget med hjelp av Copilot som lærer og guide.
  */
 
 import { useEffect, useState } from "react";
