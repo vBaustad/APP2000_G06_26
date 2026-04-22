@@ -1,7 +1,12 @@
 /**
  * Fil: Meldinger.tsx
- * Beskrivelse: Meldingssiden for direktemeldinger og gruppechatter knyttet til turer.
+ * Utvikler(e): Aleksandra Cudakiewicz
+ * Beskrivelse: Meldingsside der innloggede brukere kan se og bruke direktemeldinger
+ * og gruppechatter knyttet til turer. Siden viser oversikt over chatter,
+ * meldingshistorikk for valgt samtale, mulighet for å sende meldinger,
+ * starte nye samtaler og håndtere bilder som deles i chatten.
  */
+
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
