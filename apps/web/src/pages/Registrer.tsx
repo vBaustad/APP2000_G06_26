@@ -1,7 +1,11 @@
 /**
  * Fil: Registrer.tsx
  * Utvikler(e): Vebjørn Baustad & Parasto Jamshidi
- * Beskrivelse: Fullstendig registreringsside koblet til MariaDB via API med automatisk innlogging.
+ * Beskrivelse: Fullstendig registreringsside koblet til MySQL via API med automatisk innlogging.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import React, { useState } from "react";

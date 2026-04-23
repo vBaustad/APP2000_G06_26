@@ -1,23 +1,30 @@
 {
   "logoAlt": "Utopia",
+  "logoLinkAria": "Go to homepage",
   "intro": "Utopia makes it easier to explore tours, maps and cabins in one place, with inspiration and useful information for trip planning.",
   "studentProject": "Student project at USN.",
   "sections": {
     "content": "Content",
     "info": "Information",
+    "account": "Account",
     "contact": "Contact"
   },
   "links": {
+    "home": "Home",
+    "tours": "Tours",
     "explorer": "Explorer",
     "myTours": "My tours",
+    "myPage": "My page",
     "map": "Map",
     "tourSuggestions": "Tour suggestions",
     "cabins": "Cabins",
     "weather": "Weather and conditions",
     "groupTours": "Group tours",
     "activities": "Tour activities",
-    "about": "About the project",
-    "contactPage": "Contact page"
+    "login": "Log in",
+    "register": "Register",
+    "about": "About Utopia",
+    "contactPage": "Contact"
   },
   "contact": {
     "phone": "+47 00 000 000 (Mon–Fri 09–17)",

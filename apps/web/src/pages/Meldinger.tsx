@@ -499,7 +499,7 @@ export default function Meldinger() {
               ...current,
               meldinger: current.meldinger.map((melding) => ({
                 ...melding,
-                bilder: melding.bilder.map((bilde) =>
+                bilder: (melding.bilder ?? []).map((bilde) =>
                   bilde.id === imageId
                     ? {
                         ...bilde,

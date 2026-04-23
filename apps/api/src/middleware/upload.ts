@@ -3,6 +3,10 @@
  * Utvikler(e): Vebjørn Baustad
  * Beskrivelse: Multer-oppsett (memory storage) for opplasting av hyttebilder.
  * Selve lagringen går til Vercel Blob i route-handleren.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import multer from "multer";

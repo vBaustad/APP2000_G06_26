@@ -1,13 +1,15 @@
 /**
  * Fil: Turer.tsx
- * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu.
+ * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu. Copilot er brukt som guide og lærer i utviklingen av denne siden.
+ * Copilot er brukt som guide og lærer i utviklingen av denne siden.
  * Beskrivelse: Utforsk-side som viser tilgjengelige turer med søk, filterpanel og turkort.
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 import { getTours } from "../services/toursApi";
+import { getWeatherByCoords, type WeatherData } from "../services/weatherApi";
 import type { Tour, Region } from "../types/tour";
 import {
   MapPin,
@@ -19,7 +21,6 @@ import {
   Droplets,
   Users,
 } from "lucide-react";
-import { getMockWeather } from "../utils/weatherMock";
 
 type SortKey = "newest" | "distanceAsc" | "durationAsc";
 
@@ -44,7 +45,13 @@ function toggleInList<T>(list: T[], value: T) {
   return list.includes(value) ? list.filter((x) => x !== value) : [...list, value];
 }
 
-const REGIONS: Region[] = ["Nord-Norge", "Trøndelag", "Østlandet", "Sørlandet", "Vestlandet"];
+const REGIONS: Region[] = [
+  "Nord-Norge",
+  "Trøndelag",
+  "Østlandet",
+  "Sørlandet",
+  "Vestlandet",
+];
 
 const REGION_TO_KEY: Record<Region, string> = {
   "Nord-Norge": "north",
@@ -110,43 +117,140 @@ function buildMapSearchParams({
   return value ? `?${value}` : "";
 }
 
-function WeatherSummary({ region }: { region?: string }) {
+function translateWeatherCondition(condition: string | null | undefined, t: (key: string) => string) {
+  const value = (condition ?? "").toLowerCase().trim();
+
+  const keyMap: Record<string, string> = {
+    clearsky: "list.weatherConditions.clearsky",
+    fair: "list.weatherConditions.fair",
+    partlycloudy: "list.weatherConditions.partlycloudy",
+    cloudy: "list.weatherConditions.cloudy",
+    lightrainshowers: "list.weatherConditions.lightrainshowers",
+    rainshowers: "list.weatherConditions.rainshowers",
+    heavyrainshowers: "list.weatherConditions.heavyrainshowers",
+    lightrain: "list.weatherConditions.lightrain",
+    rain: "list.weatherConditions.rain",
+    heavyrain: "list.weatherConditions.heavyrain",
+    sleet: "list.weatherConditions.sleet",
+    lightsleet: "list.weatherConditions.lightsleet",
+    heavysleet: "list.weatherConditions.heavysleet",
+    snow: "list.weatherConditions.snow",
+    lightsnow: "list.weatherConditions.lightsnow",
+    heavysnow: "list.weatherConditions.heavysnow",
+    fog: "list.weatherConditions.fog",
+  };
+
+  if (!value) return t("list.weatherConditions.unknown");
+  const key = keyMap[value];
+  return key ? t(key) : (condition ?? t("list.weatherConditions.unknown"));
+}
+
+function formatWeatherNumber(value: number | null | undefined) {
+  if (value === null || value === undefined || Number.isNaN(value)) return "–";
+  return String(value);
+}
+
+function WeatherSummary({ mapCenter }: { mapCenter?: [number, number] | null }) {
   const { t } = useTranslation("turer");
-  const weather = getMockWeather(region);
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!mapCenter) return;
+
+    let isMounted = true;
+
+    async function loadWeather() {
+      try {
+        setLoading(true);
+        const data = await getWeatherByCoords(mapCenter[0], mapCenter[1]);
+        if (isMounted) {
+          setWeather(data);
+        }
+      } catch (error) {
+        console.error("Kunne ikke hente værdata:", error);
+        if (isMounted) {
+          setWeather(null);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadWeather();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [mapCenter]);
+
+  if (!mapCenter) return null;
 
   return (
-    <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
-      <div className="mb-2 flex items-center gap-2">
-        <CloudSun className="h-4 w-4 text-slate-700" />
-        <span className="text-sm font-semibold text-slate-800">
-          {t("list.weatherHeading")}
-        </span>
+    <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <CloudSun className="h-4 w-4 text-slate-700" />
+          <span className="text-sm font-semibold text-slate-800">
+            {t("list.weatherHeading")}
+          </span>
+        </div>
+
+        {!loading && weather && (
+          <span className="text-sm font-semibold text-slate-900">
+            {formatWeatherNumber(weather.temperature)}°C
+          </span>
+        )}
       </div>
 
-      <div className="flex flex-wrap gap-3 text-sm text-slate-700">
-        <span>{weather.condition}</span>
-        <span>{weather.temperature}°C</span>
+      {loading && (
+        <p className="mt-2 text-sm text-slate-600">{t("list.weatherLoading")}</p>
+      )}
 
-        <span className="flex items-center gap-1">
-          <Wind className="h-4 w-4" />
-          {weather.wind} m/s
-        </span>
+      {!loading && weather && (
+        <>
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-700">
+            <span className="font-medium text-slate-800">
+              {translateWeatherCondition(weather.condition, t)}
+            </span>
 
-        <span className="flex items-center gap-1">
-          <Droplets className="h-4 w-4" />
-          {weather.precipitation} mm
-        </span>
-      </div>
+            <span className="inline-flex items-center gap-1">
+              <Wind className="h-3.5 w-3.5" />
+              {formatWeatherNumber(weather.wind)} m/s
+            </span>
 
-      <p className="mt-2 text-sm font-medium text-slate-800">{weather.statusText}</p>
+            <span className="inline-flex items-center gap-1">
+              <Droplets className="h-3.5 w-3.5" />
+              {formatWeatherNumber(weather.precipitation)} mm
+            </span>
+          </div>
+
+          {weather.statusText && (
+            <p className="mt-2 text-xs font-medium text-slate-700">
+              {weather.statusText}
+            </p>
+          )}
+        </>
+      )}
+
+      {!loading && !weather && (
+        <p className="mt-2 text-sm text-slate-600">
+          {t("list.weatherUnavailable")}
+        </p>
+      )}
     </div>
   );
 }
 
 export default function Turer() {
   const { t } = useTranslation("turer");
+  const [searchParams] = useSearchParams();
+
   const [allTours, setAllTours] = useState<Tour[]>([]);
   const [query, setQuery] = useState("");
+  const [loadError, setLoadError] = useState(false);
 
   const [diffs, setDiffs] = useState<Tour["difficulty"][]>([]);
   const [lengths, setLengths] = useState<LengthBucket[]>([]);
@@ -155,14 +259,19 @@ export default function Turer() {
   const [kunFellestur, setKunFellestur] = useState(false);
 
   const [sort, setSort] = useState<SortKey>("newest");
-
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  useEffect(() => {
+    const urlQuery = searchParams.get("q") ?? "";
+    setQuery(urlQuery);
+  }, [searchParams]);
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadTours() {
       try {
+        setLoadError(false);
         const data = await getTours();
         if (isMounted) {
           setAllTours(Array.isArray(data) ? data.map(ensureTourImage) : []);
@@ -171,6 +280,7 @@ export default function Turer() {
         console.error("Kunne ikke hente turer fra API:", error);
         if (isMounted) {
           setAllTours([]);
+          setLoadError(true);
         }
       }
     }
@@ -183,7 +293,11 @@ export default function Turer() {
   }, []);
 
   const activeFilterCount =
-    diffs.length + lengths.length + durations.length + regions.length + (kunFellestur ? 1 : 0);
+    diffs.length +
+    lengths.length +
+    durations.length +
+    regions.length +
+    (kunFellestur ? 1 : 0);
 
   const visibleTours = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -331,6 +445,12 @@ export default function Turer() {
                     components={[<span className="font-semibold" key="v" />, <span className="font-semibold" key="t" />]}
                   />
                 </div>
+
+                {loadError && (
+                  <p className="mt-2 text-sm text-red-600">
+                    Kunne ikke hente alle turdata akkurat nå.
+                  </p>
+                )}
 
                 {chips.length > 0 && (
                   <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -507,7 +627,6 @@ export default function Turer() {
                 </div>
               </div>
             )}
-
           </div>
         </section>
 
@@ -545,10 +664,13 @@ export default function Turer() {
                   return (
                     <article
                       key={tour.id}
-                      className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow transition hover:-translate-y-0.5 hover:shadow-lg"
+                      className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
                     >
                       <div className="relative">
-                        <Link to={`/turer/${tour.id}`} className="block focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <Link
+                          to={`/turer/${tour.id}`}
+                          className="block focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        >
                           <img
                             src={tour.imageUrl || "/images/trip-card-placeholder.jpg"}
                             alt={tour.title}
@@ -588,7 +710,13 @@ export default function Turer() {
                           </p>
                         </div>
 
-                        <div className="mt-5 grid grid-cols-3 gap-4 border-t border-gray-100 pt-4">
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                            {t("list.typeLabel")} {tour.type || t("list.typeUnknown")}
+                          </span>
+                        </div>
+
+                        <div className="mt-5 grid grid-cols-3 gap-3 rounded-2xl bg-slate-50 p-4">
                           <div className="text-sm text-gray-600">
                             <div className="flex items-center gap-2">
                               <Route className="h-4 w-4" />
@@ -620,7 +748,7 @@ export default function Turer() {
                           </div>
                         </div>
 
-                        <WeatherSummary region={tour.region} />
+                        <WeatherSummary mapCenter={tour.mapCenter} />
 
                         {erFellestur && (
                           <div className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
@@ -647,7 +775,7 @@ export default function Turer() {
 
                             <Link
                               to={`/turer/${tour.id}`}
-                              className="text-sm font-semibold text-emerald-700 group-hover:underline"
+                              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
                             >
                               {t("list.seeMore")}
                             </Link>

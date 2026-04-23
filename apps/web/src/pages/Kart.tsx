@@ -4,7 +4,7 @@
  * Beskrivelse: Oversikt over turer og hytter med kart som viser lokasjoner
  */
 /*
- * Videreutviklet av: Ramona Cretulescu
+ * Videreutviklet av: Ramona Cretulescu. Copilot er brukt som guide og lærer i utviklingen av denne siden.
  * Endringer:
  * Leser valgt aktivitet fra URL-en (f.eks. /map?activity=skitur) Filterer hver turliste på aktivitet i tilegg til eksisterende tekstsøk.
  * f.eks.("/map?activity=skytur") viser kun skyturer.
@@ -215,6 +215,7 @@ function ensureTourImage(tour: Tour): Tour {
 function resolveCabinImageUrl(url: string | null): string | null {
   if (!url) return null;
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("/images/")) return url;
   if (url.startsWith("/")) return `${import.meta.env.VITE_API_URL}${url}`;
   return url;
 }
@@ -249,6 +250,17 @@ export default function Kart() {
   const [locateTrigger, setLocateTrigger] = useState(0);
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState<string | null>(null);
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+
+  function updateSearchParam(key: string, value: string | null) {
+    const next = new URLSearchParams(searchParams);
+    if (value === null || value === "") {
+      next.delete(key);
+    } else {
+      next.set(key, value);
+    }
+    setSearchParams(next, { replace: true });
+  }
 
   function handleLocate() {
     if (!("geolocation" in navigator)) {
@@ -313,10 +325,12 @@ export default function Kart() {
     const difficulty = params.get("difficulty");
     const region = params.get("region");
     const fellestur = params.get("fellestur");
+    const activity = params.get("activity");
 
     if (difficulty) filters.push({ key: "difficulty", label: t("filters.difficulty", { value: difficulty }) });
     if (region) filters.push({ key: "region", label: t("filters.region", { value: region }) });
     if (fellestur === "1") filters.push({ key: "fellestur", label: t("filters.fellestur") });
+    if (activity) filters.push({ key: "activity", label: t("filters.activity", { value: activity }) });
 
     return filters;
   }
@@ -371,6 +385,21 @@ export default function Kart() {
   const difficultyFilter = searchParams.get("difficulty");
   const regionFilter = searchParams.get("region");
   const fellesturOnly = searchParams.get("fellestur") === "1";
+  const activityFilter = searchParams.get("activity");
+
+  // Map fra aktivitet-query på landingssiden til faktisk DB-type-enum.
+  const activityTypeMap: Record<string, string> = {
+    fottur: "fottur",
+    sykkeltur: "sykkel",
+    skitur: "ski",
+  };
+  const activityTypeMatch = activityFilter ? activityTypeMap[activityFilter] : null;
+
+  // Scroll til toppen når siden mountes (ellers kan man havne midt i
+  // sidebaren etter navigering fra forsiden).
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const filteredTrips = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -387,10 +416,19 @@ export default function Kart() {
         const matchesDifficulty = !difficultyFilter || tour.difficulty === difficultyFilter;
         const matchesRegion = !regionFilter || tour.region === regionFilter;
         const matchesFellestur = !fellesturOnly || (tour.datoer?.length ?? 0) > 0;
+        const matchesActivity =
+          !activityTypeMatch ||
+          (tour.type ?? "").toLowerCase() === activityTypeMatch;
 
-        return matchesQuery && matchesDifficulty && matchesRegion && matchesFellestur;
+        return (
+          matchesQuery &&
+          matchesDifficulty &&
+          matchesRegion &&
+          matchesFellestur &&
+          matchesActivity
+        );
       });
-  }, [allTours, difficultyFilter, fellesturOnly, query, regionFilter, t]);
+  }, [allTours, activityTypeMatch, difficultyFilter, fellesturOnly, query, regionFilter, t]);
 
   const visibleCabins = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -407,8 +445,14 @@ export default function Kart() {
       });
   }, [allCabins, query]);
 
+  const hasTourFilter = Boolean(
+    activityTypeMatch || difficultyFilter || regionFilter || fellesturOnly,
+  );
   const displayedTrips = currentView === "cabins" ? [] : filteredTrips;
-  const displayedCabinsRaw = currentView === "tours" ? [] : visibleCabins;
+  const displayedCabinsRaw =
+    currentView === "tours" || (currentView === "all" && hasTourFilter)
+      ? []
+      : visibleCabins;
 
   // Forskyv hytte-markører hvis de ligger rett oppå en tur-markør, slik at
   // T- og H-ikoner ikke rendres på samme punkt.
@@ -545,6 +589,7 @@ export default function Kart() {
     next.delete("difficulty");
     next.delete("region");
     next.delete("fellestur");
+    next.delete("activity");
     next.delete("tourId");
     next.delete("cabinId");
     setSearchParams(next);
@@ -651,6 +696,99 @@ export default function Kart() {
             ))}
           </div>
         )}
+
+        <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <button
+            type="button"
+            onClick={() => setFilterPanelOpen((v) => !v)}
+            className="flex w-full items-center justify-between text-sm font-semibold text-slate-800 hover:text-slate-900"
+          >
+            <span className="inline-flex items-center gap-2">
+              {t("filtersPanel.title")}
+              {activeFilters.length > 0 && (
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1.5 text-xs font-bold text-white">
+                  {activeFilters.length}
+                </span>
+              )}
+            </span>
+            <span className="text-xs">{filterPanelOpen ? "▲" : "▼"}</span>
+          </button>
+
+          {filterPanelOpen && (
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  {t("filtersPanel.activity")}
+                </label>
+                <select
+                  value={activityFilter ?? ""}
+                  onChange={(e) => updateSearchParam("activity", e.target.value || null)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-500"
+                >
+                  <option value="">{t("filtersPanel.any")}</option>
+                  <option value="fottur">{t("filtersPanel.activityFoot")}</option>
+                  <option value="sykkeltur">{t("filtersPanel.activityBike")}</option>
+                  <option value="skitur">{t("filtersPanel.activitySki")}</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  {t("filtersPanel.difficulty")}
+                </label>
+                <select
+                  value={difficultyFilter ?? ""}
+                  onChange={(e) => updateSearchParam("difficulty", e.target.value || null)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-500"
+                >
+                  <option value="">{t("filtersPanel.any")}</option>
+                  <option value="Lett">{t("filtersPanel.diffEasy")}</option>
+                  <option value="Middels">{t("filtersPanel.diffMedium")}</option>
+                  <option value="Krevende">{t("filtersPanel.diffHard")}</option>
+                  <option value="Ekspert">{t("filtersPanel.diffExpert")}</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  {t("filtersPanel.region")}
+                </label>
+                <select
+                  value={regionFilter ?? ""}
+                  onChange={(e) => updateSearchParam("region", e.target.value || null)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-500"
+                >
+                  <option value="">{t("filtersPanel.any")}</option>
+                  <option value="Nord-Norge">{t("filtersPanel.regionNorth")}</option>
+                  <option value="Trøndelag">{t("filtersPanel.regionTrondelag")}</option>
+                  <option value="Vestlandet">{t("filtersPanel.regionWest")}</option>
+                  <option value="Østlandet">{t("filtersPanel.regionEast")}</option>
+                  <option value="Sørlandet">{t("filtersPanel.regionSouth")}</option>
+                </select>
+              </div>
+
+              <label className="flex items-center gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={fellesturOnly}
+                  onChange={(e) => updateSearchParam("fellestur", e.target.checked ? "1" : null)}
+                  className="h-4 w-4"
+                />
+                {t("filtersPanel.onlyFellestur")}
+              </label>
+
+              {activeFilters.length > 0 && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  {t("filtersPanel.clearAll")}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="mb-6 space-y-2">
           <label

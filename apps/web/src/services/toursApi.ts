@@ -2,6 +2,11 @@
  * Fil: toursApi.ts
  * Utvikler(e): Ramona Cretulescu. Copilot er brukt som guide og lærer i utviklingen av denne siden.
  * Beskrivelse: Henter turer fra backend-API og mapper dataene til formatet som brukes i frontend.
+ *
+ * Videreutviklet av: Vebjørn Baustad
+ * Endringer: Utvidet Tour-typen med ownerId (for eier-basert redigering)
+ * og hytter-array, og mapper tur_hytte-koblingene fra API til klient-siden
+ * slik at hytte-markører kan vises på turkartet.
  */
 
 import type { Difficulty, Region, Tour, TourPoint } from "../types/tour";

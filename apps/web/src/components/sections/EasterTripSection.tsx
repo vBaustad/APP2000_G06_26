@@ -1,6 +1,6 @@
 /**
  * Fil: EasterTripsSection.tsx
- * Utvikler(e): Ramona Cretulescu
+ * Utvikler(e): Ramona Cretulescu. Copilot er brukt som guide og lærer i utviklingen av denne siden.
  * Beskrivelse:
  * Seksjon på landingssiden som viser sesongbaserte forslag til påsketurer.
  * Komponenten fremhever relevante turer for påskeferien og leder brukeren

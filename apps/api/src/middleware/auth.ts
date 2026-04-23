@@ -2,6 +2,10 @@
  * Fil: auth.ts
  * Utvikler(e): Vebjørn Baustad
  * Beskrivelse: Håndterer autentisering og rollebasert tilgang i API-et.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import { Request, Response, NextFunction } from "express";

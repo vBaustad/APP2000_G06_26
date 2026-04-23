@@ -3,6 +3,10 @@
  * Utvikler(e): Vebjørn Baustad
  * Beskrivelse: Oppsett av react-i18next med bokmål (standard) og engelsk.
  * Språk oppdages fra localStorage / nettleser og kan byttes via navbar.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import i18n from "i18next";

@@ -45,7 +45,14 @@
       "memberSince": "Member since",
       "unknown": "Unknown",
       "role": "Role",
-      "roleUser": "User"
+      "roleUser": "User",
+      "roles": {
+        "admin": "Administrator",
+        "bruker": "User",
+        "turleder": "Tour leader",
+        "hytteeier": "Cabin owner",
+        "annonsor": "Advertiser"
+      }
     },
     "activity": {
       "title": "Activity",

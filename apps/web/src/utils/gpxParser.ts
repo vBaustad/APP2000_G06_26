@@ -4,6 +4,10 @@
  * Beskrivelse: Klient-sidig parser for GPX-filer. Ekstraherer trackpoints
  * og valgfritt navn fra <name>-tag. Støtter nedsampling så lange GPX-filer
  * ikke blåser opp UI-en eller DB-en.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 export type GpxPoint = { lat: number; lng: number; hoyde_m?: number };

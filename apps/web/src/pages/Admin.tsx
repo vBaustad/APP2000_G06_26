@@ -2,6 +2,10 @@
  * Fil: Admin.tsx
  * Utvikler(e): Vebjørn Baustad
  * Beskrivelse: Admin/redaktør-panel for å godkjenne annonsør-søknader og tildele roller til brukere.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -16,6 +20,17 @@ type PendingAnnonsor = {
   telefon: string | null;
   status: "pending" | "approved" | "rejected";
   created_at: string;
+};
+
+type PendingAnnonse = {
+  id: number;
+  tittel: string;
+  beskrivelse: string | null;
+  bilde_url: string | null;
+  kategori: string | null;
+  status: "pending" | "active" | "paused" | "rejected" | "ended";
+  created_at: string;
+  annonsor: { id: number; navn: string; epost: string } | null;
 };
 
 type Rolle = { id: number; kode: string; navn: string };
@@ -37,6 +52,7 @@ export default function Admin() {
   const isAdmin = user?.roller?.includes("admin") ?? false;
 
   const [pending, setPending] = useState<PendingAnnonsor[]>([]);
+  const [pendingAnnonser, setPendingAnnonser] = useState<PendingAnnonse[]>([]);
   const [roller, setRoller] = useState<Rolle[]>([]);
   const [brukere, setBrukere] = useState<AdminBruker[]>([]);
   const [query, setQuery] = useState("");
@@ -53,6 +69,11 @@ export default function Admin() {
     if (res.ok) setPending(await res.json());
   }
 
+  async function loadPendingAnnonser() {
+    const res = await fetch(`${API_BASE}/annonser/pending`, { headers: authHeaders });
+    if (res.ok) setPendingAnnonser(await res.json());
+  }
+
   async function loadRoller() {
     const res = await fetch(`${API_BASE}/roller`, { headers: authHeaders });
     if (res.ok) setRoller(await res.json());
@@ -67,6 +88,7 @@ export default function Admin() {
   useEffect(() => {
     if (!isAdmin || !token) return;
     loadPending();
+    loadPendingAnnonser();
     loadRoller();
     loadBrukere("");
   }, [isAdmin, token]);
@@ -88,6 +110,23 @@ export default function Admin() {
       if (!res.ok) throw new Error(action === "approve" ? t("errors.approve") : t("errors.reject"));
       await loadPending();
       await loadBrukere(query);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("errors.generic"));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function handleAnnonse(id: number, action: "approve" | "reject") {
+    setBusy(`annonse-${id}`);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/annonser/${id}/${action}`, {
+        method: "POST",
+        headers: authHeaders,
+      });
+      if (!res.ok) throw new Error(action === "approve" ? t("errors.approve") : t("errors.reject"));
+      await loadPendingAnnonser();
     } catch (e) {
       setError(e instanceof Error ? e.message : t("errors.generic"));
     } finally {
@@ -199,6 +238,76 @@ export default function Admin() {
                       className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
                     >
                       {t("advertisers.reject")}
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-slate-900">
+            {t("ads.heading", { n: pendingAnnonser.length })}
+          </h2>
+          <p className="mt-1 text-sm text-slate-600">{t("ads.description")}</p>
+          <div className="mt-4 space-y-3">
+            {pendingAnnonser.length === 0 ? (
+              <p className="text-slate-500">{t("ads.empty")}</p>
+            ) : (
+              pendingAnnonser.map((a) => (
+                <div
+                  key={a.id}
+                  className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 md:flex-row md:items-start md:justify-between"
+                >
+                  <div className="flex min-w-0 gap-4">
+                    {a.bilde_url && (
+                      <img
+                        src={
+                          a.bilde_url.startsWith("http") || a.bilde_url.startsWith("/images/")
+                            ? a.bilde_url
+                            : `${import.meta.env.VITE_API_URL}${a.bilde_url}`
+                        }
+                        alt={a.tittel}
+                        className="h-20 w-28 shrink-0 rounded-lg object-cover"
+                      />
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-semibold text-slate-900">{a.tittel}</p>
+                      {a.annonsor && (
+                        <p className="text-sm text-slate-600">{a.annonsor.navn}</p>
+                      )}
+                      {a.beskrivelse && (
+                        <p className="mt-1 line-clamp-2 text-sm text-slate-600">
+                          {a.beskrivelse}
+                        </p>
+                      )}
+                      {a.kategori && (
+                        <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">
+                          {a.kategori}
+                        </p>
+                      )}
+                      <p className="mt-1 text-xs text-slate-500">
+                        {t("advertisers.sentOn", { date: new Date(a.created_at).toLocaleDateString(locale) })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <button
+                      type="button"
+                      disabled={busy === `annonse-${a.id}`}
+                      onClick={() => handleAnnonse(a.id, "approve")}
+                      className="rounded-xl bg-[#0f8f5b] px-4 py-2 text-sm font-medium text-white hover:bg-[#0d7a4e] disabled:opacity-50"
+                    >
+                      {t("ads.approve")}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy === `annonse-${a.id}`}
+                      onClick={() => handleAnnonse(a.id, "reject")}
+                      className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                    >
+                      {t("ads.reject")}
                     </button>
                   </div>
                 </div>

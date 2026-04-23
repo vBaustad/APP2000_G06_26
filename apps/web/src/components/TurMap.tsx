@@ -3,6 +3,10 @@
  * Fil: TurMap.tsx
  * Utvikler(e): Ramona Cretulescu, Vebjørn Baustad
  * Beskrivelse: Leaflet kart-komponent (React Leaflet) som alltid rendrer riktig i cards/layout.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import "leaflet/dist/leaflet.css";

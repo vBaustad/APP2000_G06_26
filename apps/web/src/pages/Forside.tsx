@@ -1,6 +1,6 @@
 /**
  * Fil: Forside.tsx
- * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu, Synne Oppberget
+ * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu, Synne Oppberget. Copilot er brukt som guide og lærer i utviklingen av denne siden.
  * Beskrivelse:
  * Hovedkomponent for landingssiden som setter sammen og strukturerer alle
  * underseksjoner på forsiden. Består av hero-seksjon, feature-presentasjon,
@@ -18,6 +18,7 @@ import LandingActivities from "../components/landing/LandingActivities";
 import LandingCommunitySection from "../components/landing/LandingCommunitySection";
 import LandingSidebarSection from "../components/landing/LandingSidebarSection";
 import EasterTripsSection from "../components/sections/EasterTripSection";
+import ForsideAds from "../components/sections/ForsideAds";
 import PartnersSection from "../components/sections/PartnerSection";
 import ResetTestdataSection from "../components/sections/ResetTestdataSection";
 import { getTours } from "../services/toursApi";
@@ -54,9 +55,10 @@ export default function Forside() {
     <>
       <LandingHero />
 
-      <main className="mx-auto max-w-6xl space-y-20 px-4 py-16">
+      <main className="mx-auto max-w-7xl space-y-20 px-4 py-16">
         <LandingFeatures />
         <LandingActivities />
+        <ForsideAds />
         <LandingCommunitySection tours={tours} />
         <EasterTripsSection tours={tours} />
         <LandingSidebarSection />

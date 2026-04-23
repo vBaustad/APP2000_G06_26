@@ -3,6 +3,10 @@
  * Utvikler(e): Vebjørn Baustad & Parasto Jamshidi
  * Beskrivelse: API-ruter for innlogget brukers profil. Henter profil med favoritter (tur og hytte) og påmeldinger, 
  * og lar bruker oppdatere egne profilfelter
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import { Router, Response } from 'express';
@@ -19,7 +23,13 @@ userRouter.get('/me', requireAuth, async (req: AuthedRequest, res: Response) => 
 
     const bruker = await prisma.bruker.findUnique({
       where: { id: req.user.id },
-      include: {
+      select: {
+        id: true,
+        fornavn: true,
+        etternavn: true,
+        epost: true,
+        created_at: true,
+        bruker_rolle: { include: { rolle: true } },
         favoritt: { include: { tur: true, hytte: true } },
         tur_pamelding: { include: { tur_dato: { include: { tur: true } } } },
         hytte_booking: {
@@ -32,11 +42,11 @@ userRouter.get('/me', requireAuth, async (req: AuthedRequest, res: Response) => 
         },
       }
     });
-    
+
     if (!bruker) {
       return res.status(404).json({ error: "Bruker ikke funnet" });
     }
-    
+
     res.json(bruker);
   } catch (error) {
     console.error("Feil ved henting av bruker:", error);

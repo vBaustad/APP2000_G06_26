@@ -5,6 +5,14 @@
  * Side for oppretting av turer i Utopia. Admin velger tittel, beskrivelse,
  * turtype, eksisterende turstier (i rekkefølge) og eventuelle hytter
  * underveis. Datoer for fellestur håndteres i et eget steg senere.
+ *
+ * Videreutviklet av: Vebjørn Baustad
+ * Endringer: GPX-opplasting i tegnemodal (klient-side parser fyller
+ * inn punkter og navn fra fil) og i18n-konvertering av synlige strenger.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import { useEffect, useMemo, useState } from "react";

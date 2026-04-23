@@ -3,7 +3,8 @@
     "title": "Finn ditt neste eventyr",
     "subtitle": "Utforsk turforslag, kart og aktiviteter i Utopia",
     "searchPlaceholder": "Søk etter sted, tur eller hytte…",
-    "searchButton": "Søk"
+    "searchButton": "Søk",
+    "backgroundAlt": "Fjellandskap"
   },
   "features": {
     "eyebrow": "Planlegging og utforsking",
@@ -42,18 +43,45 @@
   "activities": {
     "eyebrow": "Aktiviteter og filtrering",
     "title": "Utforsk etter aktivitet",
-    "intro": "Velg aktivitet og gå videre til turer og kartvisning med relevante forslag og filtrering.",
+    "intro": "Velg aktivitet og gå videre til relevante turer, hytter og kartvisning.",
     "goToTours": "Gå til turer",
     "seeTours": "Se turer",
+    "seeCabins": "Se hytter",
     "tripsUnit": "turer",
     "cabinsUnit": "hytter",
+    "meta": {
+      "cabins": "Hytter og overnatting",
+      "loading": "Henter turer…",
+      "error": "Data utilgjengelig",
+      "explore": "Utforsk aktivitet",
+      "tripSingular": "tur",
+      "tripPlural": "turer"
+    },
     "cards": {
-      "foot": "Fottur",
-      "bike": "Sykkeltur",
-      "cabin": "Hyttetur",
-      "ski": "Skitur",
-      "peakSki": "Topptur på ski",
-      "paddle": "Padletur"
+      "foot": {
+        "title": "Fottur",
+        "description": "Nærturer, dagsturer og lengre vandringer i variert terreng."
+      },
+      "bike": {
+        "title": "Sykkeltur",
+        "description": "Turer og ruter som passer for sykkel i ulike områder."
+      },
+      "cabin": {
+        "title": "Hyttetur",
+        "description": "Hytter og overnatting som passer som stopp eller mål for turen."
+      },
+      "ski": {
+        "title": "Skitur",
+        "description": "Områder og turer som er relevante for ski og vinteraktiviteter."
+      },
+      "peakSki": {
+        "title": "Topptur på ski",
+        "description": "Mer krevende vinterturer og toppturrelaterte områder."
+      },
+      "paddle": {
+        "title": "Padletur",
+        "description": "Forslag for kajakk, kano og andre rolige padleopplevelser."
+      }
     }
   },
   "community": {
@@ -87,8 +115,15 @@
   "weather": {
     "eyebrow": "Vær og forhold",
     "title": "Turforhold i Jotunheimen",
+    "headingBeforeTrip": "Sjekk forholdene før du drar",
+    "introBeforeTrip": "Se oppdaterte værforhold for aktuelle turmål og få en rask vurdering før du planlegger neste tur.",
     "location": "Besseggen og nærliggende turmål",
     "updatedBadge": "Oppdatert i dag",
+    "updatedRecent": "Oppdatert nylig",
+    "updatedToday": "I dag kl. {{time}}",
+    "loadingShort": "Henter...",
+    "loadingYr": "Henter værdata fra Yr…",
+    "unavailable": "Værdata er ikke tilgjengelige akkurat nå.",
     "intro": "Vær og turforhold er viktige ved planlegging av tur, særlig i fjellet. Dette kortet viser hvordan løsningen kan gi brukeren rask oversikt over forhold som påvirker rutevalg, utstyr og tidspunkt.",
     "conditionsLabel": "Forhold",
     "conditionsValue": "Lettskyet og gode siktforhold i høyden",
@@ -96,13 +131,22 @@
     "temperatureValue": "2 °C på utsatte partier",
     "windLabel": "Vind",
     "windValue": "Frisk bris langs rygger og åpne områder",
+    "precipitationLabel": "Nedbør",
     "recommendationLabel": "Anbefaling",
     "recommendationValue": "Sjekk kart, kle deg for skiftende vær og planlegg med tidsmargin",
     "footerNote": "Beslutningsstøtte for tryggere turplanlegging",
-    "seeWeather": "Se vær og forhold"
+    "seeWeather": "Se vær og forhold",
+    "seeRelatedTours": "Se relevante turer"
   },
   "partners": {
     "thanks": "Takk til våre samarbeidspartnere"
+  },
+  "ads": {
+    "eyebrow": "Fra våre annonsører",
+    "heading": "Relevante tilbud for turglade",
+    "intro": "Godkjente annonser fra partnerne våre. Trykk for å utforske produktet eller tjenesten.",
+    "visit": "Besøk annonsør",
+    "disclaimer": "Annonsene er merket som sponset innhold og godkjent av redaktøren før publisering."
   },
   "reset": {
     "heading": "Testdata for sensor",

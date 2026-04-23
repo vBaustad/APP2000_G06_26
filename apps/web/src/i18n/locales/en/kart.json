@@ -20,7 +20,29 @@
     "clear": "Clear map filters",
     "difficulty": "Difficulty: {{value}}",
     "region": "Region: {{value}}",
-    "fellestur": "Group tours only"
+    "fellestur": "Group tours only",
+    "activity": "Activity: {{value}}"
+  },
+  "filtersPanel": {
+    "title": "Filters",
+    "any": "Any",
+    "activity": "Activity",
+    "activityFoot": "Hiking",
+    "activityBike": "Cycling",
+    "activitySki": "Skiing",
+    "difficulty": "Difficulty",
+    "diffEasy": "Easy",
+    "diffMedium": "Medium",
+    "diffHard": "Hard",
+    "diffExpert": "Expert",
+    "region": "Region",
+    "regionNorth": "Northern Norway",
+    "regionTrondelag": "Trøndelag",
+    "regionWest": "Western Norway",
+    "regionEast": "Eastern Norway",
+    "regionSouth": "Southern Norway",
+    "onlyFellestur": "Group tours only",
+    "clearAll": "Clear all filters"
   },
   "search": {
     "label": "Search for a tour or place",

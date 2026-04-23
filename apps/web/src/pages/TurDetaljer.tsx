@@ -1,6 +1,7 @@
 /**
  * Fil: TurDetaljer.tsx
- * Utvikler(e): Ramona Cretulescu, Vebjørn Baustad
+ * Utvikler(e): Ramona Cretulescu, Vebjørn Baustad. Copilot er brukt som guide og lærer i utviklingen av denne siden.
+ * Copilot er brukt som guide og lærer i utviklingen av denne siden.
  * Beskrivelse: Detaljside for en tur. Viser turinfo, kart, kommentarer,
  * favoritt-toggle, liste over tur-datoer og innlogget brukers egen
  * påmeldingsstatus på turen.
@@ -150,7 +151,9 @@ export default function TurDetaljer() {
   const [signupLoading, setSignupLoading] = useState(false);
   const [signupMessage, setSignupMessage] = useState("");
 
-  const [avmeldKandidat, setAvmeldKandidat] = useState<MinPamelding | null>(null);
+  const [avmeldKandidat, setAvmeldKandidat] = useState<MinPamelding | null>(
+    null,
+  );
   const [avmeldBusy, setAvmeldBusy] = useState(false);
   const [avmeldFeil, setAvmeldFeil] = useState<string | null>(null);
 
@@ -184,7 +187,7 @@ export default function TurDetaljer() {
   }, [tour]);
 
   const gear: string[] = useMemo(
-    () => (Array.isArray(tour?.gear) ? tour!.gear : []),
+    () => (Array.isArray(tour?.gear) ? tour.gear : []),
     [tour],
   );
   const routePoints = useMemo<LatLng[]>(
@@ -307,6 +310,7 @@ export default function TurDetaljer() {
       setMinePameldinger([]);
       return;
     }
+
     let active = true;
 
     fetch(`${import.meta.env.VITE_API_URL}/api/favoritter`, {
@@ -405,7 +409,11 @@ export default function TurDetaljer() {
         if (!active) return;
 
         setChatLenker(
-          Object.fromEntries(entries.filter((entry): entry is readonly [number, number] => entry !== null)),
+          Object.fromEntries(
+            entries.filter(
+              (entry): entry is readonly [number, number] => entry !== null,
+            ),
+          ),
         );
       } catch (error) {
         console.error("Feil ved henting av chat-lenker:", error);
@@ -466,9 +474,10 @@ export default function TurDetaljer() {
 
   async function handleShare() {
     const url = window.location.href;
+
     try {
       if (navigator.share) {
-        await navigator.share({ title: tour!.title, url });
+        await navigator.share({ title: tour.title, url });
         return;
       }
     } catch {
@@ -510,7 +519,7 @@ export default function TurDetaljer() {
             Authorization: `Bearer ${signupToken}`,
           },
           body: JSON.stringify({ tur_dato_id: turDatoId }),
-        }
+        },
       );
 
       const data = (await res.json().catch(() => null)) as
@@ -562,6 +571,7 @@ export default function TurDetaljer() {
       return;
     }
     if (!tid || favorittBusy) return;
+
     setFavorittBusy(true);
     try {
       if (favorittId) {
@@ -605,6 +615,7 @@ export default function TurDetaljer() {
 
     setKommentarBusy(true);
     setKommentarFeil(null);
+
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/api/turer/${tid}/kommentarer`,
@@ -617,16 +628,20 @@ export default function TurDetaljer() {
           body: JSON.stringify({ body: tekst }),
         },
       );
+
       const data = (await res.json().catch(() => null)) as
         | (Kommentar & { error?: string })
         | null;
+
       if (!res.ok) {
         setKommentarFeil(data?.error ?? t("detail.commentSaveFailed"));
         return;
       }
+
       if (data && typeof data.id === "number") {
         setKommentarer((prev) => [data, ...prev]);
       }
+
       setKommentarTekst("");
     } catch {
       setKommentarFeil(t("detail.commentNetworkError"));
@@ -710,15 +725,18 @@ export default function TurDetaljer() {
 
     setAvmeldBusy(true);
     setAvmeldFeil(null);
+
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/api/turer/pamelding/${avmeldKandidat.id}`,
         { method: "DELETE", headers: { Authorization: `Bearer ${avToken}` } },
       );
+
       if (!res.ok) {
         setAvmeldFeil(t("detail.unregisterFailed"));
         return;
       }
+
       setMinePameldinger((prev) =>
         prev.filter((p) => p.id !== avmeldKandidat.id),
       );
@@ -736,14 +754,14 @@ export default function TurDetaljer() {
     const gpx = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="Utopia TiU">
   <wpt lat="${lat}" lon="${lon}">
-    <name>${tour!.title}</name>
+    <name>${tour.title}</name>
   </wpt>
 </gpx>`;
 
     const blob = new Blob([gpx], { type: "application/gpx+xml" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `${tour!.title.replaceAll(" ", "_")}.gpx`;
+    a.download = `${tour.title.replaceAll(" ", "_")}.gpx`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -790,9 +808,9 @@ export default function TurDetaljer() {
               {tour.title}
             </h1>
 
-            <div className="mt-2 flex items-center gap-2 text-white/85">
+            <div className="mt-2 flex items-center gap-2 text-sm text-white/85">
               <MapPin className="h-4 w-4" />
-              <p className="text-sm">{tour.location}</p>
+              <p>{tour.location}</p>
             </div>
 
             <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -867,46 +885,44 @@ export default function TurDetaljer() {
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-10">
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
-            <div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Route className="h-4 w-4 text-emerald-700" />
-                <span>{t("detail.summaryDistance")}</span>
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-gray-900">
-                {tour.distanceKm} km
-              </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Route className="h-4 w-4 text-emerald-700" />
+              <span>{t("detail.summaryDistance")}</span>
             </div>
-
-            <div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Clock className="h-4 w-4 text-emerald-700" />
-                <span>{t("detail.summaryDuration")}</span>
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-gray-900">
-                {tour.durationHours} {t("detail.unitHours")}
-              </div>
+            <div className="mt-1 text-2xl font-semibold text-gray-900">
+              {tour.distanceKm} km
             </div>
+          </div>
 
-            <div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Mountain className="h-4 w-4 text-emerald-700" />
-                <span>{t("detail.summaryElevation")}</span>
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-gray-900">
-                {tour.elevationM} m
-              </div>
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Clock className="h-4 w-4 text-emerald-700" />
+              <span>{t("detail.summaryDuration")}</span>
             </div>
+            <div className="mt-1 text-2xl font-semibold text-gray-900">
+              {tour.durationHours} {t("detail.unitHours")}
+            </div>
+          </div>
 
-            <div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Star className="h-4 w-4 text-emerald-700" />
-                <span>{t("detail.summaryComments")}</span>
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-gray-900">
-                {kommentarer.length}
-              </div>
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Mountain className="h-4 w-4 text-emerald-700" />
+              <span>{t("detail.summaryElevation")}</span>
+            </div>
+            <div className="mt-1 text-2xl font-semibold text-gray-900">
+              {tour.elevationM} m
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Star className="h-4 w-4 text-emerald-700" />
+              <span>{t("detail.summaryComments")}</span>
+            </div>
+            <div className="mt-1 text-2xl font-semibold text-gray-900">
+              {kommentarer.length}
             </div>
           </div>
         </div>
@@ -932,12 +948,14 @@ export default function TurDetaljer() {
                     )}
                     {formatDate(p.tur_dato.start_at)} – {formatDate(p.tur_dato.end_at)}
                   </div>
+
                   <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${PAMELDING_STYLE[p.status]}`}
                     >
                       {t(`detail.statusLabels.${p.status}`)}
                     </span>
+
                     <button
                       type="button"
                       onClick={() => {
@@ -971,9 +989,11 @@ export default function TurDetaljer() {
                     : t("detail.groupChatBodyMany", { count: lockedCount })}
                 </p>
               </div>
+
               <Link
                 to={
-                  lasedeChatPameldinger[0] && chatLenker[lasedeChatPameldinger[0].tur_dato.id]
+                  lasedeChatPameldinger[0] &&
+                  chatLenker[lasedeChatPameldinger[0].tur_dato.id]
                     ? `/meldinger?chat=${chatLenker[lasedeChatPameldinger[0].tur_dato.id]}`
                     : "/meldinger"
                 }
@@ -997,6 +1017,7 @@ export default function TurDetaljer() {
                     {" · "}
                     {formatDate(pamelding.tur_dato.start_at)} – {formatDate(pamelding.tur_dato.end_at)}
                   </div>
+
                   <Link
                     to={
                       chatLenker[pamelding.tur_dato.id]
@@ -1044,6 +1065,7 @@ export default function TurDetaljer() {
               {aktiveDatoer.map((d) => {
                 const erPameldt = pameldteDatoIds.has(d.id);
                 const kanMelde = isLoggedIn && !erPameldt && d.status === "planned";
+
                 return (
                   <li
                     key={d.id}
@@ -1315,7 +1337,7 @@ export default function TurDetaljer() {
                     const [lat, lng] = mapCenter;
                     window.open(
                       `https://www.openstreetmap.org/#map=13/${lat}/${lng}`,
-                      "_blank"
+                      "_blank",
                     );
                   }}
                 >
@@ -1433,6 +1455,7 @@ export default function TurDetaljer() {
                           </div>
                         </div>
                       </div>
+
                       <p className="mt-3 text-sm leading-relaxed text-gray-700">
                         {k.body}
                       </p>

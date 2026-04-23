@@ -4,6 +4,10 @@
  * Beskrivelse: Enkel parser for GPX-filer brukt i seed. Ekstraherer
  * trackpoints (lat/lng + elevation hvis tilgjengelig) og støtter
  * nedsampling for å holde punkt-antall håndterbart.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import { readFileSync } from "fs";

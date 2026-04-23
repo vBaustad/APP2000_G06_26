@@ -3,7 +3,8 @@
     "title": "Find your next adventure",
     "subtitle": "Explore tours, maps and activities in Utopia",
     "searchPlaceholder": "Search for a place, tour or cabin…",
-    "searchButton": "Search"
+    "searchButton": "Search",
+    "backgroundAlt": "Mountain landscape"
   },
   "features": {
     "eyebrow": "Planning and exploration",
@@ -42,18 +43,45 @@
   "activities": {
     "eyebrow": "Activities and filtering",
     "title": "Explore by activity",
-    "intro": "Choose an activity and go to tours and map view with relevant suggestions and filtering.",
+    "intro": "Choose an activity and go to relevant tours, cabins and map view.",
     "goToTours": "Go to tours",
     "seeTours": "See tours",
+    "seeCabins": "See cabins",
     "tripsUnit": "tours",
     "cabinsUnit": "cabins",
+    "meta": {
+      "cabins": "Cabins and accommodation",
+      "loading": "Loading tours…",
+      "error": "Data unavailable",
+      "explore": "Explore activity",
+      "tripSingular": "tour",
+      "tripPlural": "tours"
+    },
     "cards": {
-      "foot": "Hiking",
-      "bike": "Cycling",
-      "cabin": "Cabin trip",
-      "ski": "Skiing",
-      "peakSki": "Ski touring",
-      "paddle": "Paddling"
+      "foot": {
+        "title": "Hiking",
+        "description": "Short trips, day hikes and longer walks in varied terrain."
+      },
+      "bike": {
+        "title": "Cycling",
+        "description": "Tours and routes suitable for cycling in different areas."
+      },
+      "cabin": {
+        "title": "Cabin trip",
+        "description": "Cabins and accommodation that fit as a stop or destination for the tour."
+      },
+      "ski": {
+        "title": "Skiing",
+        "description": "Areas and tours relevant for skiing and winter activities."
+      },
+      "peakSki": {
+        "title": "Ski touring",
+        "description": "More demanding winter tours and ski touring areas."
+      },
+      "paddle": {
+        "title": "Paddling",
+        "description": "Suggestions for kayak, canoe and other calm paddling experiences."
+      }
     }
   },
   "community": {
@@ -87,8 +115,15 @@
   "weather": {
     "eyebrow": "Weather and conditions",
     "title": "Conditions in Jotunheimen",
+    "headingBeforeTrip": "Check the conditions before you go",
+    "introBeforeTrip": "See updated weather conditions for relevant destinations and get a quick assessment before planning your next trip.",
     "location": "Besseggen and nearby destinations",
     "updatedBadge": "Updated today",
+    "updatedRecent": "Recently updated",
+    "updatedToday": "Today at {{time}}",
+    "loadingShort": "Loading...",
+    "loadingYr": "Loading weather data from Yr…",
+    "unavailable": "Weather data is not available right now.",
     "intro": "Weather and conditions are important when planning a tour, especially in the mountains. This card shows how the solution can give users a quick overview of conditions that affect route choice, equipment and timing.",
     "conditionsLabel": "Conditions",
     "conditionsValue": "Partly cloudy with good visibility at altitude",
@@ -96,13 +131,22 @@
     "temperatureValue": "2 °C in exposed areas",
     "windLabel": "Wind",
     "windValue": "Fresh breeze along ridges and open areas",
+    "precipitationLabel": "Precipitation",
     "recommendationLabel": "Recommendation",
     "recommendationValue": "Check the map, dress for changing weather and plan with a time margin",
     "footerNote": "Decision support for safer trip planning",
-    "seeWeather": "See weather and conditions"
+    "seeWeather": "See weather and conditions",
+    "seeRelatedTours": "See related tours"
   },
   "partners": {
     "thanks": "Thanks to our partners"
+  },
+  "ads": {
+    "eyebrow": "From our advertisers",
+    "heading": "Relevant offers for outdoor enthusiasts",
+    "intro": "Approved ads from our partners. Click to explore the product or service.",
+    "visit": "Visit advertiser",
+    "disclaimer": "Ads are marked as sponsored content and approved by the editor before publication."
   },
   "reset": {
     "heading": "Test data for examiner",

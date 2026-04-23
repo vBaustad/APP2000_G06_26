@@ -2,6 +2,10 @@
  * Fil: IkkeFunnet.tsx
  * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu
  * Beskrivelse: Enkel 404-side når brukeren går til en rute som ikke finnes.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 import { useTranslation } from "react-i18next";
 

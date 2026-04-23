@@ -18,5 +18,7 @@
   "languageNo": "NO",
   "languageEn": "EN",
   "switchToNorwegian": "Bytt til norsk",
-  "switchToEnglish": "Switch to English"
+  "switchToEnglish": "Switch to English",
+  "openMenu": "Åpne meny",
+  "closeMenu": "Lukk meny"
 }

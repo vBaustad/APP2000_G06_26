@@ -45,7 +45,14 @@
       "memberSince": "Medlem siden",
       "unknown": "Ukjent",
       "role": "Rolle",
-      "roleUser": "Bruker"
+      "roleUser": "Bruker",
+      "roles": {
+        "admin": "Administrator",
+        "bruker": "Bruker",
+        "turleder": "Turleder",
+        "hytteeier": "Hytteeier",
+        "annonsor": "Annonsør"
+      }
     },
     "activity": {
       "title": "Aktivitet",

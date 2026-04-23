@@ -1,23 +1,30 @@
 {
   "logoAlt": "Utopia",
+  "logoLinkAria": "Gå til forsiden",
   "intro": "Utopia gjør det enklere å utforske turer, kart og hytter på ett sted, med inspirasjon og nyttig informasjon for turplanlegging.",
   "studentProject": "Studentprosjekt ved USN.",
   "sections": {
     "content": "Innhold",
     "info": "Informasjon",
+    "account": "Konto",
     "contact": "Kontakt"
   },
   "links": {
+    "home": "Forside",
+    "tours": "Turer",
     "explorer": "Utforsker",
     "myTours": "Mine turer",
+    "myPage": "Min side",
     "map": "Kart",
     "tourSuggestions": "Turforslag",
     "cabins": "Hytter",
     "weather": "Vær og forhold",
     "groupTours": "Fellesturer",
     "activities": "Turaktiviteter",
-    "about": "Om prosjektet",
-    "contactPage": "Kontaktside"
+    "login": "Logg inn",
+    "register": "Registrer",
+    "about": "Om Utopia",
+    "contactPage": "Kontakt"
   },
   "contact": {
     "phone": "+47 00 000 000 (man–fre 09–17)",

@@ -4,6 +4,10 @@
  * Beskrivelse: CLI-entrypoint for `prisma db seed`. Delegerer til
  * seed-logikken i src/lib/seed.ts slik at samme funksjon gjenbrukes av
  * reset-endepunktet i adminRoutes.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import { runSeedCli } from "../src/lib/seed";

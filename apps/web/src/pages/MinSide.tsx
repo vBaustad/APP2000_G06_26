@@ -6,6 +6,10 @@
  * høyre hovedinnhold for mine turer, favoritter, kommentarer, bookinger
  * og konto. Henter bruker, favoritter, turpåmeldinger og hyttebookinger
  * fra /api/bruker/me.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import { useEffect, useState } from "react";
@@ -135,6 +139,7 @@ export default function MinSide() {
   const [opprettedeTurer, setOpprettedeTurer] = useState<OpprettetTur[]>([]);
 
   const isAnnonsor = authUser?.roller?.includes("annonsor") ?? false;
+  const isTurleder = authUser?.roller?.includes("turleder") ?? false;
   const [soknadStatus, setSoknadStatus] = useState<AnnonsorSoknadStatus>(null);
   const [soknadOpen, setSoknadOpen] = useState(false);
   const [soknadNavn, setSoknadNavn] = useState("");
@@ -370,13 +375,15 @@ export default function MinSide() {
                 {t("minside.createTour")}
               </NavLink>
 
-              <NavLink
-                to="/mine-turer-leder"
-                className="inline-flex items-center gap-2 rounded-xl border border-[#dcebe4] bg-[#eef5f1] px-4 py-3 font-medium text-[#0f3d2e] hover:bg-[#e4efe9]"
-              >
-                <CalendarDays className="h-4 w-4" />
-                {t("minside.myToursAsLeader")}
-              </NavLink>
+              {isTurleder && (
+                <NavLink
+                  to="/mine-turer-leder"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[#dcebe4] bg-[#eef5f1] px-4 py-3 font-medium text-[#0f3d2e] hover:bg-[#e4efe9]"
+                >
+                  <CalendarDays className="h-4 w-4" />
+                  {t("minside.myToursAsLeader")}
+                </NavLink>
+              )}
 
               {!isAnnonsor && soknadStatus?.status !== "pending" && (
                 <button
@@ -980,7 +987,13 @@ export default function MinSide() {
 
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm font-medium text-slate-500">{t("minside.info.role")}</p>
-                  <p className="mt-2 text-xl text-slate-900">{t("minside.info.roleUser")}</p>
+                  <p className="mt-2 text-xl text-slate-900">
+                    {(authUser?.roller ?? []).length > 0
+                      ? (authUser?.roller ?? [])
+                          .map((rolle) => t(`minside.info.roles.${rolle}`, { defaultValue: rolle }))
+                          .join(", ")
+                      : t("minside.info.roleUser")}
+                  </p>
                 </div>
               </div>
 

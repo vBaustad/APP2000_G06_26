@@ -2,6 +2,10 @@
  * Fil: Hytter.tsx
  * Utvikler(e): Vebjørn Baustad
  * Beskrivelse: Offentlig oversikt over hytter med hero, søk, filter og kortgrid.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -40,6 +44,8 @@ const BETJENT_BADGE: Record<Betjent, string> = {
 function resolveImageUrl(url: string | null): string | null {
   if (!url) return null;
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  // Frontend-statiske bilder: server direkte fra web-rot
+  if (url.startsWith("/images/")) return url;
   if (url.startsWith("/")) return `${import.meta.env.VITE_API_URL}${url}`;
   return url;
 }

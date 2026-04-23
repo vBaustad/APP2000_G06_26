@@ -5,6 +5,10 @@
  * Liten seksjon på forsiden som lar sensor tilbakestille alle testdata
  * til seedet utgangspunkt. Krever bekreftelse i modal før kall, og viser
  * statusmelding etter kall.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import { useEffect, useState } from "react";

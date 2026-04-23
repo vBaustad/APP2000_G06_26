@@ -1,6 +1,6 @@
 /**
  * Fil: main.tsx
- * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu
+ * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu. Copilot er brukt som guide og lærer i utviklingen av denne siden.
  * Beskrivelse: Inngangspunkt for React-applikasjonen som initialiserer
  * appen og renderer rot-komponenten.
  */

@@ -1,3 +1,12 @@
+/**
+ * Fil: chatRoutes.ts
+ * Utvikler(e): Aleksandra Cudakiewicz
+ * Beskrivelse: API-endepunkter for chat-funksjonalitet mellom brukere og
+ * gruppesamtaler knyttet til fellesturer. Håndterer opprettelse og henting
+ * av samtaler, meldinger, bilde-opplasting/godkjenning og medlemskap i
+ * låste tur-chatter.
+ */
+
 import { Router } from "express";
 import { Prisma } from "@prisma/client";
 import crypto from "crypto";

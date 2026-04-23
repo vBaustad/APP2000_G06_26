@@ -20,7 +20,29 @@
     "clear": "Fjern kartfiltre",
     "difficulty": "Vanskelighet: {{value}}",
     "region": "Region: {{value}}",
-    "fellestur": "Kun fellesturer"
+    "fellestur": "Kun fellesturer",
+    "activity": "Aktivitet: {{value}}"
+  },
+  "filtersPanel": {
+    "title": "Filtre",
+    "any": "Alle",
+    "activity": "Aktivitet",
+    "activityFoot": "Fottur",
+    "activityBike": "Sykkel",
+    "activitySki": "Ski",
+    "difficulty": "Vanskelighetsgrad",
+    "diffEasy": "Lett",
+    "diffMedium": "Middels",
+    "diffHard": "Krevende",
+    "diffExpert": "Ekspert",
+    "region": "Region",
+    "regionNorth": "Nord-Norge",
+    "regionTrondelag": "Trøndelag",
+    "regionWest": "Vestlandet",
+    "regionEast": "Østlandet",
+    "regionSouth": "Sørlandet",
+    "onlyFellestur": "Kun fellesturer",
+    "clearAll": "Fjern alle filtre"
   },
   "search": {
     "label": "Søk etter tur eller sted",

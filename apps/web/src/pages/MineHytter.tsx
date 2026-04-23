@@ -2,6 +2,10 @@
  * Fil: MineHytter.tsx
  * Utvikler(e): Vebjørn Baustad
  * Beskrivelse: CRUD for oppretting, redigering og sletting av hytter for brukere med rolle hytteeier
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 import { FASILITET_KODER } from "../data/fasiliteter";
 import { useEffect, useMemo, useState } from "react";
@@ -132,6 +136,7 @@ const API_BASE = `${import.meta.env.VITE_API_URL}/api/hytter`;
 function resolveImageUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("/images/")) return url;
   if (url.startsWith("/")) return `${import.meta.env.VITE_API_URL}${url}`;
   return url;
 }

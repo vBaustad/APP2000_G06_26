@@ -2,6 +2,10 @@
  * Fil: types/tour.ts
  * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu
  * Beskrivelse: Felles typer for tur-entitet brukt på tvers av frontend.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 export type Difficulty = "Lett" | "Middels" | "Krevende" | "Ekspert";

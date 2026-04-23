@@ -2,6 +2,10 @@
  * Fil: LoggInn.tsx
  * Utvikler(e): Vebjørn Baustad
  * Beskrivelse: Innloggingsside med e-post og passord. Logger inn via API og lagrer brukerinfo.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import { useState } from "react";

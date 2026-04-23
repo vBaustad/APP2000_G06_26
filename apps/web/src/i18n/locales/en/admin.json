@@ -21,6 +21,13 @@
     "approve": "Approve",
     "reject": "Reject"
   },
+  "ads": {
+    "heading": "Pending ads ({{n}})",
+    "description": "Ads from approved advertisers awaiting editor approval before publication.",
+    "empty": "No ads pending approval.",
+    "approve": "Approve",
+    "reject": "Reject"
+  },
   "roles": {
     "heading": "Assign roles",
     "description": "Search for a user by email or name, and assign/remove roles.",

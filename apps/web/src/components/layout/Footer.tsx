@@ -4,21 +4,14 @@
  *
  * Beskrivelse:
  * Footer-komponent for nettsiden som viser logo, kort prosjektbeskrivelse,
- * navigasjonslenker, kontaktinformasjon, sosiale medier og juridiske lenker.
+ * navigasjonslenker, kontaktinformasjon og juridiske lenker.
  * Personvern og vilkår vises som modaler over siden.
  */
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
-import {
-  Facebook,
-  Instagram,
-  Youtube,
-  Mail,
-  Phone,
-  MapPin,
-} from "lucide-react";
+import { Mail } from "lucide-react";
 import LegalModal from "./LegalModal";
 
 export default function Footer() {
@@ -32,11 +25,13 @@ export default function Footer() {
           <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
             {/* Logo + intro */}
             <div className="space-y-5">
-              <img
-                src="/logos/utopia-footer-logo.png"
-                alt={t("logoAlt")}
-                className="h-12 w-auto object-contain"
-              />
+              <Link to="/" aria-label={t("logoLinkAria")}>
+                <img
+                  src="/logos/utopia-footer-logo.png"
+                  alt={t("logoAlt")}
+                  className="h-12 w-auto object-contain"
+                />
+              </Link>
 
               <p className="max-w-xs text-sm leading-8 text-white/90">
                 {t("intro")}
@@ -54,18 +49,18 @@ export default function Footer() {
               <ul className="space-y-4 text-sm text-white/90">
                 <li>
                   <Link
-                    to="/turer"
+                    to="/"
                     className="transition hover:text-white hover:underline"
                   >
-                    {t("links.explorer")}
+                    {t("links.home")}
                   </Link>
                 </li>
                 <li>
                   <Link
-                    to="/min-side"
+                    to="/turer"
                     className="transition hover:text-white hover:underline"
                   >
-                    {t("links.myTours")}
+                    {t("links.tours")}
                   </Link>
                 </li>
                 <li>
@@ -78,52 +73,44 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link
-                    to="/turer"
-                    className="transition hover:text-white hover:underline"
-                  >
-                    {t("links.tourSuggestions")}
-                  </Link>
-                </li>
-                <li>
-                  <Link
                     to="/hytter"
                     className="transition hover:text-white hover:underline"
                   >
                     {t("links.cabins")}
                   </Link>
                 </li>
+                <li>
+                  <Link
+                    to="/min-side"
+                    className="transition hover:text-white hover:underline"
+                  >
+                    {t("links.myPage")}
+                  </Link>
+                </li>
               </ul>
             </div>
 
-            {/* Informasjon */}
+            {/* Konto */}
             <div>
               <h3 className="mb-5 text-sm font-semibold uppercase tracking-[0.18em] text-white/80">
-                {t("sections.info")}
+                {t("sections.account")}
               </h3>
 
               <ul className="space-y-4 text-sm text-white/90">
                 <li>
                   <Link
-                    to="/kart"
+                    to="/logg-inn"
                     className="transition hover:text-white hover:underline"
                   >
-                    {t("links.weather")}
+                    {t("links.login")}
                   </Link>
                 </li>
                 <li>
                   <Link
-                    to="/turer"
+                    to="/registrer"
                     className="transition hover:text-white hover:underline"
                   >
-                    {t("links.groupTours")}
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/turer"
-                    className="transition hover:text-white hover:underline"
-                  >
-                    {t("links.activities")}
+                    {t("links.register")}
                   </Link>
                 </li>
                 <li>
@@ -145,20 +132,14 @@ export default function Footer() {
 
               <ul className="space-y-4 text-sm text-white/90">
                 <li className="flex items-start gap-3">
-                  <Phone className="mt-0.5 h-4 w-4 shrink-0 text-white/70" />
-                  <span>{t("contact.phone")}</span>
-                </li>
-
-                <li className="flex items-start gap-3">
                   <Mail className="mt-0.5 h-4 w-4 shrink-0 text-white/70" />
-                  <span>{t("contact.email")}</span>
+                  <a
+                    href="mailto:post@utopia.com"
+                    className="transition hover:text-white hover:underline"
+                  >
+                    {t("contact.email")}
+                  </a>
                 </li>
-
-                <li className="flex items-start gap-3">
-                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-white/70" />
-                  <span>{t("contact.address")}</span>
-                </li>
-
                 <li>
                   <Link
                     to="/kontakt"
@@ -168,38 +149,6 @@ export default function Footer() {
                   </Link>
                 </li>
               </ul>
-
-              <div className="mt-8">
-                <p className="mb-3 text-sm font-medium text-white/80">
-                  {t("follow")}
-                </p>
-
-                <div className="flex gap-3">
-                  <a
-                    href="#"
-                    aria-label="Facebook"
-                    className="rounded-xl bg-white/10 p-3 transition hover:bg-white/20"
-                  >
-                    <Facebook className="h-5 w-5" />
-                  </a>
-
-                  <a
-                    href="#"
-                    aria-label="Instagram"
-                    className="rounded-xl bg-white/10 p-3 transition hover:bg-white/20"
-                  >
-                    <Instagram className="h-5 w-5" />
-                  </a>
-
-                  <a
-                    href="#"
-                    aria-label="YouTube"
-                    className="rounded-xl bg-white/10 p-3 transition hover:bg-white/20"
-                  >
-                    <Youtube className="h-5 w-5" />
-                  </a>
-                </div>
-              </div>
             </div>
           </div>
 

@@ -4,6 +4,10 @@
  * Beskrivelse:
  * Side for å redigere en eksisterende tur. Henter turen via API,
  * fyller skjemaet og sender PUT. Kun eier eller admin har tilgang.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import { useEffect, useMemo, useState } from "react";

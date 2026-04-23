@@ -4,6 +4,10 @@
  * Beskrivelse: Dashboard for turleder. Viser turer der innlogget bruker er
  * leder, med tilhørende tur_dato, statuser og antall påmeldinger.
  * Turlederen kan legge til nye datoer og låse/avlyse eksisterende.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";

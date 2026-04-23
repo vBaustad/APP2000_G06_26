@@ -3,6 +3,10 @@
  * Utvikler(e): Vebjørn Baustad
  * Beskrivelse: Offentlig detaljside for en hytte. Henter data fra GET /api/hytter/:id
  * og viser bilde, nøkkelinfo, fasiliteter, beskrivelse, regler og posisjon på kart.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
@@ -61,6 +65,7 @@ const BETJENT_BADGE: Record<Betjent, string> = {
 function resolveImageUrl(url: string | null): string | null {
   if (!url) return null;
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("/images/")) return url;
   if (url.startsWith("/")) return `${import.meta.env.VITE_API_URL}${url}`;
   return url;
 }

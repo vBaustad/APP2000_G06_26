@@ -8,6 +8,10 @@
  *
  * Eksporterer seedAll() som kjøres både fra CLI (prisma db seed) og fra
  * reset-endepunktet i adminRoutes.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import { PrismaClient, TurType, TurStatus, TurDatoStatus, AnnonsorStatus, AnnonseStatus } from "@prisma/client";
@@ -30,7 +34,7 @@ const testbrukere: TestbrukerSeed[] = [
   { epost: "bruker1@usn.no", fornavn: "Anne",    etternavn: "Admin",    roller: ["admin", "bruker"] },
   { epost: "bruker2@usn.no", fornavn: "Ola",     etternavn: "Turleder", roller: ["turleder", "bruker"] },
   { epost: "bruker3@usn.no", fornavn: "Kari",    etternavn: "Hytteeier",roller: ["hytteeier", "bruker"] },
-  { epost: "bruker4@usn.no", fornavn: "Per",     etternavn: "Bruker",   roller: ["bruker", "annonsor"] },
+  { epost: "bruker4@usn.no", fornavn: "Per",     etternavn: "Annonsør", roller: ["bruker", "annonsor"] },
   { epost: "bruker5@usn.no", fornavn: "Lise",    etternavn: "Bruker",   roller: ["bruker"] },
   { epost: "bruker6@usn.no", fornavn: "Sondre",  etternavn: "Bruker",   roller: ["bruker"] },
 ];
@@ -104,7 +108,7 @@ const hytter: HytteSeed[] = [
     lat: 60.1357, lng: 7.2582, hoyde_m: 1220,
     betjent: "selvbetjent",
     kapasitet_senger: 20, maks_gjester: 24, pris_per_natt: 400,
-    bilde_url: null,
+    bilde_url: "/images/cabins/cszvwrcgoa2iqepidhxf.webp",
     regler: "Ta med eget sengetøy. Rydd etter deg.",
     fasiliteter: [
       { kode: "kjokken", verdi: "selvhushold" },
@@ -118,7 +122,7 @@ const hytter: HytteSeed[] = [
     lat: 60.6019, lng: 7.5017, hoyde_m: 1222,
     betjent: "betjent",
     kapasitet_senger: 80, maks_gjester: 100, pris_per_natt: 800,
-    bilde_url: null,
+    bilde_url: "/images/cabins/eg51jvwhhgz67xxzvvws.webp",
     regler: "Servering av frokost og middag. Ro etter 23:00.",
     fasiliteter: [
       { kode: "kjokken", verdi: "felleskjøkken" },
@@ -133,7 +137,7 @@ const hytter: HytteSeed[] = [
     lat: 61.613252, lng: 9.09668, hoyde_m: 900,
     betjent: "selvbetjent",
     kapasitet_senger: 4, maks_gjester: 6, pris_per_natt: 300,
-    bilde_url: null,
+    bilde_url: "/images/cabins/l8svnzsf0vjklk02jq3h.webp",
     regler: "Ta med eget sengetøy.",
     fasiliteter: [
       { kode: "vedovn", verdi: "ja" },
@@ -147,7 +151,7 @@ const hytter: HytteSeed[] = [
     lat: 60.0938, lng: 7.1371, hoyde_m: 1250,
     betjent: "selvbetjent",
     kapasitet_senger: 30, maks_gjester: 36, pris_per_natt: 400,
-    bilde_url: null,
+    bilde_url: "/images/cabins/p0dxka7pcwkg4d17ccbg.webp",
     regler: "Ta med eget sengetøy. Ved- og gasskomfyr tilgjengelig.",
     fasiliteter: [
       { kode: "kjokken", verdi: "selvhushold" },
@@ -161,7 +165,7 @@ const hytter: HytteSeed[] = [
     lat: 60.1843, lng: 7.4813, hoyde_m: 1182,
     betjent: "betjent",
     kapasitet_senger: 25, maks_gjester: 30, pris_per_natt: 700,
-    bilde_url: null,
+    bilde_url: "/images/cabins/u0wj3hct0e98ocz1bqwy.webp",
     regler: "Betjent sommer og påske. Middag og frokost inkludert.",
     fasiliteter: [
       { kode: "kjokken", verdi: "felleskjøkken" },
@@ -896,9 +900,8 @@ async function seedAnnonser(annonsorBrukerEpost: string) {
     },
   });
 
-  const now = new Date();
-  const inTwoMonths = new Date();
-  inTwoMonths.setMonth(inTwoMonths.getMonth() + 2);
+  const start = new Date("2026-04-15T00:00:00Z");
+  const end = new Date("2026-08-25T23:59:59Z");
 
   await prisma.annonse.createMany({
     data: [
@@ -906,27 +909,46 @@ async function seedAnnonser(annonsorBrukerEpost: string) {
         annonsor_id: annonsor.id,
         tittel: "Tilbud: fjellsko fra Salomon",
         beskrivelse: "Robuste fjellsko til rabattert pris. Alle størrelser på lager.",
+        bilde_url: "/images/ads/annonse-1.png",
+        lenke_url: "https://www.salomon.com/",
         kategori: "turutstyr",
         keywords: "Turutstyr",
-        status: AnnonseStatus.approved,
-        start_at: now,
-        end_at: inTwoMonths,
+        status: AnnonseStatus.active,
+        start_at: start,
+        end_at: end,
         pris_per_visning: 0,
         pris_per_klikk: 5,
         daily_budget: 300,
       },
       {
         annonsor_id: annonsor.id,
-        tittel: "Real Turmat — tørrmat til lange turer",
-        beskrivelse: "Lett turmat, rask tilberedning og god ernæring.",
-        kategori: "turmat",
-        keywords: "Mat og drikke",
-        status: AnnonseStatus.approved,
-        start_at: now,
-        end_at: inTwoMonths,
+        tittel: "Naturkompaniet — alt for friluftslivet",
+        beskrivelse: "Kvalitetsutstyr til tur og friluftsliv, fra sekker til sovepose.",
+        bilde_url: "/images/ads/annonse-2.jpg",
+        lenke_url: "https://www.naturkompaniet.no/",
+        kategori: "turutstyr",
+        keywords: "Turutstyr, butikk",
+        status: AnnonseStatus.active,
+        start_at: start,
+        end_at: end,
         pris_per_visning: 0,
         pris_per_klikk: 4,
         daily_budget: 200,
+      },
+      {
+        annonsor_id: annonsor.id,
+        tittel: "Bergans — jakker for alle turer",
+        beskrivelse: "Vanntette og pustende jakker som holder deg tørr uansett vær.",
+        bilde_url: "/images/ads/annonse-3.jpg",
+        lenke_url: "https://www.bergans.com/",
+        kategori: "turutstyr",
+        keywords: "Turutstyr, klær",
+        status: AnnonseStatus.active,
+        start_at: start,
+        end_at: end,
+        pris_per_visning: 0,
+        pris_per_klikk: 6,
+        daily_budget: 250,
       },
     ],
   });

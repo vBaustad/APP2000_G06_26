@@ -1,6 +1,6 @@
 /**
  * Fil: Kontakt.tsx
- * Utvikler(e): Ramona Cretulescu
+ * Utvikler(e): Ramona Cretulescu. Copilot er brukt som guide og lærer i utviklingen av denne siden.
  * Beskrivelse:
  * Kontaktside for Utopia. Siden viser kontaktinformasjon og et enkelt
  * kontaktskjema i et design som følger uttrykket og fargepaletten i resten

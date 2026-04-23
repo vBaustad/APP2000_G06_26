@@ -35,7 +35,6 @@ export default function OpprettAnnonsor()
  const navigate = useNavigate();
 const location = useLocation();
 const editingAd = (location.state as { ad?: EditingAd } | null)?.ad;
-console.log("editingAd:", editingAd);
 
   const [tittel, setTittel] = useState("");
   const [beskrivelse, setBeskrivelse] = useState("");
@@ -167,7 +166,6 @@ useEffect(() => {
   }, [previewUrl]);
 
   async function handleSubmit(event: React.FormEvent) {
-     console.log("SUBMIT KJØRER");
     event.preventDefault();
     setError(null);    setSubmitted(false);
 

@@ -2,6 +2,10 @@
  * Fil: Index.ts
  * Utvikler(e): Vebjørn Baustad & Parasto Jamshidi
  * Beskrivelse: Starter backend-serveren og definerer hovedrutene.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import "dotenv/config";
@@ -18,6 +22,7 @@ import { adminRouter } from "./routes/adminRoutes";
 import { favorittRouter } from "./routes/favorittRoutes";
 import { turstiRouter } from "./routes/turstiRoutes";
 import { chatRouter } from "./routes/chatRoutes";
+import { weatherRouter } from "./routes/weatherRoutes";
 
 const app = express();
 
@@ -39,7 +44,7 @@ app.use("/api/bruker", userRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/favoritter", favorittRouter);
 app.use("/api/chats", chatRouter);
-
+app.use("/api/weather", weatherRouter);
 // Helsesjekk
 app.get('/', (req, res) => {
   res.send('API is running!');
