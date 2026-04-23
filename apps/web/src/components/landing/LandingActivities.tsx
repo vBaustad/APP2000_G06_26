@@ -8,6 +8,7 @@
  */
 
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Footprints,
   Snowflake,
@@ -19,9 +20,18 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+type ActivityCardKey =
+  | "foot"
+  | "bike"
+  | "cabin"
+  | "ski"
+  | "peakSki"
+  | "paddle";
+
 type ActivityCard = {
-  title: string;
-  count: string;
+  key: ActivityCardKey;
+  count: number;
+  unit: "trips" | "cabins";
   icon: LucideIcon;
   bgColor: string;
   iconColor: string;
@@ -29,58 +39,18 @@ type ActivityCard = {
 };
 
 const activityCards: ActivityCard[] = [
-  {
-    title: "Fottur",
-    count: "19 000 turer",
-    icon: Footprints,
-    bgColor: "bg-[#dcebe4]",
-    iconColor: "#0f3d2e",
-    query: "fottur",
-  },
-  {
-    title: "Sykkeltur",
-    count: "2 110 turer",
-    icon: Bike,
-    bgColor: "bg-[#dcebe4]",
-    iconColor: "#0f3d2e",
-    query: "sykkeltur",
-  },
-  {
-    title: "Hyttetur",
-    count: "16 hytter",
-    icon: Home,
-    bgColor: "bg-[#dcebe4]",
-    iconColor: "#0f3d2e",
-    query: "hyttetur",
-  },
-  {
-    title: "Skitur",
-    count: "4 307 turer",
-    icon: Snowflake,
-    bgColor: "bg-[#dff1f6]",
-    iconColor: "#1593a3",
-    query: "skitur",
-  },
-  {
-    title: "Topptur på ski",
-    count: "1 130 turer",
-    icon: MountainSnow,
-    bgColor: "bg-[#dff1f6]",
-    iconColor: "#1593a3",
-    query: "topptur",
-  },
-  {
-    title: "Padletur",
-    count: "619 turer",
-    icon: Waves,
-    bgColor: "bg-[#dff1f6]",
-    iconColor: "#1593a3",
-    query: "padletur",
-  },
+  { key: "foot", count: 19000, unit: "trips", icon: Footprints, bgColor: "bg-[#dcebe4]", iconColor: "#0f3d2e", query: "fottur" },
+  { key: "bike", count: 2110, unit: "trips", icon: Bike, bgColor: "bg-[#dcebe4]", iconColor: "#0f3d2e", query: "sykkeltur" },
+  { key: "cabin", count: 16, unit: "cabins", icon: Home, bgColor: "bg-[#dcebe4]", iconColor: "#0f3d2e", query: "hyttetur" },
+  { key: "ski", count: 4307, unit: "trips", icon: Snowflake, bgColor: "bg-[#dff1f6]", iconColor: "#1593a3", query: "skitur" },
+  { key: "peakSki", count: 1130, unit: "trips", icon: MountainSnow, bgColor: "bg-[#dff1f6]", iconColor: "#1593a3", query: "topptur" },
+  { key: "paddle", count: 619, unit: "trips", icon: Waves, bgColor: "bg-[#dff1f6]", iconColor: "#1593a3", query: "padletur" },
 ];
 
 export default function LandingActivities() {
+  const { t, i18n } = useTranslation("forside");
   const navigate = useNavigate();
+  const locale = i18n.resolvedLanguage === "en" ? "en-US" : "nb-NO";
 
   function handleGoToTours() {
     navigate("/turer");
@@ -95,16 +65,15 @@ export default function LandingActivities() {
       <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="max-w-3xl">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#0f3d2e]">
-            Aktiviteter og filtrering
+            {t("activities.eyebrow")}
           </p>
 
           <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">
-            Utforsk etter aktivitet
+            {t("activities.title")}
           </h2>
 
           <p className="mt-3 text-lg leading-8 text-slate-600">
-            Velg aktivitet og gå videre til turer og kartvisning med relevante
-            forslag og filtrering.
+            {t("activities.intro")}
           </p>
         </div>
 
@@ -113,7 +82,7 @@ export default function LandingActivities() {
           onClick={handleGoToTours}
           className="inline-flex items-center gap-2 font-medium text-[#0f3d2e] transition hover:underline"
         >
-          Gå til turer
+          {t("activities.goToTours")}
           <ArrowRight className="h-4 w-4" />
         </button>
       </div>
@@ -121,10 +90,15 @@ export default function LandingActivities() {
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {activityCards.map((activity) => {
           const Icon = activity.icon;
+          const unitLabel =
+            activity.unit === "cabins"
+              ? t("activities.cabinsUnit")
+              : t("activities.tripsUnit");
+          const countLabel = `${activity.count.toLocaleString(locale)} ${unitLabel}`;
 
           return (
             <button
-              key={activity.title}
+              key={activity.key}
               type="button"
               onClick={() => handleActivityClick(activity.query)}
               className="group rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm transition duration-200 hover:-translate-y-1 hover:border-[#b7d1c3] hover:shadow-lg"
@@ -140,13 +114,13 @@ export default function LandingActivities() {
               </div>
 
               <h3 className="mb-1 text-xl font-semibold text-slate-900">
-                {activity.title}
+                {t(`activities.cards.${activity.key}`)}
               </h3>
 
-              <p className="mb-4 text-sm text-slate-500">{activity.count}</p>
+              <p className="mb-4 text-sm text-slate-500">{countLabel}</p>
 
               <span className="inline-flex items-center gap-1 text-sm font-medium text-[#0f3d2e] opacity-0 transition group-hover:opacity-100">
-                Se turer
+                {t("activities.seeTours")}
                 <ArrowRight className="h-3.5 w-3.5" />
               </span>
             </button>

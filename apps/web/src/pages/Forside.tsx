@@ -19,6 +19,7 @@ import LandingCommunitySection from "../components/landing/LandingCommunitySecti
 import LandingSidebarSection from "../components/landing/LandingSidebarSection";
 import EasterTripsSection from "../components/sections/EasterTripSection";
 import PartnersSection from "../components/sections/PartnerSection";
+import ResetTestdataSection from "../components/sections/ResetTestdataSection";
 import { getTours } from "../services/toursApi";
 import type { Tour } from "../types/tour";
 
@@ -62,6 +63,7 @@ export default function Forside() {
       </main>
 
       <PartnersSection />
+      <ResetTestdataSection />
     </>
   );
 }

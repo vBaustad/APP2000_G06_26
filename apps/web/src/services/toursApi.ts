@@ -286,6 +286,7 @@ function mapTour(tour: ApiTour): Tour {
           status: d.status,
         }))
       : [],
+    ownerId: tour.leder_bruker_id ?? null,
     social: {
       averageRating: getAverageRating(ratings),
       commentCount: kommentarer.length,

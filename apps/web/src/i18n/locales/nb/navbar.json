@@ -1,0 +1,22 @@
+{
+  "banner": "Dette er et skoleprosjekt ved USN og ikke en ekte nettside.",
+  "logoAlt": "Utopia logo",
+  "home": "Hjem",
+  "map": "Kart",
+  "tours": "Turer",
+  "cabins": "Hytter",
+  "login": "Logg inn",
+  "register": "Registrer",
+  "profile": "Profil",
+  "mySide": "Min side",
+  "messages": "Meldinger",
+  "myCabins": "Mine hytter",
+  "myTourLeader": "Mine turer (leder)",
+  "advertiser": "Annonsør",
+  "admin": "Admin",
+  "logout": "Logg ut",
+  "languageNo": "NO",
+  "languageEn": "EN",
+  "switchToNorwegian": "Bytt til norsk",
+  "switchToEnglish": "Switch to English"
+}

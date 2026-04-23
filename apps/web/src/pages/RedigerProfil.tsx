@@ -21,6 +21,7 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { NavLink } from "react-router-dom";
 import { Mail, Save, User, CalendarDays, FileText } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type ProfilSkjema = {
   fornavn: string;
@@ -33,6 +34,7 @@ type ProfilSkjema = {
 type ProfilRespons = Partial<ProfilSkjema>;
 
 export default function RedigerProfil() {
+  const { t } = useTranslation("minside");
   const [form, setForm] = useState<ProfilSkjema>({
     fornavn: "",
     etternavn: "",
@@ -59,7 +61,7 @@ export default function RedigerProfil() {
       },
     })
       .then((res) => {
-        if (!res.ok) throw new Error("Kunne ikke hente profil");
+        if (!res.ok) throw new Error(t("rediger.form.errorFetch"));
         return res.json() as Promise<ProfilRespons>;
       })
       .then((data) => {
@@ -76,7 +78,7 @@ export default function RedigerProfil() {
         console.error(err);
         setLoading(false);
       });
-  }, []);
+  }, [t]);
 
   function handleChange(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value } = e.target;
@@ -106,13 +108,13 @@ export default function RedigerProfil() {
       });
 
       if (!res.ok) {
-        throw new Error("Kunne ikke lagre profil");
+        throw new Error(t("rediger.form.errorSave"));
       }
 
-      setSavedMessage("Endringene ble lagret.");
+      setSavedMessage(t("rediger.form.saved"));
     } catch (err) {
       console.error(err);
-      setSavedMessage("Noe gikk galt. Prøv igjen.");
+      setSavedMessage(t("rediger.form.errorGeneric"));
     } finally {
       setSaving(false);
     }
@@ -122,7 +124,7 @@ export default function RedigerProfil() {
     return (
       <div className="min-h-screen bg-slate-50 px-4 py-10">
         <div className="mx-auto max-w-4xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          <p className="text-slate-600">Laster profilinformasjon...</p>
+          <p className="text-slate-600">{t("rediger.loading")}</p>
         </div>
       </div>
     );
@@ -133,12 +135,11 @@ export default function RedigerProfil() {
       <section className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-4xl px-6 py-10">
           <p className="mb-2 text-sm font-semibold uppercase tracking-[0.18em] text-[#0f3d2e]">
-            Konto
+            {t("rediger.eyebrow")}
           </p>
-          <h1 className="text-4xl font-semibold text-slate-900">Rediger profil</h1>
+          <h1 className="text-4xl font-semibold text-slate-900">{t("rediger.heading")}</h1>
           <p className="mt-3 max-w-2xl text-slate-600">
-            Oppdater navn, e-post og informasjon om deg selv. Hold profilen enkel,
-            tydelig og relevant for bruk av løsningen.
+            {t("rediger.intro")}
           </p>
         </div>
       </section>
@@ -148,7 +149,7 @@ export default function RedigerProfil() {
           <aside className="space-y-6">
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h2 className="border-b border-slate-200 pb-3 text-xl font-semibold text-slate-900">
-                Profil
+                {t("rediger.sidebar.title")}
               </h2>
 
               <div className="mt-5 space-y-4">
@@ -156,29 +157,28 @@ export default function RedigerProfil() {
                   to="/min-side"
                   className="block rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 >
-                  Tilbake til min side
+                  {t("rediger.sidebar.back")}
                 </NavLink>
 
                 <div className="rounded-xl bg-[#eef5f1] px-4 py-3 text-sm font-medium text-[#0f3d2e]">
-                  Rediger profil
+                  {t("rediger.sidebar.current")}
                 </div>
               </div>
             </section>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-900">Tips</h3>
+              <h3 className="text-lg font-semibold text-slate-900">{t("rediger.sidebar.tipsTitle")}</h3>
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                Bruk fullt navn og en kort tekst om interesser. Det gjør profilen mer
-                troverdig og nyttig i fellesturer og sosial turplanlegging.
+                {t("rediger.sidebar.tipsBody")}
               </p>
             </section>
           </aside>
 
           <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
             <div className="border-b border-slate-200 pb-4">
-              <h2 className="text-2xl font-semibold text-slate-900">Din profil</h2>
+              <h2 className="text-2xl font-semibold text-slate-900">{t("rediger.form.title")}</h2>
               <p className="mt-2 text-slate-500">
-                Informasjonen under brukes i kontoen din og på profilsiden.
+                {t("rediger.form.subtitle")}
               </p>
             </div>
 
@@ -186,7 +186,7 @@ export default function RedigerProfil() {
               <div className="grid gap-6 md:grid-cols-2">
                 <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Fornavn
+                    {t("rediger.form.firstName")}
                   </label>
                   <div className="relative">
                     <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -202,7 +202,7 @@ export default function RedigerProfil() {
 
                 <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Etternavn
+                    {t("rediger.form.lastName")}
                   </label>
                   <div className="relative">
                     <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -219,10 +219,10 @@ export default function RedigerProfil() {
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700">
-                  E-post
+                  {t("rediger.form.email")}
                 </label>
                 <p className="mb-3 max-w-2xl text-sm leading-6 text-slate-500">
-                  Hvis du endrer e-postadressen vil du kunne måtte bekrefte den på nytt.
+                  {t("rediger.form.emailHint")}
                 </p>
                 <div className="relative">
                   <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -238,17 +238,17 @@ export default function RedigerProfil() {
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Fødselsdato
+                  {t("rediger.form.birthDate")}
                 </label>
                 <p className="mb-3 max-w-2xl text-sm leading-6 text-slate-500">
-                  Valgfritt felt. Kan brukes for tilpasning av profil og statistikk.
+                  {t("rediger.form.birthDateHint")}
                 </p>
                 <div className="relative max-w-sm">
                   <CalendarDays className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
                     name="fodselsdato"
-                    placeholder="DD.MM.ÅÅÅÅ"
+                    placeholder={t("rediger.form.birthDatePlaceholder")}
                     value={form.fodselsdato}
                     onChange={handleChange}
                     className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-11 pr-4 text-slate-900 outline-none focus:border-[#0f8f5b] focus:ring-2 focus:ring-[#dcebe4]"
@@ -258,10 +258,10 @@ export default function RedigerProfil() {
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Om meg
+                  {t("rediger.form.aboutMe")}
                 </label>
                 <p className="mb-3 max-w-2xl text-sm leading-6 text-slate-500">
-                  Skriv en kort tekst om deg og friluftsinteressene dine.
+                  {t("rediger.form.aboutMeHint")}
                 </p>
                 <div className="relative">
                   <FileText className="pointer-events-none absolute left-4 top-4 h-4 w-4 text-slate-400" />
@@ -288,7 +288,7 @@ export default function RedigerProfil() {
                   className="inline-flex items-center gap-2 rounded-xl bg-[#0f8f5b] px-5 py-3 font-medium text-white transition hover:bg-[#0d7a4e] disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   <Save className="h-4 w-4" />
-                  {saving ? "Lagrer..." : "Lagre endringer"}
+                  {saving ? t("rediger.form.saving") : t("rediger.form.save")}
                 </button>
               </div>
             </form>

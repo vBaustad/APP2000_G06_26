@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx creator="fabulator:gpx-builder" version="1.1" xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 https://www.topografix.com/GPX/1/1/gpx.xsd">
+  <metadata>
+    <name>Skitur til Hovstøyl fra Hallbjørnsekken</name>
+    <copyright author="UT.no">
+      <year>2026</year>
+      <license>http://creativecommons.org/licenses/by-nc/4.0/deed.no</license>
+    </copyright>
+    <link href="https://ut.no"></link>
+  </metadata>
+  <trk>
+    <trkseg>
+      <trkpt lat="59.347344" lon="7.751754">
+        <ele>777</ele>
+        <time>2026-04-23T12:32:19.791Z</time>
+      </trkpt>
+      <trkpt lat="59.346918" lon="7.755895">
+        <ele>788</ele>
+        <time>2026-04-23T12:32:19.791Z</time>
+      </trkpt>
+      <trkpt lat="59.345277" lon="7.755741">
+        <ele>779</ele>
+        <time>2026-04-23T12:32:19.791Z</time>
+      </trkpt>
+      <trkpt lat="59.342894" lon="7.75212">
+        <ele>783</ele>
+        <time>2026-04-23T12:32:19.791Z</time>
+      </trkpt>
+      <trkpt lat="59.341183" lon="7.74535">
+        <ele>787</ele>
+        <time>2026-04-23T12:32:19.791Z</time>
+      </trkpt>
+      <trkpt lat="59.337889" lon="7.735682">
+        <ele>800</ele>
+        <time>2026-04-23T12:32:19.791Z</time>
+      </trkpt>
+      <trkpt lat="59.325227" lon="7.738611">
+        <ele>892</ele>
+        <time>2026-04-23T12:32:19.791Z</time>
+      </trkpt>
+      <trkpt lat="59.317939" lon="7.745486">
+        <ele>854</ele>
+        <time>2026-04-23T12:32:19.791Z</time>
+      </trkpt>
+      <trkpt lat="59.317093" lon="7.740008">
+        <ele>855</ele>
+        <time>2026-04-23T12:32:19.791Z</time>
+      </trkpt>
+      <trkpt lat="59.31385" lon="7.734236">
+        <ele>853</ele>
+        <time>2026-04-23T12:32:19.791Z</time>
+      </trkpt>
+      <trkpt lat="59.310206" lon="7.736311">
+        <ele>833</ele>
+        <time>2026-04-23T12:32:19.791Z</time>
+      </trkpt>
+      <trkpt lat="59.304015" lon="7.744846">
+        <ele>825</ele>
+        <time>2026-04-23T12:32:19.791Z</time>
+      </trkpt>
+      <trkpt lat="59.302569" lon="7.747353">
+        <ele>808</ele>
+        <time>2026-04-23T12:32:19.791Z</time>
+      </trkpt>
+      <trkpt lat="59.297825" lon="7.746924">
+        <ele>775</ele>
+        <time>2026-04-23T12:32:19.791Z</time>
+      </trkpt>
+      <trkpt lat="59.292444" lon="7.75107">
+        <ele>731</ele>
+        <time>2026-04-23T12:32:19.791Z</time>
+      </trkpt>
+      <trkpt lat="59.287212" lon="7.766668">
+        <ele>682</ele>
+        <time>2026-04-23T12:32:19.791Z</time>
+      </trkpt>
+      <trkpt lat="59.267569" lon="7.778446">
+        <ele>682</ele>
+        <time>2026-04-23T12:32:19.791Z</time>
+      </trkpt>
+      <trkpt lat="59.254645" lon="7.769786">
+        <ele>857</ele>
+        <time>2026-04-23T12:32:19.791Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

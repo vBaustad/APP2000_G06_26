@@ -6,6 +6,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 
 type PendingAnnonsor = {
@@ -31,6 +32,8 @@ const API_BASE = `${import.meta.env.VITE_API_URL}/api/admin`;
 
 export default function Admin() {
   const { user, token } = useAuth();
+  const { t, i18n } = useTranslation("admin");
+  const locale = i18n.resolvedLanguage === "en" ? "en-US" : "nb-NO";
   const isAdmin = user?.roller?.includes("admin") ?? false;
 
   const [pending, setPending] = useState<PendingAnnonsor[]>([]);
@@ -70,8 +73,8 @@ export default function Admin() {
 
   useEffect(() => {
     if (!isAdmin || !token) return;
-    const t = setTimeout(() => loadBrukere(query), 250);
-    return () => clearTimeout(t);
+    const tId = setTimeout(() => loadBrukere(query), 250);
+    return () => clearTimeout(tId);
   }, [query, isAdmin, token]);
 
   async function handleAnnonsor(id: number, action: "approve" | "reject") {
@@ -82,11 +85,11 @@ export default function Admin() {
         method: "POST",
         headers: authHeaders,
       });
-      if (!res.ok) throw new Error(`Kunne ikke ${action === "approve" ? "godkjenne" : "avslå"}`);
+      if (!res.ok) throw new Error(action === "approve" ? t("errors.approve") : t("errors.reject"));
       await loadPending();
       await loadBrukere(query);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Noe gikk galt");
+      setError(e instanceof Error ? e.message : t("errors.generic"));
     } finally {
       setBusy(null);
     }
@@ -101,10 +104,10 @@ export default function Admin() {
         headers: { ...authHeaders, "Content-Type": "application/json" },
         body: JSON.stringify({ rolle }),
       });
-      if (!res.ok) throw new Error("Kunne ikke tildele rolle");
+      if (!res.ok) throw new Error(t("errors.grantRole"));
       await loadBrukere(query);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Noe gikk galt");
+      setError(e instanceof Error ? e.message : t("errors.generic"));
     } finally {
       setBusy(null);
     }
@@ -118,10 +121,10 @@ export default function Admin() {
         method: "DELETE",
         headers: authHeaders,
       });
-      if (!res.ok && res.status !== 204) throw new Error("Kunne ikke fjerne rolle");
+      if (!res.ok && res.status !== 204) throw new Error(t("errors.revokeRole"));
       await loadBrukere(query);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Noe gikk galt");
+      setError(e instanceof Error ? e.message : t("errors.generic"));
     } finally {
       setBusy(null);
     }
@@ -131,13 +134,13 @@ export default function Admin() {
     return (
       <div className="min-h-screen bg-slate-50 px-4 py-10">
         <div className="mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <h1 className="text-3xl font-bold text-slate-900">Admin</h1>
-          <p className="mt-4 text-slate-600">Du må være innlogget som admin for å se denne siden.</p>
+          <h1 className="text-3xl font-bold text-slate-900">{t("title")}</h1>
+          <p className="mt-4 text-slate-600">{t("noAccess.description")}</p>
           <NavLink
             to="/logg-inn"
             className="mt-6 inline-flex rounded-xl bg-[#0f8f5b] px-6 py-3 font-medium text-white hover:bg-[#0d7a4e]"
           >
-            Logg inn
+            {t("noAccess.loginButton")}
           </NavLink>
         </div>
       </div>
@@ -148,9 +151,9 @@ export default function Admin() {
     <div className="min-h-screen bg-slate-50 px-4 py-10">
       <div className="mx-auto grid max-w-6xl gap-8">
         <header>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0f3d2e]">Adminpanel</p>
-          <h1 className="mt-1 text-3xl font-semibold text-slate-900">Administrasjon</h1>
-          <p className="mt-2 text-slate-600">Godkjenn annonsør-søknader og tildel roller til brukere.</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0f3d2e]">{t("eyebrow")}</p>
+          <h1 className="mt-1 text-3xl font-semibold text-slate-900">{t("heading")}</h1>
+          <p className="mt-2 text-slate-600">{t("description")}</p>
         </header>
 
         {error && (
@@ -161,11 +164,11 @@ export default function Admin() {
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-slate-900">
-            Ventende annonsør-søknader ({pending.length})
+            {t("advertisers.heading", { n: pending.length })}
           </h2>
           <div className="mt-4 space-y-3">
             {pending.length === 0 ? (
-              <p className="text-slate-500">Ingen ventende søknader.</p>
+              <p className="text-slate-500">{t("advertisers.empty")}</p>
             ) : (
               pending.map((a) => (
                 <div
@@ -177,7 +180,7 @@ export default function Admin() {
                     <p className="text-sm text-slate-600">{a.epost}</p>
                     {a.telefon && <p className="text-sm text-slate-600">{a.telefon}</p>}
                     <p className="mt-1 text-xs text-slate-500">
-                      Sendt {new Date(a.created_at).toLocaleDateString("no-NO")}
+                      {t("advertisers.sentOn", { date: new Date(a.created_at).toLocaleDateString(locale) })}
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -187,7 +190,7 @@ export default function Admin() {
                       onClick={() => handleAnnonsor(a.id, "approve")}
                       className="rounded-xl bg-[#0f8f5b] px-4 py-2 text-sm font-medium text-white hover:bg-[#0d7a4e] disabled:opacity-50"
                     >
-                      Godkjenn
+                      {t("advertisers.approve")}
                     </button>
                     <button
                       type="button"
@@ -195,7 +198,7 @@ export default function Admin() {
                       onClick={() => handleAnnonsor(a.id, "reject")}
                       className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
                     >
-                      Avslå
+                      {t("advertisers.reject")}
                     </button>
                   </div>
                 </div>
@@ -205,22 +208,22 @@ export default function Admin() {
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">Tildel roller</h2>
+          <h2 className="text-xl font-semibold text-slate-900">{t("roles.heading")}</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Søk etter bruker på e-post eller navn, og tildel/fjern roller.
+            {t("roles.description")}
           </p>
 
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Søk etter bruker..."
+            placeholder={t("roles.searchPlaceholder")}
             className="mt-4 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 outline-none focus:border-[#0f8f5b] focus:bg-white"
           />
 
           <div className="mt-4 space-y-3">
             {brukere.length === 0 ? (
-              <p className="text-slate-500">Ingen brukere funnet.</p>
+              <p className="text-slate-500">{t("roles.noUsers")}</p>
             ) : (
               brukere.map((b) => {
                 const brukerRoller = new Set(b.bruker_rolle.map((r) => r.rolle.kode));
@@ -250,7 +253,7 @@ export default function Admin() {
                               disabled={busy === `revoke-${b.id}-${br.rolle.kode}`}
                               onClick={() => revokeRole(b.id, br.rolle.kode)}
                               className="text-[#0f3d2e]/70 hover:text-red-600 disabled:opacity-50"
-                              aria-label={`Fjern ${br.rolle.kode}`}
+                              aria-label={t("roles.removeAria", { role: br.rolle.kode })}
                             >
                               ×
                             </button>

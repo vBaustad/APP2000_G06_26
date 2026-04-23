@@ -20,6 +20,7 @@ import RedigerProfil from "./pages/RedigerProfil";
 import OmOss from "./pages/OmOss";
 import Kontakt from "./pages/Kontakt";
 import OpprettTur from "./pages/OpprettTur";
+import RedigerTur from "./pages/RedigerTur";
 import OpprettAnnonsor from "./pages/OpprettAnnonsor";
 import Annonsor from "./pages/Annonsor";
 import LoggetUt from "./pages/LoggetUt";
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="/registrer" element={<Registrer />} />
           <Route path="/turer" element={<Turer />} />
           <Route path="/turer/:id" element={<TurDetaljer />} />
+          <Route path="/turer/:id/rediger" element={<RedigerTur />} />
           <Route path="/kart" element={<Kart />} />
           <Route path="/min-side" element={<MinSide />} />
           <Route path="/meldinger" element={<Meldinger />} />

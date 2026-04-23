@@ -1,0 +1,65 @@
+{
+  "heading": "Plan your next adventure on the map",
+  "subheading": "Use the map to discover tours, cabins, or both, and get a quick overview of the area.",
+  "viewToggle": {
+    "label": "Show on map",
+    "tours": "Tours",
+    "cabins": "Cabins",
+    "all": "Both"
+  },
+  "locate": {
+    "button": "Show my location",
+    "busy": "Locating...",
+    "popup": "You are here",
+    "unsupported": "Your browser does not support geolocation.",
+    "denied": "You denied location access. Enable it in your browser settings.",
+    "unavailable": "Position not available right now. Try again outdoors.",
+    "generic": "Could not get your position. Try again."
+  },
+  "filters": {
+    "clear": "Clear map filters",
+    "difficulty": "Difficulty: {{value}}",
+    "region": "Region: {{value}}",
+    "fellestur": "Group tours only"
+  },
+  "search": {
+    "label": "Search for a tour or place",
+    "placeholder": "e.g. Hardangervidda or Lofoten"
+  },
+  "dates": {
+    "none": "No fixed dates",
+    "one": "1 available tour date",
+    "many": "{{n}} available tour dates"
+  },
+  "fallbacks": {
+    "defaultType": "Tour",
+    "unknownArea": "Unknown area"
+  },
+  "selected": {
+    "cabinLabel": "Selected cabin",
+    "closeCabinAria": "Close selected cabin",
+    "closeTripAria": "Close selected tour",
+    "beds": "{{n}} beds",
+    "pricePerNight": "{{price}} NOK/night",
+    "cabinDetails": "View cabin details",
+    "tripFallbackDescription": "See tour details for more information about this route.",
+    "tripDetails": "View tour details"
+  },
+  "results": {
+    "tours": "Tours in the map result ({{n}})",
+    "cabins": "Cabins in the map result ({{n}})"
+  },
+  "empty": {
+    "tours": "No tours with map coordinates match your filters right now.",
+    "cabins": "No cabins with map coordinates match your filters right now.",
+    "all": "No tours or cabins with map coordinates match your filters right now."
+  },
+  "popup": {
+    "bedsWithPrice": "{{beds}} beds • {{price}} NOK/night",
+    "bedsOnly": "{{beds}} beds",
+    "viewCabin": "View cabin →"
+  },
+  "map": {
+    "attribution": "© OpenStreetMap contributors"
+  }
+}

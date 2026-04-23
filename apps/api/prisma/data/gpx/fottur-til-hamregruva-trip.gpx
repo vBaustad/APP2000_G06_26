@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx creator="fabulator:gpx-builder" version="1.1" xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 https://www.topografix.com/GPX/1/1/gpx.xsd">
+  <metadata>
+    <name>Fottur til Hamregruva</name>
+    <copyright author="UT.no">
+      <year>2026</year>
+      <license>http://creativecommons.org/licenses/by-nc/4.0/deed.no</license>
+    </copyright>
+    <link href="https://ut.no"></link>
+  </metadata>
+  <trk>
+    <trkseg>
+      <trkpt lat="58.812654" lon="7.762317">
+        <ele>226</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.81257" lon="7.761927">
+        <ele>231</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.812632" lon="7.761425">
+        <ele>238</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.812697" lon="7.761101">
+        <ele>243</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.812778" lon="7.760667">
+        <ele>247</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.812842" lon="7.760311">
+        <ele>253</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.812984" lon="7.759741">
+        <ele>266</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.813207" lon="7.759112">
+        <ele>277</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.813172" lon="7.758339">
+        <ele>291</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.81346" lon="7.758253">
+        <ele>298</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.81373" lon="7.758039">
+        <ele>305</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.813772" lon="7.757655">
+        <ele>314</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.813631" lon="7.757389">
+        <ele>317</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.813483" lon="7.756667">
+        <ele>344</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.813634" lon="7.756262">
+        <ele>355</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.813763" lon="7.755972">
+        <ele>360</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.814092" lon="7.755631">
+        <ele>383</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.81446" lon="7.755246">
+        <ele>414</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.814607" lon="7.755329">
+        <ele>413</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.814775" lon="7.755284">
+        <ele>422</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.814962" lon="7.755247">
+        <ele>431</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.815091" lon="7.755211">
+        <ele>436</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.81532" lon="7.755261">
+        <ele>441</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.815551" lon="7.755213">
+        <ele>468</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.815829" lon="7.755139">
+        <ele>492</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.816245" lon="7.754957">
+        <ele>498</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.81634" lon="7.754299">
+        <ele>508</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.816576" lon="7.753825">
+        <ele>512</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.816886" lon="7.753798">
+        <ele>506</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.817152" lon="7.753911">
+        <ele>505</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.817312" lon="7.754007">
+        <ele>505</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.817548" lon="7.754414">
+        <ele>507</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.817562" lon="7.754771">
+        <ele>507</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.817629" lon="7.755372">
+        <ele>507</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+      <trkpt lat="58.817718" lon="7.755543">
+        <ele>505</ele>
+        <time>2026-04-23T12:32:38.812Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

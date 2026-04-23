@@ -8,6 +8,7 @@
  */
 
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ArrowRight, Clock3, Route as RouteIcon, SunMedium } from "lucide-react";
 import type { Tour } from "../../types/tour";
 
@@ -16,6 +17,7 @@ type EasterTripsSectionProps = {
 };
 
 export default function EasterTripsSection({ tours }: EasterTripsSectionProps) {
+  const { t } = useTranslation("forside");
   const easterTrips = tours.slice(0, 3);
 
   if (easterTrips.length === 0) {
@@ -27,16 +29,15 @@ export default function EasterTripsSection({ tours }: EasterTripsSectionProps) {
       <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="max-w-3xl">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#8b5a10]">
-            Sesongbaserte forslag
+            {t("easter.eyebrow")}
           </p>
 
           <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">
-            Fine turer i påsken
+            {t("easter.title")}
           </h2>
 
           <p className="mt-3 text-lg leading-8 text-slate-600">
-            Utforsk turforslag som passer godt for påskeferien, med alt fra
-            skiturer i fjellet til roligere familievennlige alternativer.
+            {t("easter.intro")}
           </p>
         </div>
 
@@ -44,7 +45,7 @@ export default function EasterTripsSection({ tours }: EasterTripsSectionProps) {
           to="/turer"
           className="inline-flex items-center gap-2 font-medium text-[#8b5a10] hover:underline"
         >
-          Se flere sesongturer
+          {t("easter.seeMore")}
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
@@ -58,7 +59,7 @@ export default function EasterTripsSection({ tours }: EasterTripsSectionProps) {
             <div className="mb-4 flex items-center justify-between">
               <span className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-[#8b5a10]">
                 <SunMedium className="h-4 w-4" />
-                Påsketur
+                {t("easter.badge")}
               </span>
             </div>
 
@@ -67,20 +68,22 @@ export default function EasterTripsSection({ tours }: EasterTripsSectionProps) {
             </h3>
 
             <p className="mb-5 leading-7 text-slate-700">
-              {trip.description || "Se turdetaljer for mer informasjon om denne turen."}
+              {trip.description || t("easter.fallbackDescription")}
             </p>
 
             <div className="mb-6 space-y-2 text-sm text-slate-600">
               <p className="inline-flex items-center gap-2">
                 <Clock3 className="h-4 w-4 text-[#8b5a10]" />
-                {trip.durationHours} timer
+                {trip.durationHours} {t("easter.unitHours")}
               </p>
               <p className="inline-flex items-center gap-2">
                 <RouteIcon className="h-4 w-4 text-[#8b5a10]" />
                 {trip.distanceKm} km
               </p>
               <p>
-                <span className="font-medium text-slate-800">Nivå:</span>{" "}
+                <span className="font-medium text-slate-800">
+                  {t("easter.levelLabel")}
+                </span>{" "}
                 {trip.difficulty}
               </p>
             </div>
@@ -90,7 +93,7 @@ export default function EasterTripsSection({ tours }: EasterTripsSectionProps) {
                 to={`/turer/${trip.id}`}
                 className="inline-flex items-center gap-2 font-semibold text-[#8b5a10] hover:underline"
               >
-                Se tur
+                {t("easter.seeTour")}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>

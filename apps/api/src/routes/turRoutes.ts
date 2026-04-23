@@ -19,7 +19,7 @@
 import { Router, Request, Response } from "express";
 import { Prisma, TurType, TurStatus } from "@prisma/client";
 import { prisma } from "../prisma";
-import { requireAuth, requireRole } from "../middleware/auth";
+import { requireAuth } from "../middleware/auth";
 import type { AuthedRequest } from "../middleware/auth";
 
 export const turRouter = Router();
@@ -620,8 +620,15 @@ turRouter.post("/:id/datoer", requireAuth, async (req: AuthedRequest, res) => {
       select: { id: true, leder_bruker_id: true },
     });
     if (!tur) return res.status(404).json({ error: "Fant ikke turen." });
-    if (tur.leder_bruker_id !== brukerId) {
-      return res.status(403).json({ error: "Kun turlederen kan legge til datoer." });
+
+    const erEier = tur.leder_bruker_id === brukerId;
+    const erAdmin = req.user?.roles.includes("admin") ?? false;
+    const harTurlederRolle = req.user?.roles.includes("turleder") ?? false;
+
+    if (!((erEier && harTurlederRolle) || erAdmin)) {
+      return res.status(403).json({
+        error: "Kun turledere kan legge til datoer på egne turer.",
+      });
     }
 
     const turDato = await prisma.tur_dato.create({
@@ -821,7 +828,10 @@ turRouter.delete("/pamelding/:id", requireAuth, async (req, res) => {
 turRouter.post("/:id/pameld", requireAuth, async (req: AuthedRequest, res) => {
   const turId = Number(req.params.id);
   const brukerId = req.user?.id;
-  const { tur_dato_id } = req.body as { tur_dato_id?: number | string };
+  const { tur_dato_id, binding } = req.body as {
+    tur_dato_id?: number | string;
+    binding?: boolean;
+  };
 
   if (isNaN(turId)) {
     return res.status(400).json({ error: "Ugyldig tur-id." });
@@ -879,16 +889,59 @@ turRouter.post("/:id/pameld", requireAuth, async (req: AuthedRequest, res) => {
       });
     }
 
+    // Ved bindende påmelding: sjekk at brukeren ikke har andre
+    // overlappende bindende eller låste påmeldinger.
+    if (binding === true) {
+      const overlapp = await prisma.tur_pamelding.findFirst({
+        where: {
+          bruker_id: brukerId,
+          status: { in: ["binding", "locked"] },
+          tur_dato: {
+            start_at: { lt: turDato.end_at },
+            end_at: { gt: turDato.start_at },
+          },
+        },
+        include: {
+          tur_dato: {
+            select: {
+              start_at: true,
+              end_at: true,
+              tittel: true,
+              tur: { select: { tittel: true } },
+            },
+          },
+        },
+      });
+
+      if (overlapp) {
+        return res.status(409).json({
+          error:
+            "Du har allerede en overlappende bindende påmelding for «" +
+            (overlapp.tur_dato.tur?.tittel ?? "en annen tur") +
+            "». En person kan ikke ha flere overlappende bindende påmeldinger.",
+          konflikt: {
+            tur: overlapp.tur_dato.tur?.tittel ?? null,
+            dato_tittel: overlapp.tur_dato.tittel ?? null,
+            start_at: overlapp.tur_dato.start_at,
+            end_at: overlapp.tur_dato.end_at,
+          },
+        });
+      }
+    }
+
     const pamelding = await prisma.tur_pamelding.create({
       data: {
         tur_dato_id: turDato.id,
         bruker_id: brukerId,
-        status: "pending",
+        status: binding === true ? "binding" : "pending",
       },
     });
 
     return res.status(201).json({
-      message: "Du er nå påmeldt turdatoen.",
+      message:
+        binding === true
+          ? "Du har gjort en bindende påmelding til turdatoen."
+          : "Du er nå påmeldt turdatoen (interesse registrert).",
       pamelding,
     });
   } catch (error) {
@@ -896,6 +949,90 @@ turRouter.post("/:id/pameld", requireAuth, async (req: AuthedRequest, res) => {
     return res.status(500).json({ error: "Intern serverfeil." });
   }
 });
+
+// AUTH: Oppgrader egen pending-påmelding til bindende, med overlapp-sjekk.
+turRouter.patch(
+  "/pamelding/:id/binding",
+  requireAuth,
+  async (req: AuthedRequest, res) => {
+    const id = Number(req.params.id);
+    const brukerId = req.user?.id;
+
+    if (!Number.isFinite(id)) {
+      return res.status(400).json({ error: "Ugyldig pamelding-id." });
+    }
+    if (!brukerId) {
+      return res.status(401).json({ error: "Ikke innlogget." });
+    }
+
+    try {
+      const pamelding = await prisma.tur_pamelding.findUnique({
+        where: { id },
+        include: {
+          tur_dato: {
+            select: { id: true, start_at: true, end_at: true },
+          },
+        },
+      });
+
+      if (!pamelding) {
+        return res.status(404).json({ error: "Fant ikke påmeldingen." });
+      }
+      if (pamelding.bruker_id !== brukerId) {
+        return res.status(403).json({ error: "Kan kun oppgradere egne påmeldinger." });
+      }
+      if (pamelding.status !== "pending") {
+        return res.status(409).json({
+          error: "Kun pending-påmeldinger kan oppgraderes til bindende.",
+        });
+      }
+
+      const overlapp = await prisma.tur_pamelding.findFirst({
+        where: {
+          bruker_id: brukerId,
+          id: { not: id },
+          status: { in: ["binding", "locked"] },
+          tur_dato: {
+            start_at: { lt: pamelding.tur_dato.end_at },
+            end_at: { gt: pamelding.tur_dato.start_at },
+          },
+        },
+        include: {
+          tur_dato: {
+            select: {
+              start_at: true,
+              end_at: true,
+              tittel: true,
+              tur: { select: { tittel: true } },
+            },
+          },
+        },
+      });
+
+      if (overlapp) {
+        return res.status(409).json({
+          error:
+            "Du har allerede en overlappende bindende påmelding for «" +
+            (overlapp.tur_dato.tur?.tittel ?? "en annen tur") +
+            "». En person kan ikke ha flere overlappende bindende påmeldinger.",
+        });
+      }
+
+      const oppdatert = await prisma.tur_pamelding.update({
+        where: { id },
+        data: { status: "binding" },
+      });
+
+      return res.json({
+        message: "Påmeldingen er nå bindende.",
+        pamelding: oppdatert,
+      });
+    } catch (error) {
+      console.error("Feil i PATCH /api/turer/pamelding/:id/binding:", error);
+      return res.status(500).json({ error: "Intern serverfeil." });
+    }
+  }
+);
 
 // AUTH: Opprett tur (med turstier og eventuelle hytter). Eier = innlogget bruker.
 turRouter.post(
@@ -1004,47 +1141,142 @@ turRouter.post(
 );
 
 // ADMIN: Update tur
+// AUTH (eier eller admin): Oppdater tur inkludert turstier og hytter.
 turRouter.put(
   "/:id",
   requireAuth,
-  requireRole("admin"),
-  async (req, res) => {
+  async (req: AuthedRequest, res) => {
     const id = Number(req.params.id);
+    const brukerId = req.user?.id;
 
-    if (isNaN(id)) {
+    if (!Number.isFinite(id)) {
       return res.status(400).json({ error: "Ugyldig tur-id." });
+    }
+    if (!brukerId) {
+      return res.status(401).json({ error: "Ikke innlogget" });
     }
 
     try {
       const existing = await prisma.tur.findUnique({
         where: { id },
+        select: { id: true, leder_bruker_id: true },
       });
 
       if (!existing) {
         return res.status(404).json({ error: "Fant ikke turen." });
       }
 
+      const erEier = existing.leder_bruker_id === brukerId;
+      const erAdmin = req.user?.roles.includes("admin") ?? false;
+      if (!erEier && !erAdmin) {
+        return res.status(403).json({ error: "Du har ikke tilgang til å redigere denne turen." });
+      }
+
       const {
         tittel,
         beskrivelse,
+        type,
         vanskelighetsgrad,
+        omrade,
+        antall_netter,
         min_deltakere,
         max_deltakere,
         status,
-        leder_bruker_id,
-      } = req.body;
+        tursti_ids,
+        hytte_ids,
+      } = req.body as {
+        tittel?: string;
+        beskrivelse?: string | null;
+        type?: string | null;
+        vanskelighetsgrad?: string | null;
+        omrade?: string | null;
+        antall_netter?: number | string | null;
+        min_deltakere?: number | string | null;
+        max_deltakere?: number | string | null;
+        status?: string;
+        tursti_ids?: number[];
+        hytte_ids?: number[];
+      };
 
-      const updated = await prisma.tur.update({
-        where: { id },
-        data: {
-          tittel,
-          beskrivelse,
-          vanskelighetsgrad,
-          min_deltakere: min_deltakere ? Number(min_deltakere) : undefined,
-          max_deltakere: max_deltakere ? Number(max_deltakere) : undefined,
-          status,
-          leder_bruker_id: leder_bruker_id ? Number(leder_bruker_id) : undefined,
-        },
+      const valgtType =
+        type && (Object.values(TurType) as string[]).includes(type)
+          ? (type as TurType)
+          : type === null || type === ""
+            ? null
+            : undefined;
+      const valgtStatus =
+        status && (Object.values(TurStatus) as string[]).includes(status)
+          ? (status as TurStatus)
+          : undefined;
+
+      const tursti_ids_num = Array.isArray(tursti_ids)
+        ? tursti_ids.map((v) => Number(v)).filter((v) => Number.isFinite(v))
+        : null;
+      const hytte_ids_num = Array.isArray(hytte_ids)
+        ? hytte_ids.map((v) => Number(v)).filter((v) => Number.isFinite(v))
+        : null;
+
+      if (tursti_ids_num !== null && tursti_ids_num.length === 0) {
+        return res.status(400).json({ error: "Minst én tursti må velges." });
+      }
+
+      const updated = await prisma.$transaction(async (tx) => {
+        const tur = await tx.tur.update({
+          where: { id },
+          data: {
+            tittel: tittel ?? undefined,
+            beskrivelse: beskrivelse === undefined ? undefined : beskrivelse,
+            type: valgtType,
+            vanskelighetsgrad:
+              vanskelighetsgrad === undefined ? undefined : vanskelighetsgrad,
+            omrade: omrade === undefined ? undefined : omrade,
+            antall_netter:
+              antall_netter === undefined
+                ? undefined
+                : antall_netter === null || antall_netter === ""
+                  ? null
+                  : Number(antall_netter),
+            min_deltakere:
+              min_deltakere === undefined
+                ? undefined
+                : min_deltakere === null || min_deltakere === ""
+                  ? null
+                  : Number(min_deltakere),
+            max_deltakere:
+              max_deltakere === undefined
+                ? undefined
+                : max_deltakere === null || max_deltakere === ""
+                  ? null
+                  : Number(max_deltakere),
+            status: valgtStatus,
+          },
+        });
+
+        if (tursti_ids_num !== null) {
+          await tx.tur_tursti.deleteMany({ where: { tur_id: id } });
+          await tx.tur_tursti.createMany({
+            data: tursti_ids_num.map((tursti_id, i) => ({
+              tur_id: id,
+              tursti_id,
+              rekkefolge: i + 1,
+            })),
+          });
+        }
+
+        if (hytte_ids_num !== null) {
+          await tx.tur_hytte.deleteMany({ where: { tur_id: id } });
+          if (hytte_ids_num.length > 0) {
+            await tx.tur_hytte.createMany({
+              data: hytte_ids_num.map((hytte_id, i) => ({
+                tur_id: id,
+                hytte_id,
+                rekkefolge: i + 1,
+              })),
+            });
+          }
+        }
+
+        return tur;
       });
 
       res.json(updated);
@@ -1055,25 +1287,35 @@ turRouter.put(
   }
 );
 
-// ADMIN: Delete tur
+// AUTH (eier eller admin): Slett egen tur.
 turRouter.delete(
   "/:id",
   requireAuth,
-  requireRole("admin"),
-  async (req: Request, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const id = Number(req.params.id);
+    const brukerId = req.user?.id;
 
-    if (isNaN(id)) {
+    if (!Number.isFinite(id)) {
       return res.status(400).json({ error: "Ugyldig tur-id." });
+    }
+    if (!brukerId) {
+      return res.status(401).json({ error: "Ikke innlogget" });
     }
 
     try {
       const existing = await prisma.tur.findUnique({
         where: { id },
+        select: { id: true, leder_bruker_id: true },
       });
 
       if (!existing) {
         return res.status(404).json({ error: "Fant ikke turen." });
+      }
+
+      const erEier = existing.leder_bruker_id === brukerId;
+      const erAdmin = req.user?.roles.includes("admin") ?? false;
+      if (!erEier && !erAdmin) {
+        return res.status(403).json({ error: "Du har ikke tilgang til å slette denne turen." });
       }
 
       await prisma.tur.delete({

@@ -6,6 +6,8 @@
  * gjennom en enkel logo-rad rett over footeren.
  */
 
+import { useTranslation } from "react-i18next";
+
 const partners = [
   { name: "Kvikk Lunsj", logo: "/partner1.png" },
   { name: "Solo", logo: "/partner2.png" },
@@ -14,11 +16,13 @@ const partners = [
 ];
 
 export default function PartnersSection() {
+  const { t } = useTranslation("forside");
+
   return (
     <section className="mx-auto max-w-6xl px-4 pb-8 pt-2">
       <div className="border-t border-slate-200 pt-6">
         <p className="mb-5 text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-          Takk til våre samarbeidspartnere
+          {t("partners.thanks")}
         </p>
 
         <div className="flex flex-wrap items-center gap-x-10 gap-y-6">

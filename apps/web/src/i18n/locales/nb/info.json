@@ -1,0 +1,117 @@
+{
+  "omOss": {
+    "hero": {
+      "eyebrow": "Om Utopia",
+      "imageAlt": "Om Utopia",
+      "title": "En digital løsning for turplanlegging",
+      "titleLine2": "og friluftsliv",
+      "lead": "Utopia er utviklet for å gjøre det enklere å finne, forstå og planlegge turer i naturen gjennom en oversiktlig og brukervennlig plattform."
+    },
+    "whatIs": {
+      "badge": "Hva er Utopia?",
+      "title": "En plattform som samler turinformasjon på ett sted",
+      "p1": "Utopia er utviklet som en webapplikasjon for brukere som ønsker bedre oversikt over turmuligheter, kart og informasjon knyttet til friluftsliv. Løsningen skal gjøre det enklere å finne relevante turer og planlegge dem på en mer strukturert måte.",
+      "p2": "Tanken bak prosjektet er å samle sentral informasjon på ett sted, slik at brukeren slipper å lete flere steder for å få oversikt over vanskelighetsgrad, varighet, sted og andre praktiske detaljer.",
+      "p3": "Utopia er derfor både en informasjonsløsning og et planleggingsverktøy, utviklet med fokus på tydelig struktur, brukervennlighet og tilgjengelighet.",
+      "imageAlt": "Natur i Utopia",
+      "caption": "Utopia er laget for å gjøre naturen mer oversiktlig og lettere å utforske gjennom en moderne digital løsning."
+    },
+    "purpose": {
+      "title": "Formål",
+      "p1": "Formålet med Utopia er å gjøre turplanlegging enklere og mer oversiktlig. Løsningen skal hjelpe brukeren med å finne turer, forstå viktig informasjon og sammenligne alternativer på en måte som støtter gode valg.",
+      "p2": "Prosjektet viser også hvordan moderne webteknologi kan brukes til å bygge en helhetlig tjeneste med fokus på strukturert informasjon, kart og brukeropplevelse."
+    },
+    "audience": {
+      "title": "Målgruppe",
+      "p1": "Utopia er utviklet for brukere som ønsker å utforske naturen på en enkel og oversiktlig måte. Løsningen skal være nyttig både for dem som ønsker korte nærturer og for dem som planlegger lengre og mer krevende turer.",
+      "p2": "Målgruppen inkluderer derfor både nybegynnere og mer erfarne brukere som trenger et tydelig system for å finne relevant turinformasjon."
+    },
+    "values": {
+      "badge": "Våre verdier",
+      "title": "Verdiene som ligger til grunn for løsningen",
+      "lead": "Utopia er utviklet med verdier som handler om brukervennlighet, trygghet, tilgjengelighet og inspirasjon til friluftsliv.",
+      "natureJoy": {
+        "title": "Naturglede",
+        "text": "Løsningen skal motivere flere til å bruke naturen aktivt og oppleve verdien av friluftsliv i hverdagen."
+      },
+      "community": {
+        "title": "Fellesskap",
+        "text": "Friluftsliv handler også om å dele erfaringer, opplevelser og inspirasjon med andre."
+      },
+      "safety": {
+        "title": "Trygghet",
+        "text": "God og tydelig turinformasjon skal bidra til bedre planlegging og gjøre det enklere å ta trygge valg."
+      },
+      "exploration": {
+        "title": "Utforskning",
+        "text": "Utopia skal gjøre det enklere å oppdage nye turmål og se flere muligheter enn brukeren kanskje allerede kjenner til."
+      },
+      "quality": {
+        "title": "Kvalitet",
+        "text": "Informasjonen skal presenteres på en ryddig og nyttig måte, slik at brukeren raskt forstår det viktigste."
+      },
+      "accessibility": {
+        "title": "Tilgjengelighet",
+        "text": "Løsningen skal være enkel å bruke for ulike typer brukere, uansett erfaring med turplanlegging eller digitale tjenester."
+      }
+    },
+    "vision": {
+      "title": "Vår visjon",
+      "p1": "Visjonen bak Utopia er å utvikle en løsning som gjør friluftsliv mer oversiktlig, relevant og tilgjengelig for flere mennesker.",
+      "p2": "Ved å kombinere kart, turinformasjon og en strukturert brukerflate ønsker vi å senke terskelen for å planlegge og gjennomføre turer.",
+      "p3": "Teknologi skal her fungere som et praktisk hjelpemiddel som støtter naturopplevelsen, ikke erstatter den.",
+      "contributeTitle": "Det vi ønsker å bidra til",
+      "contribute1": "• tydeligere og enklere turinformasjon",
+      "contribute2": "• bedre oversikt over turmuligheter",
+      "contribute3": "• enklere planlegging av turer",
+      "contribute4": "• mer tilgjengelig friluftsliv for flere brukere"
+    },
+    "team": {
+      "imageAlt": "Teamet bak Utopia",
+      "badge": "Teamet bak løsningen",
+      "title": "Et studentprosjekt med fokus på både teknologi og brukeropplevelse",
+      "p1": "Utopia er utviklet som et studentprosjekt med mål om å designe og bygge en moderne webapplikasjon for turplanlegging og friluftsliv.",
+      "p2": "Prosjektet kombinerer arbeid med design, frontend, backend og informasjonsstruktur for å skape en helhetlig løsning som er både nyttig og brukervennlig.",
+      "p3": "Arbeidet med Utopia handler derfor både om å utvikle en digital løsning og om å utforske hvordan teknologi kan støtte brukere i møte med naturen."
+    },
+    "cta": {
+      "title": "Klar for å utforske Utopia?",
+      "text": "Ta en nærmere titt på turene i løsningen og utforsk hvordan Utopia presenterer turinformasjon, kart og planleggingsmuligheter.",
+      "link": "Utforsk turer →"
+    }
+  },
+  "kontakt": {
+    "eyebrow": "Kontakt",
+    "title": "Kontakt oss",
+    "lead": "Har du spørsmål om løsningen, turinnhold eller funksjonalitet? Send oss en melding. Utopia er et studentprosjekt ved Universitetet i Sørøst-Norge og siden brukes som del av demonstrasjon og utvikling.",
+    "form": {
+      "heading": "Send oss en melding",
+      "nameLabel": "Navn",
+      "namePlaceholder": "Ditt navn",
+      "emailLabel": "E-post",
+      "emailPlaceholder": "din@epost.no",
+      "subjectLabel": "Emne",
+      "subjectPlaceholder": "Hva gjelder det?",
+      "messageLabel": "Melding",
+      "messagePlaceholder": "Skriv meldingen din her...",
+      "submit": "Send melding"
+    },
+    "info": {
+      "heading": "Kontaktinformasjon",
+      "emailLabel": "E-post",
+      "emailValue": "post@utopia.com",
+      "addressLabel": "Adresse",
+      "addressLine1": "Utopiaveien 1",
+      "addressLine2": "0123 Utopia, Norge",
+      "phoneLabel": "Telefon",
+      "phoneValue": "+47 00 000 000",
+      "hoursLabel": "Åpningstider",
+      "hoursValue": "Man–fre: 09:00–17:00",
+      "disclaimer": "Denne kontaktsiden er del av et skoleprosjekt. Meldinger brukes som demonstrasjon av funksjonalitet og går ikke til en faktisk kundeservice."
+    }
+  },
+  "ikkeFunnet": {
+    "title": "404 – Siden finnes ikke",
+    "text": "Gå tilbake til forsiden."
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "shared": {
+    "access": {
+      "loginRequired": "Du må være innlogget for å bruke annonsørportalen.",
+      "annonsorOnly_pre": "Denne siden er kun for brukere med rollen ",
+      "annonsorOnlyRole": "annonsør",
+      "annonsorOnly_post": "."
+    }
+  },
+  "opprett": {
+    "hero": {
+      "eyebrow": "Mine annonser",
+      "title": "Opprett ny annonse",
+      "subtitle": "Kom i kontakt med hundrevis av turinteresserte!"
+    },
+    "sections": {
+      "info": {
+        "title": "Annonseinfo",
+        "description": "Skriv inn tittel, beskrivelse og last opp bilde for annonsen."
+      },
+      "customize": {
+        "title": "Tilpass din annonse",
+        "description": "Velg riktig kategori, relevante søkeord og kampanjeperiode."
+      },
+      "payment": {
+        "title": "Betalingsmodell"
+      }
+    },
+    "fields": {
+      "title": "Tittel",
+      "titlePlaceholder": "Annonsetittel",
+      "description": "Beskrivelse",
+      "descriptionPlaceholder": "Annonsetekst",
+      "uploadImage": "Last opp bilde",
+      "imagePreviewAlt": "Preview av annonsebildet",
+      "linkLabel": "Link til hjemmeside",
+      "linkPlaceholder": "https://din-hjemmeside.no",
+      "keywordsLabel": "Søkeord / kategorier",
+      "keywordsHint": "Velg søkeord og kategorier som skal knyttes til annonsen.",
+      "startDate": "Startdato",
+      "endDate": "Sluttdato"
+    },
+    "keywords": {
+      "turutstyr": "Turutstyr",
+      "matOgDrikke": "Mat og drikke",
+      "overnattingssteder": "Overnattingssteder",
+      "klaerOgAccesorier": "Klær og accesorier",
+      "friluftsliv": "Friluftsliv"
+    },
+    "plans": {
+      "selected": "Valgt",
+      "pricePerClick": "Pris/klikk {{price}} kr",
+      "dailyBudget": "Daglig {{amount}} kr",
+      "basic": {
+        "title": "Basic",
+        "description": "En rimelig startpakke med lavere kostnad per klikk og små budsjetter."
+      },
+      "standard": {
+        "title": "Standard",
+        "description": "God balanse mellom pris og synlighet. Passer de fleste annonsører."
+      },
+      "premium": {
+        "title": "Premium",
+        "description": "Sterk synlighet med høyere bud og større daglig budsjett."
+      }
+    },
+    "actions": {
+      "reset": "Tøm skjema",
+      "publish": "Publiser"
+    },
+    "messages": {
+      "success": "Annonsen er registrert. Du kan nå tilbake til annonsørportalen.",
+      "errorTitleRequired": "Du må skrive inn en tittel.",
+      "errorWaitForUpload": "Vennligst vent på at bildet lastes opp før du sender inn annonsen.",
+      "errorSave": "Kunne ikke lagre annonsen.",
+      "errorServer": "Kunne ikke kontakte serveren. Sjekk at API kjører.",
+      "errorImageType": "Velg et bilde (jpg, png eller lignende)."
+    }
+  },
+  "portal": {
+    "title": "Annonsørportal",
+    "intro": "Her kan du administrere dine annonser.",
+    "newAd": "Ny annonse",
+    "filters": {
+      "all": "Alle annonser",
+      "active": "Aktive annonser",
+      "paused": "Inaktive annonser",
+      "ended": "Annonse historikk",
+      "hint": "Filtrer annonsene dine etter status for å finne kampanjer raskere."
+    },
+    "search": {
+      "label": "Søk i annonser",
+      "placeholder": "Tittel, kategori eller søkeord",
+      "reset": "Nullstill"
+    },
+    "analytics": {
+      "title": "Annonseanalyse",
+      "countLabel": "Antall annonser",
+      "viewsLabel": "Totale visninger",
+      "clicksLabel": "Totale klikk",
+      "showing": "Viser {{count}} annonser etter gjeldende filter."
+    },
+    "empty": {
+      "noAds": "Ingen annonser er funnet.",
+      "noMatch": "Ingen annonser matcher søk eller filter. Prøv et annet søk eller nullstill filteret."
+    },
+    "card": {
+      "uncategorized": "Uten kategori",
+      "unknownStatus": "Ukjent",
+      "noDescription": "Ingen beskrivelse",
+      "type": "Type: {{value}}",
+      "pricePerView": "Pris/visning: {{value}}",
+      "pricePerClick": "Pris/klikk: {{value}}",
+      "dailyBudget": "Dagsbudsjett: {{value}} kr",
+      "spentToday": "Brukt i dag: {{value}} kr",
+      "views": "Visninger: {{value}}",
+      "clicks": "Klikk: {{value}}",
+      "period": "Periode: {{start}} – {{end}}",
+      "noDate": "-",
+      "noValue": "–",
+      "budgetUsed": "Budsjett brukt: {{value}} kr"
+    },
+    "actions": {
+      "registerView": "Registrer visning",
+      "openAd": "Åpne annonse",
+      "edit": "Rediger",
+      "delete": "Slett",
+      "confirmDelete": "Er du sikker på at du vil slette annonsen?"
+    },
+    "errors": {
+      "loadFailed": "Kunne ikke hente annonser",
+      "generic": "Noe gikk galt"
+    }
+  }
+}

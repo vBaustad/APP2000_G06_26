@@ -7,8 +7,28 @@
 import { Router } from "express";
 import { prisma } from "../prisma";
 import { requireAuth, requireRole } from "../middleware/auth";
+import { clearAllData, seedAll } from "../lib/seed";
 
 export const adminRouter = Router();
+
+// PUBLIC: Tilbakestill alle testdata. Bevisst uten auth så sensor kan
+// nullstille systemet under testing. UI-en krever confirm-modal før kall.
+adminRouter.post("/reset-testdata", async (_req, res) => {
+  try {
+    await clearAllData();
+    await seedAll();
+    res.json({
+      ok: true,
+      message: "Testdata tilbakestilt. Alle brukere, turer, hytter og annonser er reseedet.",
+    });
+  } catch (error) {
+    console.error("Feil ved reset av testdata:", error);
+    res.status(500).json({
+      ok: false,
+      error: "Kunne ikke tilbakestille testdata.",
+    });
+  }
+});
 
 //Alle ruter under krever admin-rolle
 adminRouter.use(requireAuth, requireRole("admin"));

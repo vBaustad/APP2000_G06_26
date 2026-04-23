@@ -1,0 +1,31 @@
+{
+  "title": "Admin",
+  "eyebrow": "Admin panel",
+  "heading": "Administration",
+  "description": "Approve advertiser applications and assign roles to users.",
+  "noAccess": {
+    "description": "You must be signed in as an admin to see this page.",
+    "loginButton": "Sign in"
+  },
+  "errors": {
+    "approve": "Could not approve",
+    "reject": "Could not reject",
+    "grantRole": "Could not assign role",
+    "revokeRole": "Could not remove role",
+    "generic": "Something went wrong"
+  },
+  "advertisers": {
+    "heading": "Pending advertiser applications ({{n}})",
+    "empty": "No pending applications.",
+    "sentOn": "Sent {{date}}",
+    "approve": "Approve",
+    "reject": "Reject"
+  },
+  "roles": {
+    "heading": "Assign roles",
+    "description": "Search for a user by email or name, and assign/remove roles.",
+    "searchPlaceholder": "Search for user...",
+    "noUsers": "No users found.",
+    "removeAria": "Remove {{role}}"
+  }
+}

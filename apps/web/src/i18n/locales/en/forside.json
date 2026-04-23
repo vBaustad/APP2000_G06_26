@@ -1,0 +1,123 @@
+{
+  "hero": {
+    "title": "Find your next adventure",
+    "subtitle": "Explore tours, maps and activities in Utopia",
+    "searchPlaceholder": "Search for a place, tour or cabin…",
+    "searchButton": "Search"
+  },
+  "features": {
+    "eyebrow": "Planning and exploration",
+    "title": "Find tours, cabins and routes",
+    "intro": "Utopia makes it easier to explore hiking opportunities, find accommodations and plan your next trip with maps, route overviews and relevant information.",
+    "cards": {
+      "tours": {
+        "badge": "Tours",
+        "title": "Explore tours",
+        "description": "Find tours by activity, difficulty and duration. This entry point supports search, filtering and navigation to tour details.",
+        "point1": "Search for destinations and activities",
+        "point2": "Filter by level, length and type of tour",
+        "point3": "Go to tour details",
+        "cta": "Go to tours"
+      },
+      "cabins": {
+        "badge": "Accommodation",
+        "title": "Cabins and accommodation",
+        "description": "See cabins and other accommodations gathered on a dedicated page. Here users can get an overview of facilities, location and possible stops along the way.",
+        "point1": "Go to the overview of cabins and accommodation",
+        "point2": "Overview of facilities and location",
+        "point3": "Relevant for trip planning with stops",
+        "cta": "See cabins and accommodation"
+      },
+      "routes": {
+        "badge": "Routes",
+        "title": "Plan a route",
+        "description": "Use the map and route overview to plan your next tour. This part points to work with trails, stages and further support for your own tours.",
+        "point1": "See routes and trails on the map",
+        "point2": "Plan tours with several stages",
+        "point3": "Connect the tour to map view",
+        "cta": "Plan a tour"
+      }
+    }
+  },
+  "activities": {
+    "eyebrow": "Activities and filtering",
+    "title": "Explore by activity",
+    "intro": "Choose an activity and go to tours and map view with relevant suggestions and filtering.",
+    "goToTours": "Go to tours",
+    "seeTours": "See tours",
+    "tripsUnit": "tours",
+    "cabinsUnit": "cabins",
+    "cards": {
+      "foot": "Hiking",
+      "bike": "Cycling",
+      "cabin": "Cabin trip",
+      "ski": "Skiing",
+      "peakSki": "Ski touring",
+      "paddle": "Paddling"
+    }
+  },
+  "community": {
+    "eyebrow": "User reviews and recommendations",
+    "title": "Tours others recommend",
+    "intro": "See short reviews from users who have done the tours before you, and find inspiration for your next trip.",
+    "seeMore": "See more tours",
+    "seeTour": "See tour",
+    "fallbackReview": "A nice tour with good experiences along the way. See tour details for more information.",
+    "time": {
+      "recent": "Recently",
+      "hoursAgo": "{{count}} hours ago",
+      "dayAgo": "1 day ago",
+      "daysAgo": "{{count}} days ago",
+      "whileAgo": "A while ago"
+    },
+    "rated": "Has given a rating",
+    "unitHours": "hours"
+  },
+  "easter": {
+    "eyebrow": "Seasonal suggestions",
+    "title": "Great tours for Easter",
+    "intro": "Explore tour suggestions that fit the Easter holiday well, from ski tours in the mountains to calmer family-friendly options.",
+    "seeMore": "See more seasonal tours",
+    "seeTour": "See tour",
+    "badge": "Easter tour",
+    "fallbackDescription": "See tour details for more information about this tour.",
+    "levelLabel": "Level:",
+    "unitHours": "hours"
+  },
+  "weather": {
+    "eyebrow": "Weather and conditions",
+    "title": "Conditions in Jotunheimen",
+    "location": "Besseggen and nearby destinations",
+    "updatedBadge": "Updated today",
+    "intro": "Weather and conditions are important when planning a tour, especially in the mountains. This card shows how the solution can give users a quick overview of conditions that affect route choice, equipment and timing.",
+    "conditionsLabel": "Conditions",
+    "conditionsValue": "Partly cloudy with good visibility at altitude",
+    "temperatureLabel": "Temperature",
+    "temperatureValue": "2 °C in exposed areas",
+    "windLabel": "Wind",
+    "windValue": "Fresh breeze along ridges and open areas",
+    "recommendationLabel": "Recommendation",
+    "recommendationValue": "Check the map, dress for changing weather and plan with a time margin",
+    "footerNote": "Decision support for safer trip planning",
+    "seeWeather": "See weather and conditions"
+  },
+  "partners": {
+    "thanks": "Thanks to our partners"
+  },
+  "reset": {
+    "heading": "Test data for examiner",
+    "description": "Press here to restore all test data (users, tours, cabins, ads) to the seeded state. Used by the examiner during review.",
+    "button": "Reset test data",
+    "busy": "Resetting...",
+    "success": "Test data was reset.",
+    "errorGeneric": "Could not reset test data.",
+    "errorNetwork": "Network error. Try again.",
+    "confirmTitle": "Reset all test data?",
+    "confirmBody": "This will delete and reseed all content in the application. The action cannot be undone.",
+    "bullet1": "All users except the test users (bruker1–6) will be deleted",
+    "bullet2": "All tours, cabins, trails and ads will be replaced with the seeded set",
+    "bullet3": "Registrations, bookings, comments and favorites will be removed",
+    "confirmButton": "Yes, reset",
+    "cancel": "Cancel"
+  }
+}

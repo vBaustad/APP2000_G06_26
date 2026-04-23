@@ -8,8 +8,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { Trans, useTranslation } from "react-i18next";
 import { getTourById } from "../services/toursApi";
 import type { Tour } from "../types/tour";
+import { useAuth } from "../context/AuthContext";
 import {
   MapPin,
   Route,
@@ -23,10 +25,26 @@ import {
   Repeat,
   Footprints,
   MessageCircle,
+  PencilLine,
 } from "lucide-react";
 import TurMap from "../components/TurMap";
 
 type LatLng = [number, number];
+
+const DIFF_KEY: Record<Tour["difficulty"], string> = {
+  Lett: "diffEasy",
+  Middels: "diffMedium",
+  Krevende: "diffHard",
+  Ekspert: "diffExpert",
+};
+
+const REGION_KEY: Record<string, string> = {
+  "Nord-Norge": "regionNorth",
+  "Trøndelag": "regionTrondelag",
+  "Østlandet": "regionEast",
+  "Sørlandet": "regionSouth",
+  "Vestlandet": "regionWest",
+};
 
 const TOUR_IMAGES = [
   "/images/tours/floibanen.jpg",
@@ -46,10 +64,10 @@ function hashStringToIndex(s: string, mod: number) {
   return mod === 0 ? 0 : h % mod;
 }
 
-function ensureTourImage(t: Tour): Tour {
-  if (t.imageUrl && t.imageUrl.trim()) return t;
-  const idx = hashStringToIndex(t.id ?? t.title ?? "tour", TOUR_IMAGES.length);
-  return { ...t, imageUrl: TOUR_IMAGES[idx] };
+function ensureTourImage(tour: Tour): Tour {
+  if (tour.imageUrl && tour.imageUrl.trim()) return tour;
+  const idx = hashStringToIndex(tour.id ?? tour.title ?? "tour", TOUR_IMAGES.length);
+  return { ...tour, imageUrl: TOUR_IMAGES[idx] };
 }
 
 type Kommentar = {
@@ -75,13 +93,6 @@ type MinPamelding = {
   };
 };
 
-const PAMELDING_LABEL: Record<MinPamelding["status"], string> = {
-  pending: "Interesse meldt",
-  binding: "Bindende påmelding",
-  locked: "Dato låst",
-  freed: "Dato fristilt",
-};
-
 const PAMELDING_STYLE: Record<MinPamelding["status"], string> = {
   pending: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
   binding: "bg-[#eef5f1] text-[#0f3d2e] ring-1 ring-[#dcebe4]",
@@ -89,55 +100,12 @@ const PAMELDING_STYLE: Record<MinPamelding["status"], string> = {
   freed: "bg-amber-100 text-amber-900 ring-1 ring-amber-200",
 };
 
-function formatDateNo(iso: string) {
-  try {
-    return new Date(iso).toLocaleDateString("nb-NO", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  } catch {
-    return iso;
-  }
-}
-
 function safeGet(key: string) {
   try {
     return localStorage.getItem(key);
   } catch {
     return null;
   }
-}
-
-function storyForTour(tour: Tour) {
-  const fallback =
-    "Dette er en tur som gir en tydelig naturopplevelse med god progresjon underveis. Gå jevnt, ta pauser og bruk forholdene til din fordel.";
-
-  const diffLine =
-    tour.difficulty === "Lett"
-      ? "Passer for en rolig dag og for deg som vil ha en mer tilgjengelig tur."
-      : tour.difficulty === "Middels"
-        ? "Gir nok motbakke og lengde til at turen føles ordentlig, uten å bli for ekstrem."
-        : tour.difficulty === "Krevende"
-          ? "Her bør du ha gode sko, litt erfaring og være forberedt på en mer fysisk tur."
-          : "Dette er en tur for sterke bein og god dømmekraft.";
-
-  const regionLine =
-    tour.region === "Vestlandet"
-      ? "Vestlandet kan skifte vær fort, så det lønner seg å pakke for mer enn bare sol."
-      : tour.region === "Nord-Norge"
-        ? "Nord-Norge gir store naturopplevelser, men krever også respekt for vær og avstander."
-        : tour.region === "Østlandet"
-          ? "Østlandet gir ofte fine og stabile forhold, men våte stier og værskifter må fortsatt tas på alvor."
-          : tour.region === "Trøndelag"
-            ? "Trøndelag byr ofte på variert terreng og turer som kan overraske underveis."
-            : "Sørlandet kan gi rolige og fine turer med gode stopp underveis.";
-
-  const typeLine = tour.type
-    ? `Turtypen er ${tour.type.toLowerCase()}, så det er lurt å tilpasse tempo og utstyr deretter.`
-    : "Tilpass turen etter forholdene og formen din den dagen.";
-
-  return `${fallback} ${diffLine} ${regionLine} ${typeLine}`;
 }
 
 function pickLatLngFromTour(tour: Tour): LatLng | null {
@@ -151,6 +119,8 @@ function pickLatLngFromTour(tour: Tour): LatLng | null {
 }
 
 export default function TurDetaljer() {
+  const { t, i18n } = useTranslation("turer");
+  const { user } = useAuth();
   const { id } = useParams();
 
   const [tour, setTour] = useState<Tour | null>(null);
@@ -175,6 +145,25 @@ export default function TurDetaljer() {
   const [avmeldFeil, setAvmeldFeil] = useState<string | null>(null);
 
   const tid = String(tour?.id ?? id ?? "");
+  const dateLocale = i18n.resolvedLanguage === "en" ? "en-US" : "nb-NO";
+  const canEdit = useMemo(() => {
+    if (!user || !tour) return false;
+    const isAdmin = user.roller?.includes("admin") ?? false;
+    const isOwner = tour.ownerId !== null && tour.ownerId === user.id;
+    return isAdmin || isOwner;
+  }, [user, tour]);
+
+  function formatDate(iso: string) {
+    try {
+      return new Date(iso).toLocaleDateString(dateLocale, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    } catch {
+      return iso;
+    }
+  }
 
   const mapCenter = useMemo<LatLng>(() => {
     if (!tour) return [60.472, 8.468];
@@ -192,13 +181,41 @@ export default function TurDetaljer() {
     return Boolean(token || user);
   }, []);
 
-  const datoer = tour?.datoer ?? [];
-  const pameldteDatoIds = new Set(minePameldinger.map((p) => p.tur_dato.id));
+  function storyForTour(tourArg: Tour) {
+    const base = t("detail.story.intro");
+    const diffLine =
+      tourArg.difficulty === "Lett"
+        ? t("detail.story.diffEasy")
+        : tourArg.difficulty === "Middels"
+          ? t("detail.story.diffMedium")
+          : tourArg.difficulty === "Krevende"
+            ? t("detail.story.diffHard")
+            : t("detail.story.diffExpert");
+
+    const regionLineKey = REGION_KEY[tourArg.region] ?? "regionSouth";
+    const regionLine = t(`detail.story.${regionLineKey}`);
+
+    const typeLine = tourArg.type
+      ? t("detail.story.typeWith", { type: tourArg.type.toLowerCase() })
+      : t("detail.story.typeWithout");
+
+    return `${base} ${diffLine} ${regionLine} ${typeLine}`;
+  }
+
+  const datoer = useMemo(() => tour?.datoer ?? [], [tour]);
+  const pameldteDatoIds = useMemo(
+    () => new Set(minePameldinger.map((p) => p.tur_dato.id)),
+    [minePameldinger],
+  );
   const token = safeGet("token") || safeGet("auth_token");
-  const lasedeChatPameldinger = minePameldinger.filter((pamelding) => {
-    const dato = datoer.find((item) => item.id === pamelding.tur_dato.id);
-    return dato?.status === "locked" && pamelding.status !== "freed";
-  });
+  const lasedeChatPameldinger = useMemo(
+    () =>
+      minePameldinger.filter((pamelding) => {
+        const dato = datoer.find((item) => item.id === pamelding.tur_dato.id);
+        return dato?.status === "locked" && pamelding.status !== "freed";
+      }),
+    [minePameldinger, datoer],
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -254,8 +271,8 @@ export default function TurDetaljer() {
 
   useEffect(() => {
     if (!tid) return;
-    const token = safeGet("token") || safeGet("auth_token");
-    if (!token) {
+    const localToken = safeGet("token") || safeGet("auth_token");
+    if (!localToken) {
       setFavorittId(null);
       setMinePameldinger([]);
       return;
@@ -263,7 +280,7 @@ export default function TurDetaljer() {
     let active = true;
 
     fetch(`${import.meta.env.VITE_API_URL}/api/favoritter`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${localToken}` },
     })
       .then((res) =>
         res.ok
@@ -282,7 +299,7 @@ export default function TurDetaljer() {
       });
 
     fetch(`${import.meta.env.VITE_API_URL}/api/bruker/me`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${localToken}` },
     })
       .then((res) =>
         res.ok
@@ -380,7 +397,7 @@ export default function TurDetaljer() {
       <main className="min-h-[70vh] bg-gray-50">
         <section className="mx-auto max-w-7xl px-6 py-10">
           <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow">
-            <p className="text-gray-600">Laster turdetaljer...</p>
+            <p className="text-gray-600">{t("detail.loading")}</p>
           </div>
         </section>
       </main>
@@ -395,19 +412,18 @@ export default function TurDetaljer() {
             to="/turer"
             className="text-sm font-semibold text-emerald-700 hover:underline"
           >
-            ← Tilbake til Utforsk
+            {t("detail.back")}
           </Link>
 
           <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow">
-            <h1 className="text-2xl font-semibold">Fant ikke tur</h1>
+            <h1 className="text-2xl font-semibold">{t("detail.notFoundTitle")}</h1>
             <p className="mt-2 text-gray-600">
-              Vi fant ingen tur{" "}
               {id ? (
                 <>
-                  med id: <span className="font-mono">{id}</span>
+                  {t("detail.notFoundWithId")} <span className="font-mono">{id}</span>
                 </>
               ) : (
-                <> (mangler id i URL)</>
+                t("detail.notFoundNoId")
               )}
             </p>
           </div>
@@ -431,7 +447,7 @@ export default function TurDetaljer() {
 
     try {
       await navigator.clipboard.writeText(url);
-      alert("Lenke kopiert!");
+      alert(t("detail.shareCopied"));
     } catch {
       alert(url);
     }
@@ -439,15 +455,15 @@ export default function TurDetaljer() {
 
   async function handleSignup(turDatoId: number) {
     if (!isLoggedIn) {
-      alert("Du må logge inn for å melde deg på turen.");
+      alert(t("detail.mustLoginSignup"));
       window.location.href = "/logg-inn";
       return;
     }
 
-    const token = safeGet("token") || safeGet("auth_token");
+    const signupToken = safeGet("token") || safeGet("auth_token");
 
-    if (!token) {
-      alert("Fant ikke gyldig innlogging.");
+    if (!signupToken) {
+      alert(t("detail.mustLoginToken"));
       return;
     }
 
@@ -461,7 +477,7 @@ export default function TurDetaljer() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${signupToken}`,
           },
           body: JSON.stringify({ tur_dato_id: turDatoId }),
         }
@@ -475,7 +491,7 @@ export default function TurDetaljer() {
         | null;
 
       if (!res.ok) {
-        setSignupMessage(data?.error || "Kunne ikke melde deg på turen.");
+        setSignupMessage(data?.error || t("detail.signupFailed"));
         return;
       }
 
@@ -495,12 +511,10 @@ export default function TurDetaljer() {
         setMinePameldinger((prev) => [...prev, ny]);
       }
 
-      setSignupMessage(
-        "Du er nå meldt på turdatoen. Sjekk Min side for oversikt.",
-      );
+      setSignupMessage(t("detail.signupSuccess"));
     } catch (error) {
       console.error("Feil ved turpåmelding:", error);
-      setSignupMessage("Noe gikk galt ved påmelding.");
+      setSignupMessage(t("detail.signupError"));
     } finally {
       setSignupLoading(false);
     }
@@ -512,9 +526,9 @@ export default function TurDetaljer() {
   }
 
   async function handleToggleSave() {
-    const token = safeGet("token") || safeGet("auth_token");
-    if (!token) {
-      alert("Du må være innlogget for å favorisere turen.");
+    const favToken = safeGet("token") || safeGet("auth_token");
+    if (!favToken) {
+      alert(t("detail.mustLoginFavorite"));
       return;
     }
     if (!tid || favorittBusy) return;
@@ -523,7 +537,7 @@ export default function TurDetaljer() {
       if (favorittId) {
         const res = await fetch(
           `${import.meta.env.VITE_API_URL}/api/favoritter/${favorittId}`,
-          { method: "DELETE", headers: { Authorization: `Bearer ${token}` } },
+          { method: "DELETE", headers: { Authorization: `Bearer ${favToken}` } },
         );
         if (res.ok) setFavorittId(null);
       } else {
@@ -531,7 +545,7 @@ export default function TurDetaljer() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${favToken}`,
           },
           body: JSON.stringify({ tur_id: Number(tid) }),
         });
@@ -547,15 +561,15 @@ export default function TurDetaljer() {
 
   async function handleSubmitKommentar() {
     if (!isLoggedIn) {
-      alert("Du må være innlogget for å kommentere.");
+      alert(t("detail.mustLoginComment"));
       return;
     }
-    const token = safeGet("token") || safeGet("auth_token");
-    if (!token || !tid) return;
+    const komToken = safeGet("token") || safeGet("auth_token");
+    if (!komToken || !tid) return;
 
     const tekst = kommentarTekst.trim();
     if (tekst.length < 3) {
-      setKommentarFeil("Kommentar må ha minst 3 tegn.");
+      setKommentarFeil(t("detail.commentMinLength"));
       return;
     }
 
@@ -568,7 +582,7 @@ export default function TurDetaljer() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${komToken}`,
           },
           body: JSON.stringify({ body: tekst }),
         },
@@ -577,7 +591,7 @@ export default function TurDetaljer() {
         | (Kommentar & { error?: string })
         | null;
       if (!res.ok) {
-        setKommentarFeil(data?.error ?? "Kunne ikke lagre kommentar.");
+        setKommentarFeil(data?.error ?? t("detail.commentSaveFailed"));
         return;
       }
       if (data && typeof data.id === "number") {
@@ -585,14 +599,14 @@ export default function TurDetaljer() {
       }
       setKommentarTekst("");
     } catch {
-      setKommentarFeil("Nettverksfeil. Prøv igjen.");
+      setKommentarFeil(t("detail.commentNetworkError"));
     } finally {
       setKommentarBusy(false);
     }
   }
 
   function handleReport() {
-    alert("Rapportering er en demo her. (Koble til backend senere)");
+    alert(t("detail.reportDemo"));
   }
 
   function handleAvbrytAvmeld() {
@@ -603,9 +617,9 @@ export default function TurDetaljer() {
 
   async function handleBekreftAvmeld() {
     if (!avmeldKandidat) return;
-    const token = safeGet("token") || safeGet("auth_token");
-    if (!token) {
-      setAvmeldFeil("Fant ikke gyldig innlogging.");
+    const avToken = safeGet("token") || safeGet("auth_token");
+    if (!avToken) {
+      setAvmeldFeil(t("detail.unregisterTokenMissing"));
       return;
     }
 
@@ -614,10 +628,10 @@ export default function TurDetaljer() {
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/api/turer/pamelding/${avmeldKandidat.id}`,
-        { method: "DELETE", headers: { Authorization: `Bearer ${token}` } },
+        { method: "DELETE", headers: { Authorization: `Bearer ${avToken}` } },
       );
       if (!res.ok) {
-        setAvmeldFeil("Kunne ikke melde deg av. Prøv igjen.");
+        setAvmeldFeil(t("detail.unregisterFailed"));
         return;
       }
       setMinePameldinger((prev) =>
@@ -625,7 +639,7 @@ export default function TurDetaljer() {
       );
       setAvmeldKandidat(null);
     } catch {
-      setAvmeldFeil("Nettverksfeil. Prøv igjen.");
+      setAvmeldFeil(t("detail.commentNetworkError"));
     } finally {
       setAvmeldBusy(false);
     }
@@ -650,6 +664,9 @@ export default function TurDetaljer() {
     a.remove();
   }
 
+  const dateCount = datoer.length;
+  const lockedCount = lasedeChatPameldinger.length;
+
   return (
     <main className="bg-gray-50">
       <section className="relative h-[38vh] min-h-[320px]">
@@ -666,12 +683,12 @@ export default function TurDetaljer() {
               to="/turer"
               className="mb-5 inline-flex w-fit text-sm font-semibold text-white/90 hover:underline"
             >
-              ← Tilbake til Utforsk
+              {t("detail.back")}
             </Link>
 
             <div className="flex flex-wrap items-center gap-3">
               <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 shadow-sm">
-                {tour.difficulty}
+                {t(`list.filters.${DIFF_KEY[tour.difficulty]}`)}
               </span>
 
               <span className="rounded-full bg-white/90 px-3 py-1 text-sm font-medium text-gray-900">
@@ -683,7 +700,6 @@ export default function TurDetaljer() {
                   {tour.type}
                 </span>
               )}
-
             </div>
 
             <h1 className="mt-3 text-4xl font-semibold text-white md:text-5xl">
@@ -696,7 +712,7 @@ export default function TurDetaljer() {
             </div>
 
             <div className="mt-5 flex flex-wrap items-center gap-3">
-              {datoer.length === 1 ? (
+              {dateCount === 1 ? (
                 <button
                   type="button"
                   onClick={() => handleSignup(datoer[0].id)}
@@ -705,19 +721,19 @@ export default function TurDetaljer() {
                 >
                   <Calendar className="h-4 w-4" />
                   {pameldteDatoIds.has(datoer[0].id)
-                    ? "Du er påmeldt"
+                    ? t("detail.signedUp")
                     : signupLoading
-                      ? "Melder på..."
-                      : "Meld meg på"}
+                      ? t("detail.signingUp")
+                      : t("detail.signUp")}
                 </button>
-              ) : datoer.length > 1 ? (
+              ) : dateCount > 1 ? (
                 <button
                   type="button"
                   onClick={scrollToDatoer}
                   className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
                 >
                   <Calendar className="h-4 w-4" />
-                  Velg dato ({datoer.length} alternativer)
+                  {t("detail.chooseDate", { count: dateCount })}
                 </button>
               ) : null}
 
@@ -733,7 +749,7 @@ export default function TurDetaljer() {
                   }`}
                 >
                   <Heart className={`h-4 w-4 ${favorittId ? "fill-white" : ""}`} />
-                  {favorittId ? "Favoritt" : "Legg til favoritt"}
+                  {favorittId ? t("detail.favorite") : t("detail.addFavorite")}
                 </button>
               )}
 
@@ -743,8 +759,18 @@ export default function TurDetaljer() {
                 className="inline-flex items-center gap-2 rounded-xl border border-white/40 bg-white/10 px-4 py-3 text-sm font-semibold text-white hover:bg-white/20"
               >
                 <Share2 className="h-4 w-4" />
-                Del
+                {t("detail.share")}
               </button>
+
+              {canEdit && (
+                <Link
+                  to={`/turer/${tid}/rediger`}
+                  className="inline-flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-100 px-4 py-3 text-sm font-semibold text-amber-900 shadow-sm hover:bg-amber-200"
+                >
+                  <PencilLine className="h-4 w-4" />
+                  {t("detail.edit")}
+                </Link>
+              )}
             </div>
 
             {signupMessage && (
@@ -762,7 +788,7 @@ export default function TurDetaljer() {
             <div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Route className="h-4 w-4 text-emerald-700" />
-                <span>Distanse</span>
+                <span>{t("detail.summaryDistance")}</span>
               </div>
               <div className="mt-1 text-2xl font-semibold text-gray-900">
                 {tour.distanceKm} km
@@ -772,17 +798,17 @@ export default function TurDetaljer() {
             <div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Clock className="h-4 w-4 text-emerald-700" />
-                <span>Varighet</span>
+                <span>{t("detail.summaryDuration")}</span>
               </div>
               <div className="mt-1 text-2xl font-semibold text-gray-900">
-                {tour.durationHours} t
+                {tour.durationHours} {t("detail.unitHours")}
               </div>
             </div>
 
             <div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Mountain className="h-4 w-4 text-emerald-700" />
-                <span>Stigning</span>
+                <span>{t("detail.summaryElevation")}</span>
               </div>
               <div className="mt-1 text-2xl font-semibold text-gray-900">
                 {tour.elevationM} m
@@ -792,7 +818,7 @@ export default function TurDetaljer() {
             <div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Star className="h-4 w-4 text-emerald-700" />
-                <span>Kommentarer</span>
+                <span>{t("detail.summaryComments")}</span>
               </div>
               <div className="mt-1 text-2xl font-semibold text-gray-900">
                 {kommentarer.length}
@@ -806,7 +832,7 @@ export default function TurDetaljer() {
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-[#0f3d2e]" />
               <h2 className="text-lg font-semibold text-[#0f3d2e]">
-                Din påmelding på denne turen
+                {t("detail.myRegistration")}
               </h2>
             </div>
 
@@ -820,14 +846,13 @@ export default function TurDetaljer() {
                     {p.tur_dato.tittel && (
                       <span className="font-semibold">{p.tur_dato.tittel} · </span>
                     )}
-                    {formatDateNo(p.tur_dato.start_at)} –{" "}
-                    {formatDateNo(p.tur_dato.end_at)}
+                    {formatDate(p.tur_dato.start_at)} – {formatDate(p.tur_dato.end_at)}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${PAMELDING_STYLE[p.status]}`}
                     >
-                      {PAMELDING_LABEL[p.status]}
+                      {t(`detail.statusLabels.${p.status}`)}
                     </span>
                     <button
                       type="button"
@@ -837,7 +862,7 @@ export default function TurDetaljer() {
                       }}
                       className="rounded-lg border border-red-300 bg-white px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50"
                     >
-                      Meld av
+                      {t("detail.unregister")}
                     </button>
                   </div>
                 </li>
@@ -846,20 +871,20 @@ export default function TurDetaljer() {
           </div>
         )}
 
-        {lasedeChatPameldinger.length > 0 && (
+        {lockedCount > 0 && (
           <div className="mt-6 rounded-2xl border border-sky-100 bg-white p-5 shadow">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="flex items-center gap-2">
                   <MessageCircle className="h-5 w-5 text-sky-700" />
                   <h2 className="text-lg font-semibold text-slate-900">
-                    Gruppesamtale i meldinger
+                    {t("detail.groupChatTitle")}
                   </h2>
                 </div>
                 <p className="mt-1 text-sm text-slate-600">
-                  Du har {lasedeChatPameldinger.length} låst{" "}
-                  {lasedeChatPameldinger.length === 1 ? "turdato" : "turdatoer"} med
-                  egen gruppesamtale. Åpne dem i meldingssiden.
+                  {lockedCount === 1
+                    ? t("detail.groupChatBodyOne", { count: lockedCount })
+                    : t("detail.groupChatBodyMany", { count: lockedCount })}
                 </p>
               </div>
               <Link
@@ -871,7 +896,7 @@ export default function TurDetaljer() {
                 className="inline-flex items-center gap-2 self-start rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700"
               >
                 <MessageCircle className="h-4 w-4" />
-                Åpne riktig chat
+                {t("detail.groupChatOpen")}
               </Link>
             </div>
 
@@ -883,11 +908,10 @@ export default function TurDetaljer() {
                 >
                   <div>
                     <span className="font-semibold text-slate-800">
-                      {pamelding.tur_dato.tittel ?? "Turdato"}
+                      {pamelding.tur_dato.tittel ?? t("detail.dateItemTitle")}
                     </span>
                     {" · "}
-                    {formatDateNo(pamelding.tur_dato.start_at)} –{" "}
-                    {formatDateNo(pamelding.tur_dato.end_at)}
+                    {formatDate(pamelding.tur_dato.start_at)} – {formatDate(pamelding.tur_dato.end_at)}
                   </div>
                   <Link
                     to={
@@ -898,7 +922,9 @@ export default function TurDetaljer() {
                     className="inline-flex items-center gap-2 self-start rounded-xl border border-sky-200 bg-white px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50"
                   >
                     <MessageCircle className="h-3.5 w-3.5" />
-                    {chatLenker[pamelding.tur_dato.id] ? "Åpne chat" : "Gå til meldinger"}
+                    {chatLenker[pamelding.tur_dato.id]
+                      ? t("detail.groupChatOpenOne")
+                      : t("detail.groupChatOpenFallback")}
                   </Link>
                 </li>
               ))}
@@ -906,24 +932,21 @@ export default function TurDetaljer() {
           </div>
         )}
 
-        {datoer.length > 0 && (
+        {dateCount > 0 && (
           <div
             id="datoalternativer"
             className="mt-6 scroll-mt-24 rounded-2xl border border-gray-100 bg-white p-6 shadow"
           >
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-emerald-700" />
-              <h2 className="text-lg font-semibold">Datoalternativer</h2>
+              <h2 className="text-lg font-semibold">{t("detail.dateOptionsTitle")}</h2>
               <span className="ml-2 rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700">
-                {datoer.length} {datoer.length === 1 ? "dato" : "datoer"}
+                {dateCount} {dateCount === 1 ? t("detail.dateSingular") : t("detail.datePlural")}
               </span>
             </div>
 
-            {datoer.length > 1 && (
-              <p className="mt-2 text-sm text-gray-600">
-                Meld deg på én eller flere datoer. Er du på flere, låses den
-                datoen som til slutt får nok deltakere.
-              </p>
+            {dateCount > 1 && (
+              <p className="mt-2 text-sm text-gray-600">{t("detail.datesIntro")}</p>
             )}
 
             <ul className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -937,10 +960,10 @@ export default function TurDetaljer() {
                   >
                     <div>
                       <div className="font-semibold text-gray-900">
-                        {d.tittel ?? "Dato"}
+                        {d.tittel ?? t("detail.dateNoLabel")}
                       </div>
                       <div className="text-gray-700">
-                        {formatDateNo(d.startAt)} – {formatDateNo(d.endAt)}
+                        {formatDate(d.startAt)} – {formatDate(d.endAt)}
                       </div>
                       <div className="mt-1 text-xs uppercase tracking-wider text-gray-500">
                         {d.status}
@@ -951,14 +974,14 @@ export default function TurDetaljer() {
                       {erPameldt ? (
                         <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-200">
                           <Calendar className="h-3.5 w-3.5" />
-                          Du er påmeldt
+                          {t("detail.signedUp")}
                         </span>
                       ) : !isLoggedIn ? (
                         <Link
                           to="/logg-inn"
                           className="inline-flex items-center gap-2 rounded-xl border border-emerald-600 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50"
                         >
-                          Logg inn for å melde deg på
+                          {t("detail.loginToSignup")}
                         </Link>
                       ) : (
                         <button
@@ -967,13 +990,13 @@ export default function TurDetaljer() {
                           disabled={signupLoading || !kanMelde}
                           title={
                             d.status !== "planned"
-                              ? "Denne datoen er ikke åpen for påmelding."
+                              ? t("detail.dateClosed")
                               : undefined
                           }
                           className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           <Calendar className="h-3.5 w-3.5" />
-                          {signupLoading ? "Melder på..." : "Meld meg på"}
+                          {signupLoading ? t("detail.signingUp") : t("detail.signUp")}
                         </button>
                       )}
                     </div>
@@ -991,7 +1014,7 @@ export default function TurDetaljer() {
                 <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-emerald-200 text-emerald-700">
                   i
                 </span>
-                Om turen
+                {t("detail.aboutTour")}
               </h2>
 
               <div className="mt-5 space-y-3 text-gray-700">
@@ -999,9 +1022,7 @@ export default function TurDetaljer() {
                   <MapPin className="mt-0.5 h-5 w-5 text-emerald-700" />
                   <div>
                     <div className="font-semibold">{tour.location}</div>
-                    <div className="text-sm text-gray-500">
-                      {tour.region}
-                    </div>
+                    <div className="text-sm text-gray-500">{tour.region}</div>
                   </div>
                 </div>
 
@@ -1009,10 +1030,10 @@ export default function TurDetaljer() {
                   <Footprints className="h-5 w-5 text-emerald-700" />
                   <div>
                     <div className="font-semibold">
-                      {tour.type || "Fottur"}
+                      {tour.type || t("detail.aboutTypeFallback")}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {tour.difficulty}
+                      {t(`list.filters.${DIFF_KEY[tour.difficulty]}`)}
                     </div>
                   </div>
                 </div>
@@ -1020,20 +1041,16 @@ export default function TurDetaljer() {
                 <div className="flex items-center gap-3">
                   <Repeat className="h-5 w-5 text-emerald-700" />
                   <div>
-                    <div className="font-semibold">
-                      Tur basert på koblede turstier
-                    </div>
-                    <div className="text-sm text-gray-500">Rute</div>
+                    <div className="font-semibold">{t("detail.aboutRouteBased")}</div>
+                    <div className="text-sm text-gray-500">{t("detail.aboutRouteLabel")}</div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
                   <Calendar className="h-5 w-5 text-emerald-700" />
                   <div>
-                    <div className="font-semibold">
-                      Hele året (væravhengig)
-                    </div>
-                    <div className="text-sm text-gray-500">Sesong</div>
+                    <div className="font-semibold">{t("detail.aboutSeason")}</div>
+                    <div className="text-sm text-gray-500">{t("detail.aboutSeasonLabel")}</div>
                   </div>
                 </div>
               </div>
@@ -1044,31 +1061,24 @@ export default function TurDetaljer() {
 
               <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
                 <div className="text-sm font-semibold text-emerald-900">
-                  Turvett (klassisk og smart)
+                  {t("detail.turvettTitle")}
                 </div>
-                <p className="mt-1 text-sm text-emerald-900/80">
-                  Hold deg på stien der det er mulig, vis hensyn, og ta med søppel hjem.
-                  Naturen er ikke en søppelbøtte.
-                </p>
+                <p className="mt-1 text-sm text-emerald-900/80">{t("detail.turvettBody")}</p>
                 <button
                   type="button"
                   className="mt-3 inline-flex rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
-                  onClick={() =>
-                    alert(
-                      "Demo: Her kan dere lenke til info-side om turvett/verneregler."
-                    )
-                  }
+                  onClick={() => alert(t("detail.turvettDemoAlert"))}
                 >
-                  Les mer
+                  {t("detail.turvettReadMore")}
                 </button>
               </div>
 
               <h3 className="mt-6 text-sm font-semibold text-gray-900">
-                Anbefalt utstyr
+                {t("detail.recommendedGear")}
               </h3>
               <div className="mt-2 flex flex-wrap gap-2">
                 {gear.length === 0 ? (
-                  <span className="text-sm text-gray-500">Ikke spesifisert</span>
+                  <span className="text-sm text-gray-500">{t("detail.gearNotSpecified")}</span>
                 ) : (
                   gear.map((g) => (
                     <span
@@ -1085,7 +1095,7 @@ export default function TurDetaljer() {
 
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900">Kart</h3>
+              <h3 className="text-sm font-semibold text-gray-900">{t("detail.mapTitle")}</h3>
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -1098,7 +1108,7 @@ export default function TurDetaljer() {
                     );
                   }}
                 >
-                  Stort kart
+                  {t("detail.bigMap")}
                 </button>
 
                 <button
@@ -1106,7 +1116,7 @@ export default function TurDetaljer() {
                   className="rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold hover:bg-gray-50"
                   onClick={handleDownloadGpx}
                 >
-                  GPX
+                  {t("detail.gpxDownload")}
                 </button>
               </div>
             </div>
@@ -1119,7 +1129,7 @@ export default function TurDetaljer() {
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <Star className="h-5 w-5 text-emerald-700" />
-              <h2 className="text-xl font-semibold">Kommentarer</h2>
+              <h2 className="text-xl font-semibold">{t("detail.commentsTitle")}</h2>
               <span className="ml-2 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
                 {kommentarer.length}
               </span>
@@ -1129,13 +1139,13 @@ export default function TurDetaljer() {
           <div className="mt-6">
             {!isLoggedIn ? (
               <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-gray-600">
-                Logg inn for å legge igjen en kommentar.
+                {t("detail.loginToComment")}
                 <div className="mt-3">
                   <Link
                     to="/logg-inn"
                     className="inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
                   >
-                    Logg inn
+                    {t("detail.login")}
                   </Link>
                 </div>
               </div>
@@ -1147,7 +1157,7 @@ export default function TurDetaljer() {
                     setKommentarTekst(e.target.value);
                     setKommentarFeil(null);
                   }}
-                  placeholder="Skriv kort om opplevelsen din..."
+                  placeholder={t("detail.commentPlaceholder")}
                   maxLength={500}
                   className="min-h-[100px] w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
                 />
@@ -1168,7 +1178,7 @@ export default function TurDetaljer() {
                     disabled={kommentarBusy}
                     className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
                   >
-                    {kommentarBusy ? "Publiserer..." : "Publiser kommentar"}
+                    {kommentarBusy ? t("detail.commentPublishing") : t("detail.commentPublish")}
                   </button>
                 </div>
               </div>
@@ -1176,21 +1186,19 @@ export default function TurDetaljer() {
           </div>
 
           <div className="mt-6 border-t border-gray-100 pt-6">
-            <div className="text-sm font-semibold text-gray-900">
-              Hva andre sier
-            </div>
+            <div className="text-sm font-semibold text-gray-900">{t("detail.othersSay")}</div>
 
             {kommentarer.length === 0 ? (
               <div className="mt-3 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-gray-600">
-                Ingen kommentarer ennå. Bli den første til å dele!
+                {t("detail.noCommentsYet")}
               </div>
             ) : (
               <div className="mt-4 space-y-4">
                 {kommentarer.map((k) => {
                   const navn = k.bruker
                     ? `${k.bruker.fornavn ?? ""} ${k.bruker.etternavn ?? ""}`.trim() ||
-                      "Bruker"
-                    : "Bruker";
+                      t("detail.unknownUser")
+                    : t("detail.unknownUser");
                   return (
                     <div
                       key={k.id}
@@ -1200,7 +1208,7 @@ export default function TurDetaljer() {
                         <div>
                           <div className="font-semibold text-gray-900">{navn}</div>
                           <div className="mt-1 text-xs text-gray-500">
-                            {formatDateNo(k.created_at)}
+                            {formatDate(k.created_at)}
                           </div>
                         </div>
                       </div>
@@ -1215,7 +1223,7 @@ export default function TurDetaljer() {
           </div>
 
           <div className="mt-8 flex flex-col gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-xs text-gray-500">Tur-ID: {tid}</div>
+            <div className="text-xs text-gray-500">{t("detail.tourIdLabel")} {tid}</div>
 
             <button
               type="button"
@@ -1223,7 +1231,7 @@ export default function TurDetaljer() {
               className="inline-flex items-center gap-2 self-start rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
             >
               <Flag className="h-4 w-4 text-red-600" />
-              Rapporter
+              {t("detail.report")}
             </button>
           </div>
         </div>
@@ -1245,19 +1253,18 @@ export default function TurDetaljer() {
               id="avmeld-tittel"
               className="text-lg font-semibold text-slate-900"
             >
-              Meld deg av turdato?
+              {t("detail.unregisterDialogTitle")}
             </h3>
 
             <p className="mt-2 text-sm text-slate-600">
-              Du er i ferd med å melde deg av{" "}
-              <span className="font-semibold text-slate-800">
-                {avmeldKandidat.tur_dato.tittel
-                  ? `${avmeldKandidat.tur_dato.tittel} · `
-                  : ""}
-                {formatDateNo(avmeldKandidat.tur_dato.start_at)} –{" "}
-                {formatDateNo(avmeldKandidat.tur_dato.end_at)}
-              </span>
-              . Du kan melde deg på igjen senere hvis det fortsatt er plass.
+              <Trans
+                i18nKey="detail.unregisterDialogBody"
+                ns="turer"
+                values={{
+                  date: `${avmeldKandidat.tur_dato.tittel ? `${avmeldKandidat.tur_dato.tittel} · ` : ""}${formatDate(avmeldKandidat.tur_dato.start_at)} – ${formatDate(avmeldKandidat.tur_dato.end_at)}`,
+                }}
+                components={[<span className="font-semibold text-slate-800" key="0" />]}
+              />
             </p>
 
             {avmeldFeil && (
@@ -1273,7 +1280,7 @@ export default function TurDetaljer() {
                 disabled={avmeldBusy}
                 className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
               >
-                Avbryt
+                {t("detail.cancel")}
               </button>
               <button
                 type="button"
@@ -1281,7 +1288,7 @@ export default function TurDetaljer() {
                 disabled={avmeldBusy}
                 className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {avmeldBusy ? "Melder av..." : "Meld av"}
+                {avmeldBusy ? t("detail.unregistering") : t("detail.confirmUnregister")}
               </button>
             </div>
           </div>

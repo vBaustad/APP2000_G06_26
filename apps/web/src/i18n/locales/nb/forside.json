@@ -1,0 +1,123 @@
+{
+  "hero": {
+    "title": "Finn ditt neste eventyr",
+    "subtitle": "Utforsk turforslag, kart og aktiviteter i Utopia",
+    "searchPlaceholder": "Søk etter sted, tur eller hytte…",
+    "searchButton": "Søk"
+  },
+  "features": {
+    "eyebrow": "Planlegging og utforsking",
+    "title": "Finn turer, hytter og ruter",
+    "intro": "Utopia gjør det enklere å utforske turmuligheter, finne overnattingssteder og planlegge neste tur med kart, ruteoversikt og relevant informasjon.",
+    "cards": {
+      "tours": {
+        "badge": "Turer",
+        "title": "Utforsk turer",
+        "description": "Finn turer etter aktivitet, vanskelighetsgrad og varighet. Denne inngangen støtter søk, filtrering og videre navigering til turdetaljer.",
+        "point1": "Søk etter turmål og aktiviteter",
+        "point2": "Filtrer på nivå, lengde og type tur",
+        "point3": "Gå videre til turdetaljer",
+        "cta": "Gå til turer"
+      },
+      "cabins": {
+        "badge": "Overnatting",
+        "title": "Hytter og overnatting",
+        "description": "Se hytter og andre overnattingssteder samlet på en egen side. Her kan brukeren få oversikt over fasiliteter, plassering og mulige stopp underveis.",
+        "point1": "Gå videre til oversikt over hytter og overnatting",
+        "point2": "Oversikt over fasiliteter og plassering",
+        "point3": "Relevant for turplanlegging med stopp",
+        "cta": "Se hytter og overnatting"
+      },
+      "routes": {
+        "badge": "Ruter",
+        "title": "Planlegg rute",
+        "description": "Bruk kart og ruteoversikt for å planlegge neste tur. Denne delen peker mot arbeid med stier, etapper og videre støtte for egne turer.",
+        "point1": "Se ruter og stier i kart",
+        "point2": "Planlegg tur med flere etapper",
+        "point3": "Knytt turen til kartvisning",
+        "cta": "Planlegg tur"
+      }
+    }
+  },
+  "activities": {
+    "eyebrow": "Aktiviteter og filtrering",
+    "title": "Utforsk etter aktivitet",
+    "intro": "Velg aktivitet og gå videre til turer og kartvisning med relevante forslag og filtrering.",
+    "goToTours": "Gå til turer",
+    "seeTours": "Se turer",
+    "tripsUnit": "turer",
+    "cabinsUnit": "hytter",
+    "cards": {
+      "foot": "Fottur",
+      "bike": "Sykkeltur",
+      "cabin": "Hyttetur",
+      "ski": "Skitur",
+      "peakSki": "Topptur på ski",
+      "paddle": "Padletur"
+    }
+  },
+  "community": {
+    "eyebrow": "Brukeromtaler og anbefalinger",
+    "title": "Turer andre anbefaler",
+    "intro": "Se korte omtaler fra brukere som har gått turene før deg, og finn inspirasjon til neste tur.",
+    "seeMore": "Se flere turer",
+    "seeTour": "Se tur",
+    "fallbackReview": "Fin tur med gode opplevelser underveis. Se turdetaljer for mer informasjon.",
+    "time": {
+      "recent": "Nylig",
+      "hoursAgo": "{{count}} timer siden",
+      "dayAgo": "1 dag siden",
+      "daysAgo": "{{count}} dager siden",
+      "whileAgo": "For en stund siden"
+    },
+    "rated": "Har gitt vurdering",
+    "unitHours": "timer"
+  },
+  "easter": {
+    "eyebrow": "Sesongbaserte forslag",
+    "title": "Fine turer i påsken",
+    "intro": "Utforsk turforslag som passer godt for påskeferien, med alt fra skiturer i fjellet til roligere familievennlige alternativer.",
+    "seeMore": "Se flere sesongturer",
+    "seeTour": "Se tur",
+    "badge": "Påsketur",
+    "fallbackDescription": "Se turdetaljer for mer informasjon om denne turen.",
+    "levelLabel": "Nivå:",
+    "unitHours": "timer"
+  },
+  "weather": {
+    "eyebrow": "Vær og forhold",
+    "title": "Turforhold i Jotunheimen",
+    "location": "Besseggen og nærliggende turmål",
+    "updatedBadge": "Oppdatert i dag",
+    "intro": "Vær og turforhold er viktige ved planlegging av tur, særlig i fjellet. Dette kortet viser hvordan løsningen kan gi brukeren rask oversikt over forhold som påvirker rutevalg, utstyr og tidspunkt.",
+    "conditionsLabel": "Forhold",
+    "conditionsValue": "Lettskyet og gode siktforhold i høyden",
+    "temperatureLabel": "Temperatur",
+    "temperatureValue": "2 °C på utsatte partier",
+    "windLabel": "Vind",
+    "windValue": "Frisk bris langs rygger og åpne områder",
+    "recommendationLabel": "Anbefaling",
+    "recommendationValue": "Sjekk kart, kle deg for skiftende vær og planlegg med tidsmargin",
+    "footerNote": "Beslutningsstøtte for tryggere turplanlegging",
+    "seeWeather": "Se vær og forhold"
+  },
+  "partners": {
+    "thanks": "Takk til våre samarbeidspartnere"
+  },
+  "reset": {
+    "heading": "Testdata for sensor",
+    "description": "Trykk her for å tilbakestille alle testdata (brukere, turer, hytter, annonser) til seedet utgangspunkt. Brukt av sensor under gjennomgang.",
+    "button": "Tilbakestill testdata",
+    "busy": "Tilbakestiller...",
+    "success": "Testdata ble tilbakestilt.",
+    "errorGeneric": "Kunne ikke tilbakestille testdata.",
+    "errorNetwork": "Nettverksfeil. Prøv igjen.",
+    "confirmTitle": "Tilbakestille alle testdata?",
+    "confirmBody": "Dette vil slette og reseede alt innhold i applikasjonen. Handlingen kan ikke angres.",
+    "bullet1": "Alle brukere unntatt testbrukerne (bruker1–6) slettes",
+    "bullet2": "Alle turer, hytter, turstier og annonser erstattes med seedet sett",
+    "bullet3": "Påmeldinger, bookinger, kommentarer og favoritter fjernes",
+    "confirmButton": "Ja, tilbakestill",
+    "cancel": "Avbryt"
+  }
+}

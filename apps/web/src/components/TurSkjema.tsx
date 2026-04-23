@@ -1,4 +1,3 @@
-
 /**
  * Fil: TurSkjema.tsx
  * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu.
@@ -6,6 +5,7 @@
  */
 
 import { useMemo, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import type { Tour, Region } from "../types/tour";
 
 type Props =
@@ -45,21 +45,28 @@ const REGIONS: Region[] = [
   "Vestlandet",
 ];
 
-// Samme filer som du har i /public/images/tours
 const TOUR_IMAGES = [
-  { value: "", label: "Bruk automatisk / standard" },
-  { value: "/images/tours/floibanen.jpg", label: "Fløibanen" },
-  { value: "/images/tours/oslofjord.jpg", label: "Oslofjorden" },
-  { value: "/images/tours/geiranger.jpg", label: "Geiranger" },
-  { value: "/images/tours/fjelltur-1.jpg", label: "Fjelltur 1" },
-  { value: "/images/tours/fjelltur-2.jpg", label: "Fjelltur 2" },
-  { value: "/images/tours/fjelltur-3.webp", label: "Fjelltur 3" },
-  { value: "/images/tours/bergen-fjelloping.avif", label: "Bergen fjelløping" },
-  { value: "/images/tours/fjell-okt.avif", label: "Fjelløkt" },
-  { value: "/images/tours/1635176958-noedt-til-aa-loepe.avif", label: "Nødt til å løpe" },
+  { value: "", tKey: "auto" },
+  { value: "/images/tours/floibanen.jpg", tKey: "floibanen" },
+  { value: "/images/tours/oslofjord.jpg", tKey: "oslofjord" },
+  { value: "/images/tours/geiranger.jpg", tKey: "geiranger" },
+  { value: "/images/tours/fjelltur-1.jpg", tKey: "fjelltur1" },
+  { value: "/images/tours/fjelltur-2.jpg", tKey: "fjelltur2" },
+  { value: "/images/tours/fjelltur-3.webp", tKey: "fjelltur3" },
+  { value: "/images/tours/bergen-fjelloping.avif", tKey: "bergen" },
+  { value: "/images/tours/fjell-okt.avif", tKey: "fjellokt" },
+  { value: "/images/tours/1635176958-noedt-til-aa-loepe.avif", tKey: "running" },
 ];
 
+const DIFFICULTY_KEY: Record<Tour["difficulty"], string> = {
+  Lett: "diffEasy",
+  Middels: "diffMedium",
+  Krevende: "diffHard",
+  Ekspert: "diffExpert",
+};
+
 export default function TurSkjema(props: Props) {
+  const { t } = useTranslation("opprettTur");
   const initial = useMemo<Tour>(() => {
     if (props.mode === "edit") return props.initialTour;
 
@@ -97,12 +104,12 @@ export default function TurSkjema(props: Props) {
     const cleanLocation = location.trim();
 
     if (!cleanTitle) {
-      setError("Tittel må fylles ut.");
+      setError(t("form.errorTitleRequired"));
       return;
     }
 
     if (!cleanLocation) {
-      setError("Sted må fylles ut.");
+      setError(t("form.errorLocationRequired"));
       return;
     }
 
@@ -111,32 +118,32 @@ export default function TurSkjema(props: Props) {
     const parsedDurationHours = toNumber(durationHours, NaN);
 
     if (!Number.isFinite(parsedDistanceKm)) {
-      setError("Distanse må være et gyldig tall.");
+      setError(t("form.errorDistanceNumber"));
       return;
     }
 
     if (!Number.isFinite(parsedElevationM)) {
-      setError("Høydemeter må være et gyldig tall.");
+      setError(t("form.errorElevationNumber"));
       return;
     }
 
     if (!Number.isFinite(parsedDurationHours)) {
-      setError("Varighet må være et gyldig tall.");
+      setError(t("form.errorDurationNumber"));
       return;
     }
 
     if (parsedDistanceKm <= 0) {
-      setError("Distanse må være større enn 0 km.");
+      setError(t("form.errorDistancePositive"));
       return;
     }
 
     if (parsedElevationM < 0) {
-      setError("Høydemeter kan ikke være negativt.");
+      setError(t("form.errorElevationNotNegative"));
       return;
     }
 
     if (parsedDurationHours <= 0) {
-      setError("Varighet må være større enn 0 timer.");
+      setError(t("form.errorDurationPositive"));
       return;
     }
 
@@ -171,29 +178,29 @@ export default function TurSkjema(props: Props) {
 
       <div className="grid gap-3 md:grid-cols-2">
         <label className="grid gap-1 text-sm">
-          <span className="font-medium text-gray-700">Tittel</span>
+          <span className="font-medium text-gray-700">{t("form.titleLabel")}</span>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="rounded-xl border border-gray-200 px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500"
-            placeholder="F.eks. Utopiatoppen Rundtur"
+            placeholder={t("form.titlePlaceholder")}
           />
         </label>
 
         <label className="grid gap-1 text-sm">
-          <span className="font-medium text-gray-700">Sted</span>
+          <span className="font-medium text-gray-700">{t("form.locationLabel")}</span>
           <input
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             className="rounded-xl border border-gray-200 px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500"
-            placeholder="F.eks. Grønndalen"
+            placeholder={t("form.locationPlaceholder")}
           />
         </label>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
         <label className="grid gap-1 text-sm">
-          <span className="font-medium text-gray-700">Region</span>
+          <span className="font-medium text-gray-700">{t("form.regionLabel")}</span>
           <select
             value={region}
             onChange={(e) => setRegion(e.target.value as Region)}
@@ -208,23 +215,24 @@ export default function TurSkjema(props: Props) {
         </label>
 
         <label className="grid gap-1 text-sm">
-          <span className="font-medium text-gray-700">Vanskelighetsgrad</span>
+          <span className="font-medium text-gray-700">{t("form.difficultyLabel")}</span>
           <select
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value as Tour["difficulty"])}
             className="rounded-xl border border-gray-200 px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500"
           >
-            <option value="Lett">Lett</option>
-            <option value="Middels">Middels</option>
-            <option value="Krevende">Krevende</option>
-            <option value="Ekspert">Ekspert</option>
+            {(["Lett", "Middels", "Krevende", "Ekspert"] as Tour["difficulty"][]).map((d) => (
+              <option key={d} value={d}>
+                {t(`page.${DIFFICULTY_KEY[d]}`)}
+              </option>
+            ))}
           </select>
         </label>
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
         <label className="grid gap-1 text-sm">
-          <span className="font-medium text-gray-700">Distanse (km)</span>
+          <span className="font-medium text-gray-700">{t("form.distanceLabel")}</span>
           <input
             inputMode="decimal"
             value={distanceKm}
@@ -235,7 +243,7 @@ export default function TurSkjema(props: Props) {
         </label>
 
         <label className="grid gap-1 text-sm">
-          <span className="font-medium text-gray-700">Høydemeter (m)</span>
+          <span className="font-medium text-gray-700">{t("form.elevationLabel")}</span>
           <input
             inputMode="numeric"
             value={elevationM}
@@ -246,7 +254,7 @@ export default function TurSkjema(props: Props) {
         </label>
 
         <label className="grid gap-1 text-sm">
-          <span className="font-medium text-gray-700">Varighet (timer)</span>
+          <span className="font-medium text-gray-700">{t("form.durationLabel")}</span>
           <input
             inputMode="decimal"
             value={durationHours}
@@ -258,17 +266,17 @@ export default function TurSkjema(props: Props) {
       </div>
 
       <label className="grid gap-1 text-sm">
-        <span className="font-medium text-gray-700">Utstyr (komma-separert)</span>
+        <span className="font-medium text-gray-700">{t("form.gearLabel")}</span>
         <input
           value={gear}
           onChange={(e) => setGear(e.target.value)}
           className="rounded-xl border border-gray-200 px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500"
-          placeholder="Fjellsko, Regnjakke, Drikkeflaske"
+          placeholder={t("form.gearPlaceholder")}
         />
       </label>
 
       <label className="grid gap-1 text-sm">
-        <span className="font-medium text-gray-700">Bilde</span>
+        <span className="font-medium text-gray-700">{t("form.imageLabel")}</span>
         <select
           value={imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
@@ -276,13 +284,11 @@ export default function TurSkjema(props: Props) {
         >
           {TOUR_IMAGES.map((o) => (
             <option key={o.value || "auto"} value={o.value}>
-              {o.label}
+              {t(`form.imageOptions.${o.tKey}`)}
             </option>
           ))}
         </select>
-        <span className="text-xs text-gray-500">
-          Hvis du velger “automatisk”, får turen et bilde automatisk basert på id.
-        </span>
+        <span className="text-xs text-gray-500">{t("form.imageAutoHint")}</span>
       </label>
 
       <div className="flex justify-end">
@@ -290,7 +296,7 @@ export default function TurSkjema(props: Props) {
           type="submit"
           className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
         >
-          {props.mode === "create" ? "Legg til tur" : "Lagre endringer"}
+          {props.mode === "create" ? t("form.submitCreate") : t("form.submitSave")}
         </button>
       </div>
     </form>

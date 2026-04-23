@@ -6,6 +6,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { Trans, useTranslation } from "react-i18next";
 import { MapPin, BedDouble, Users, Image as ImageIcon } from "lucide-react";
 import { FASILITET_KODER } from "../data/fasiliteter";
 
@@ -48,6 +49,7 @@ function toggleInList<T>(list: T[], value: T): T[] {
 }
 
 export default function Hytter() {
+  const { t } = useTranslation("hytter");
   const [hytter, setHytter] = useState<Hytte[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -72,11 +74,7 @@ export default function Hytter() {
     };
   }, []);
 
-  const fasilitetLabel = useMemo(() => {
-    const map = new Map<string, string>();
-    FASILITET_KODER.forEach((f) => map.set(f.kode, f.label));
-    return map;
-  }, []);
+  const fasilitetLabel = (kode: string) => t(`fasiliteter.${kode}`, kode);
 
   const activeFilterCount = betjentFilter.length + fasFilter.length + (maxPris ? 1 : 0);
 
@@ -121,21 +119,21 @@ export default function Hytter() {
   const chips: { key: string; label: string; onRemove: () => void }[] = [
     ...betjentFilter.map((b) => ({
       key: `bet:${b}`,
-      label: b[0].toUpperCase() + b.slice(1),
+      label: t(`betjent.${b}`),
       onRemove: () => setBetjentFilter((prev) => prev.filter((x) => x !== b)),
     })),
     ...(maxPris
       ? [
           {
             key: "pris",
-            label: `Maks ${maxPris} kr/natt`,
+            label: t("list.filters.maxPriceChip", { price: maxPris }),
             onRemove: () => setMaxPris(""),
           },
         ]
       : []),
     ...fasFilter.map((k) => ({
       key: `fas:${k}`,
-      label: fasilitetLabel.get(k) ?? k,
+      label: fasilitetLabel(k),
       onRemove: () => setFasFilter((prev) => prev.filter((x) => x !== k)),
     })),
   ];
@@ -153,16 +151,14 @@ export default function Hytter() {
         <div className="relative z-10 h-full">
           <div className="mx-auto flex h-full max-w-7xl items-end px-6 pb-10">
             <div className="w-full max-w-4xl">
-              <h1 className="text-5xl font-semibold text-white">Finn din hytte</h1>
-              <p className="mt-2 text-sm text-white/80">
-                Filtrer på type, pris og fasiliteter — fra betjente hytter til enkel selvbetjening.
-              </p>
+              <h1 className="text-5xl font-semibold text-white">{t("list.heroTitle")}</h1>
+              <p className="mt-2 text-sm text-white/80">{t("list.heroSubtitle")}</p>
 
               <div className="mt-6">
                 <input
                   type="search"
-                  aria-label="Søk etter hytte eller sted"
-                  placeholder="Søk etter hytte eller sted"
+                  aria-label={t("list.searchLabel")}
+                  placeholder={t("list.searchPlaceholder")}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   className="w-full rounded-2xl bg-white/95 px-5 py-3 text-gray-900 outline-none placeholder:text-gray-500 focus:ring-2 focus:ring-emerald-500"
@@ -179,20 +175,24 @@ export default function Hytter() {
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
                 <div className="text-sm text-gray-600">
-                  Viser <span className="font-semibold">{visible.length}</span> av{" "}
-                  <span className="font-semibold">{hytter.length}</span> hytter
+                  <Trans
+                    i18nKey="list.showingCount"
+                    ns="hytter"
+                    values={{ visible: visible.length, total: hytter.length }}
+                    components={[<span className="font-semibold" key="v" />, <span className="font-semibold" key="t" />]}
+                  />
                 </div>
 
                 {chips.length > 0 && (
                   <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <span className="text-sm text-gray-600">Aktive filtre:</span>
+                    <span className="text-sm text-gray-600">{t("list.activeFilters")}</span>
                     {chips.map((c) => (
                       <button
                         key={c.key}
                         type="button"
                         onClick={c.onRemove}
                         className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-800 hover:bg-gray-200"
-                        title="Fjern filter"
+                        title={t("list.removeFilterTitle")}
                       >
                         {c.label} <span className="ml-1">×</span>
                       </button>
@@ -202,7 +202,7 @@ export default function Hytter() {
                       onClick={clearAllFilters}
                       className="ml-2 text-sm font-semibold text-red-600 hover:underline"
                     >
-                      Fjern alle
+                      {t("list.clearAll")}
                     </button>
                   </div>
                 )}
@@ -214,9 +214,9 @@ export default function Hytter() {
                   onChange={(e) => setSort(e.target.value as SortKey)}
                   className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none focus:ring-2 focus:ring-emerald-500"
                 >
-                  <option value="newest">Sorter: Nyeste</option>
-                  <option value="priceAsc">Sorter: Lavest pris</option>
-                  <option value="priceDesc">Sorter: Høyest pris</option>
+                  <option value="newest">{t("list.sortNewest")}</option>
+                  <option value="priceAsc">{t("list.sortPriceAsc")}</option>
+                  <option value="priceDesc">{t("list.sortPriceDesc")}</option>
                 </select>
 
                 <button
@@ -224,7 +224,7 @@ export default function Hytter() {
                   onClick={() => setFiltersOpen((v) => !v)}
                   className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-900 hover:bg-gray-50"
                 >
-                  Filtrer
+                  {t("list.filter")}
                   {activeFilterCount > 0 && (
                     <span className="ml-2 inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-emerald-600 px-2 text-sm font-bold text-white">
                       {activeFilterCount}
@@ -238,7 +238,7 @@ export default function Hytter() {
               <div className="mt-5 rounded-2xl border border-gray-100 bg-gray-50 p-4 md:p-6">
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   <div>
-                    <h3 className="mb-3 text-lg font-semibold">Type</h3>
+                    <h3 className="mb-3 text-lg font-semibold">{t("list.filters.type")}</h3>
                     {BETJENT_VALUES.map((b) => (
                       <label key={b} className="flex items-center gap-3 py-2 text-base">
                         <input
@@ -247,25 +247,25 @@ export default function Hytter() {
                           onChange={() => setBetjentFilter((prev) => toggleInList(prev, b))}
                           className="h-5 w-5"
                         />
-                        <span>{b[0].toUpperCase() + b.slice(1)}</span>
+                        <span>{t(`betjent.${b}`)}</span>
                       </label>
                     ))}
                   </div>
 
                   <div>
-                    <h3 className="mb-3 text-lg font-semibold">Maks pris/natt</h3>
+                    <h3 className="mb-3 text-lg font-semibold">{t("list.filters.maxPricePerNight")}</h3>
                     <input
                       type="number"
                       min="0"
                       value={maxPris}
                       onChange={(e) => setMaxPris(e.target.value)}
-                      placeholder="Ubegrenset"
+                      placeholder={t("list.filters.unlimited")}
                       className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
 
                   <div>
-                    <h3 className="mb-3 text-lg font-semibold">Fasiliteter</h3>
+                    <h3 className="mb-3 text-lg font-semibold">{t("list.filters.amenities")}</h3>
                     <div className="grid grid-cols-2 gap-x-3">
                       {FASILITET_KODER.map((f) => (
                         <label key={f.kode} className="flex items-center gap-2 py-1.5 text-sm">
@@ -275,7 +275,7 @@ export default function Hytter() {
                             onChange={() => setFasFilter((prev) => toggleInList(prev, f.kode))}
                             className="h-4 w-4"
                           />
-                          <span>{f.label}</span>
+                          <span>{fasilitetLabel(f.kode)}</span>
                         </label>
                       ))}
                     </div>
@@ -288,7 +288,7 @@ export default function Hytter() {
                     onClick={clearAllFilters}
                     className="text-sm font-semibold text-red-600 hover:underline"
                   >
-                    Fjern alle
+                    {t("list.clearAll")}
                   </button>
 
                   <button
@@ -296,7 +296,7 @@ export default function Hytter() {
                     onClick={() => setFiltersOpen(false)}
                     className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
                   >
-                    Lukk filter
+                    {t("list.closeFilter")}
                   </button>
                 </div>
               </div>
@@ -306,27 +306,23 @@ export default function Hytter() {
 
         <section className="mx-auto max-w-7xl px-6 pb-16 pt-10">
           {loading ? (
-            <p className="text-gray-600">Laster hytter...</p>
+            <p className="text-gray-600">{t("list.loading")}</p>
           ) : visible.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center text-gray-600">
-              <p className="text-base font-medium text-gray-800">
-                Ingen hytter matcher søket eller filtrene dine.
-              </p>
-              <p className="mt-2 text-sm text-gray-600">
-                Prøv å justere kriteriene eller fjern noen filtre.
-              </p>
+              <p className="text-base font-medium text-gray-800">{t("list.emptyTitle")}</p>
+              <p className="mt-2 text-sm text-gray-600">{t("list.emptySubtitle")}</p>
               <button
                 type="button"
                 onClick={clearAllFilters}
                 className="mt-4 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
               >
-                Fjern filtre
+                {t("list.emptyClear")}
               </button>
             </div>
           ) : (
             <div>
               <div className="mb-5">
-                <h2 className="text-2xl font-semibold text-gray-900">Alle hytter</h2>
+                <h2 className="text-2xl font-semibold text-gray-900">{t("list.allCabins")}</h2>
               </div>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -357,7 +353,7 @@ export default function Hytter() {
                           <span
                             className={`absolute left-4 top-4 rounded-full px-3 py-1 text-sm font-semibold shadow-sm ${BETJENT_BADGE[h.betjent]}`}
                           >
-                            {h.betjent[0].toUpperCase() + h.betjent.slice(1)}
+                            {t(`betjent.${h.betjent}`)}
                           </span>
                         )}
                       </div>
@@ -382,7 +378,7 @@ export default function Hytter() {
                           <div className="text-sm text-gray-600">
                             <div className="flex items-center gap-2">
                               <BedDouble className="h-4 w-4" />
-                              <span>Senger</span>
+                              <span>{t("list.beds")}</span>
                             </div>
                             <div className="mt-1 text-lg font-semibold text-gray-900">
                               {h.kapasitet_senger}
@@ -392,7 +388,7 @@ export default function Hytter() {
                           <div className="text-sm text-gray-600">
                             <div className="flex items-center gap-2">
                               <Users className="h-4 w-4" />
-                              <span>Gjester</span>
+                              <span>{t("list.guests")}</span>
                             </div>
                             <div className="mt-1 text-lg font-semibold text-gray-900">
                               {h.maks_gjester ?? "—"}
@@ -407,7 +403,7 @@ export default function Hytter() {
                                 key={f.kode}
                                 className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-900 ring-1 ring-emerald-100"
                               >
-                                {fasilitetLabel.get(f.kode) ?? f.kode}
+                                {fasilitetLabel(f.kode)}
                               </span>
                             ))}
                             {fasiliteter.length > 4 && (
@@ -420,11 +416,13 @@ export default function Hytter() {
 
                         <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
                           <div className="text-base font-semibold text-gray-900">
-                            {h.pris_per_natt ? `${h.pris_per_natt} kr/natt` : "Pris ikke satt"}
+                            {h.pris_per_natt
+                              ? t("list.pricePerNight", { price: h.pris_per_natt })
+                              : t("list.priceNotSet")}
                           </div>
 
                           <span className="text-sm font-semibold text-emerald-700 group-hover:underline">
-                            Se detaljer →
+                            {t("list.seeDetails")}
                           </span>
                         </div>
                       </div>

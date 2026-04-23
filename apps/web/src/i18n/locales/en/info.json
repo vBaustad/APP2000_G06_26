@@ -1,0 +1,117 @@
+{
+  "omOss": {
+    "hero": {
+      "eyebrow": "About Utopia",
+      "imageAlt": "About Utopia",
+      "title": "A digital platform for trip planning",
+      "titleLine2": "and outdoor life",
+      "lead": "Utopia is built to make it easier to find, understand and plan outdoor trips through a clear and user-friendly platform."
+    },
+    "whatIs": {
+      "badge": "What is Utopia?",
+      "title": "A platform that gathers trip information in one place",
+      "p1": "Utopia is developed as a web application for users who want a better overview of trip options, maps and information related to outdoor life. The solution aims to make it easier to find relevant trips and plan them in a more structured way.",
+      "p2": "The idea behind the project is to bring key information together in one place, so that users no longer have to search in several places to get an overview of difficulty, duration, location and other practical details.",
+      "p3": "Utopia is therefore both an information resource and a planning tool, developed with a focus on clear structure, usability and accessibility.",
+      "imageAlt": "Nature in Utopia",
+      "caption": "Utopia is designed to make nature easier to navigate and explore through a modern digital solution."
+    },
+    "purpose": {
+      "title": "Purpose",
+      "p1": "The purpose of Utopia is to make trip planning easier and more transparent. The solution helps users find trips, understand important information and compare alternatives in a way that supports informed choices.",
+      "p2": "The project also demonstrates how modern web technology can be used to build a cohesive service focused on structured information, maps and user experience."
+    },
+    "audience": {
+      "title": "Target audience",
+      "p1": "Utopia is developed for users who want to explore nature in a simple and clear way. The solution should be useful both for those looking for short local walks and for those planning longer and more demanding trips.",
+      "p2": "The target audience therefore includes both beginners and more experienced users who need a clear system for finding relevant trip information."
+    },
+    "values": {
+      "badge": "Our values",
+      "title": "The values that underpin the platform",
+      "lead": "Utopia is built on values of usability, safety, accessibility and inspiration for outdoor life.",
+      "natureJoy": {
+        "title": "Love of nature",
+        "text": "The platform aims to motivate more people to use nature actively and experience the value of outdoor life in everyday life."
+      },
+      "community": {
+        "title": "Community",
+        "text": "Outdoor life is also about sharing experiences, adventures and inspiration with others."
+      },
+      "safety": {
+        "title": "Safety",
+        "text": "Clear and reliable trip information supports better planning and makes it easier to make safe choices."
+      },
+      "exploration": {
+        "title": "Exploration",
+        "text": "Utopia makes it easier to discover new destinations and see more options than the user may already know about."
+      },
+      "quality": {
+        "title": "Quality",
+        "text": "Information should be presented in an organised and useful way so that users quickly grasp what matters most."
+      },
+      "accessibility": {
+        "title": "Accessibility",
+        "text": "The platform should be easy to use for different types of users, regardless of experience with trip planning or digital services."
+      }
+    },
+    "vision": {
+      "title": "Our vision",
+      "p1": "The vision behind Utopia is to create a platform that makes outdoor life clearer, more relevant and more accessible for more people.",
+      "p2": "By combining maps, trip information and a structured interface, we want to lower the barrier to planning and carrying out trips.",
+      "p3": "Here technology serves as a practical aid that supports the nature experience rather than replacing it.",
+      "contributeTitle": "What we want to contribute",
+      "contribute1": "• clearer and simpler trip information",
+      "contribute2": "• a better overview of trip options",
+      "contribute3": "• easier trip planning",
+      "contribute4": "• more accessible outdoor life for more users"
+    },
+    "team": {
+      "imageAlt": "The team behind Utopia",
+      "badge": "The team behind the platform",
+      "title": "A student project focused on both technology and user experience",
+      "p1": "Utopia is developed as a student project with the goal of designing and building a modern web application for trip planning and outdoor life.",
+      "p2": "The project combines design, frontend, backend and information architecture to create a cohesive solution that is both useful and user-friendly.",
+      "p3": "Working on Utopia is therefore both about building a digital solution and exploring how technology can support users as they engage with nature."
+    },
+    "cta": {
+      "title": "Ready to explore Utopia?",
+      "text": "Take a closer look at the trips in the platform and explore how Utopia presents trip information, maps and planning options.",
+      "link": "Explore trips →"
+    }
+  },
+  "kontakt": {
+    "eyebrow": "Contact",
+    "title": "Contact us",
+    "lead": "Do you have questions about the platform, trip content or features? Send us a message. Utopia is a student project at the University of South-Eastern Norway, and the site is used as part of demonstration and development.",
+    "form": {
+      "heading": "Send us a message",
+      "nameLabel": "Name",
+      "namePlaceholder": "Your name",
+      "emailLabel": "Email",
+      "emailPlaceholder": "your@email.com",
+      "subjectLabel": "Subject",
+      "subjectPlaceholder": "What is it about?",
+      "messageLabel": "Message",
+      "messagePlaceholder": "Write your message here...",
+      "submit": "Send message"
+    },
+    "info": {
+      "heading": "Contact information",
+      "emailLabel": "Email",
+      "emailValue": "post@utopia.com",
+      "addressLabel": "Address",
+      "addressLine1": "Utopiaveien 1",
+      "addressLine2": "0123 Utopia, Norway",
+      "phoneLabel": "Phone",
+      "phoneValue": "+47 00 000 000",
+      "hoursLabel": "Opening hours",
+      "hoursValue": "Mon–Fri: 09:00–17:00",
+      "disclaimer": "This contact page is part of a school project. Messages are used to demonstrate functionality and do not reach an actual customer service team."
+    }
+  },
+  "ikkeFunnet": {
+    "title": "404 – Page not found",
+    "text": "Go back to the home page."
+  }
+}

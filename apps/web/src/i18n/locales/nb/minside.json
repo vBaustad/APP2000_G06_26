@@ -1,0 +1,302 @@
+{
+  "shared": {
+    "loading": "Laster din profil...",
+    "mustLogIn": "Du må være logget inn for å se dine turer og favoritter.",
+    "logIn": "Logg inn",
+    "logOut": "Logg ut",
+    "cancel": "Avbryt",
+    "unknownError": "Ukjent feil.",
+    "somethingWentWrong": "Noe gikk galt",
+    "back": "Tilbake",
+    "close": "Lukk"
+  },
+  "minside": {
+    "eyebrow": "Min profil",
+    "memberBadge": "Turmedlem",
+    "intro": "Her får du oversikt over turene dine, fellesturer, favoritter, bookinger og kontoinformasjon.",
+    "editProfile": "Rediger profil",
+    "createTour": "Opprett tur",
+    "myToursAsLeader": "Mine turer som leder",
+    "becomeAdvertiser": "Bli annonsør",
+    "advertiserApplicationSent": "Annonsør-søknad sendt",
+    "tabs": {
+      "oversikt": "Oversikt",
+      "mineTurer": "Mine påmeldinger",
+      "opprettedeTurer": "Turer jeg har opprettet",
+      "favoritter": "Favoritter",
+      "bookinger": "Bookinger",
+      "konto": "Konto"
+    },
+    "createdTours": {
+      "title": "Turer jeg har opprettet",
+      "create": "Opprett ny tur",
+      "groupTour": "Fellestur",
+      "regularTour": "Vanlig tur",
+      "view": "Se tur",
+      "edit": "Rediger",
+      "empty": "Du har ikke opprettet noen turer enda."
+    },
+    "info": {
+      "title": "Info",
+      "name": "Navn",
+      "email": "E-post",
+      "memberSince": "Medlem siden",
+      "unknown": "Ukjent",
+      "role": "Rolle",
+      "roleUser": "Bruker"
+    },
+    "activity": {
+      "title": "Aktivitet",
+      "completedTours": "Fullførte turer",
+      "registeredTours": "Påmeldte turer",
+      "favorites": "Favoritter"
+    },
+    "myTours": {
+      "title": "Mine turer",
+      "empty": "Du er ikke påmeldt noen turer.",
+      "details": "Detaljer"
+    },
+    "notifications": {
+      "title": "Varsler",
+      "activeRegistrations": "Du har {{count}} aktiv(e) turpåmelding(er).",
+      "activeBookingsSingular": "Du har 1 aktiv hyttebooking.",
+      "activeBookingsPlural": "Du har {{count}} aktive hyttebookinger.",
+      "noActiveBookings": "Ingen aktive hyttebookinger akkurat nå."
+    },
+    "favorites": {
+      "title": "Favoritter",
+      "empty": "Ingen favoritter ennå.",
+      "unknown": "Ukjent favoritt",
+      "typeTour": "Tur",
+      "typeCabin": "Hytte"
+    },
+    "comments": {
+      "title": "Mine kommentarer",
+      "totalCount": "{{count}} totalt",
+      "onTour": "På tur:",
+      "deletedTour": "(slettet tur)",
+      "empty": "Du har ikke skrevet kommentarer ennå."
+    },
+    "bookings": {
+      "title": "Bookinger",
+      "totalCount": "{{count}} totalt",
+      "unknownCabin": "Ukjent hytte",
+      "guestSingular": "gjest",
+      "guestPlural": "gjester",
+      "total": "Total: {{price}} kr",
+      "empty": "Ingen hyttebookinger ennå.",
+      "findCabins": "Finn hytter",
+      "details": "Detaljer"
+    },
+    "account": {
+      "title": "Konto"
+    },
+    "pamelding": {
+      "pending": "Interesse meldt",
+      "binding": "Bindende påmelding",
+      "locked": "Dato låst",
+      "freed": "Dato fristilt"
+    },
+    "bookingStatus": {
+      "pending": "Venter på bekreftelse",
+      "confirmed": "Bekreftet",
+      "cancelled": "Kansellert"
+    },
+    "soknad": {
+      "eyebrow": "Søknad",
+      "title": "Bli annonsør",
+      "description": "Admin vil gjennomgå søknaden og gi deg annonsør-rollen ved godkjenning.",
+      "nameLabel": "Navn / firma*",
+      "phoneLabel": "Telefon",
+      "submit": "Send søknad",
+      "submitting": "Sender...",
+      "defaultError": "Kunne ikke sende søknad"
+    },
+    "errors": {
+      "fetchProfile": "Kunne ikke hente profil"
+    }
+  },
+  "turerLeder": {
+    "mustLogIn": "Du må være logget inn for å se denne siden.",
+    "loading": "Laster turer...",
+    "heading": "Mine turer som leder",
+    "countSingular": "{{count}} tur · {{total}} datoer totalt",
+    "countPlural": "{{count}} turer · {{total}} datoer totalt",
+    "createNewTour": "Opprett ny tur",
+    "emptyStart": "Du leder ingen turer ennå. ",
+    "emptyLink": "Opprett din første tur",
+    "emptyEnd": ".",
+    "noArea": "Uten område",
+    "nightsSuffix": " · {{count}} netter",
+    "createdPrefix": "Opprettet ",
+    "addDate": "Legg til dato",
+    "closeForm": "Lukk",
+    "form": {
+      "titleOptional": "Tittel (valgfri)",
+      "titlePlaceholder": "f.eks. Påskeuka",
+      "startRequired": "Start *",
+      "endRequired": "Slutt *",
+      "earlyDeadline": "Tidlig påmeldings-frist (valgfri)",
+      "earlyDiscount": "Rabatt tidlig (%) (valgfri)",
+      "save": "Legg til",
+      "saving": "Lagrer...",
+      "errorDatesRequired": "Startdato og sluttdato er påkrevd.",
+      "errorSave": "Kunne ikke legge til dato.",
+      "errorFetch": "Kunne ikke hente turer.",
+      "errorStatus": "Kunne ikke oppdatere status."
+    },
+    "noDates": "Ingen datoer lagt til ennå. Legg til minst én dato så brukere kan melde seg på.",
+    "datoStatus": {
+      "planned": "Foreslått",
+      "locked": "Låst",
+      "cancelled": "Avlyst",
+      "freed": "Fristilt"
+    },
+    "participants": "{{binding}} bindende · {{pending}} interesse",
+    "participantsLocked": " · {{locked}} låst",
+    "earlyDeadlineLabel": "Tidlig frist: {{date}}",
+    "earlyDiscountSuffix": " ({{percent}}% rabatt)",
+    "confirmLock": "Låse denne datoen? Andre datoer på samme tur vil bli fristilt.",
+    "confirmCancel": "Avlyse denne datoen? Påmeldinger blir fristilt.",
+    "lock": "Lås",
+    "cancel": "Avlys",
+    "lockedFreedNotice": "Låst — andre datoer fristilt"
+  },
+  "mineHytter": {
+    "loginTitle": "Mine hytter",
+    "loginMessage": "Du må være logget inn for å administrere hytter.",
+    "notOwnerMessageStart": "Denne siden er kun for brukere med rollen ",
+    "notOwnerRole": "hytteeier",
+    "notOwnerMessageEnd": ".",
+    "eyebrow": "Hytteutleie",
+    "heading": "Mine hytter",
+    "intro": "Registrer, oppdater og administrer hyttene dine. Sett posisjon på kartet, legg inn beskrivelse, pris og bilde.",
+    "cabinCountSingular": "{{count}} hytte",
+    "cabinCountPlural": "{{count}} hytter",
+    "newCabin": "Ny hytte",
+    "bookings": {
+      "title": "Bookingforespørsler",
+      "subtitle": "Godkjenn eller avslå forespørsler fra gjester.",
+      "pendingBadge": "{{count}} ventende",
+      "filterActive": "Aktive",
+      "filterAll": "Alle ({{count}})",
+      "emptyActive": "Ingen aktive bookinger akkurat nå.",
+      "emptyAll": "Ingen bookinger registrert ennå.",
+      "unknownGuest": "Ukjent gjest",
+      "nightSingular": "natt",
+      "nightPlural": "netter",
+      "guestSingular": "gjest",
+      "guestPlural": "gjester",
+      "busy": "Jobber...",
+      "approve": "Godkjenn",
+      "cancel": "Kanseller",
+      "reject": "Avslå",
+      "approved": "Booking godkjent",
+      "rejected": "Booking avslått",
+      "errorUpdate": "Kunne ikke oppdatere booking",
+      "errorNetwork": "Nettverksfeil. Prøv igjen."
+    },
+    "bookingStatus": {
+      "pending": "Ventende",
+      "confirmed": "Godkjent",
+      "cancelled": "Avslått"
+    },
+    "list": {
+      "title": "Mine registrerte hytter",
+      "empty": "Ingen hytter registrert ennå.",
+      "emptyHint": "Kom i gang ved å registrere din første hytte.",
+      "bedSuffix": "senger",
+      "maxGuests": "Maks {{count}}",
+      "altitude": "{{height}} moh.",
+      "pricePerNight": "{{price}} kr/natt",
+      "edit": "Rediger",
+      "delete": "Slett"
+    },
+    "betjent": {
+      "betjent": "Betjent",
+      "selvbetjent": "Selvbetjent",
+      "ubetjent": "Ubetjent"
+    },
+    "confirmDelete": "Er du sikker på at du vil slette hytta?",
+    "messages": {
+      "deleted": "Hytta ble slettet",
+      "created": "Hytta ble opprettet",
+      "updated": "Hytta ble oppdatert",
+      "errorFetch": "Kunne ikke hente hytter",
+      "errorSave": "Kunne ikke lagre hytta",
+      "errorDelete": "Kunne ikke slette hytta",
+      "errorUpload": "Bilde ble ikke lastet opp"
+    },
+    "modal": {
+      "eyebrow": "Hytte",
+      "editTitle": "Rediger hytte",
+      "createTitle": "Registrer ny hytte",
+      "sections": {
+        "basic": "Grunnleggende",
+        "capacityPrice": "Kapasitet og pris",
+        "location": "Plassering",
+        "locationHint": "Klikk i kartet for å sette posisjon",
+        "amenities": "Fasiliteter",
+        "mediaDetails": "Media og detaljer"
+      },
+      "fields": {
+        "name": "Navn*",
+        "type": "Type",
+        "typePlaceholder": "Velg type…",
+        "area": "Område",
+        "areaPlaceholder": "f.eks. Hardangervidda",
+        "address": "Adresse",
+        "beds": "Senger",
+        "maxGuests": "Maks gjester",
+        "pricePerNight": "Pris per natt (NOK)",
+        "lat": "Breddegrad (lat)",
+        "lng": "Lengdegrad (lng)",
+        "altitude": "Høyde (moh.)",
+        "image": "Bilde",
+        "previewAlt": "Forhåndsvisning",
+        "changeImage": "Bytt bilde",
+        "chooseImage": "Velg bilde",
+        "undoChoice": "Angre valg",
+        "imageHint": "JPG, PNG, WebP. Maks 5 MB.",
+        "description": "Beskrivelse",
+        "rules": "Regler"
+      },
+      "save": "Oppdater hytte",
+      "create": "Opprett hytte",
+      "saving": "Lagrer...",
+      "mapAttribution": "&copy; OpenStreetMap-bidragsytere"
+    }
+  },
+  "rediger": {
+    "loading": "Laster profilinformasjon...",
+    "eyebrow": "Konto",
+    "heading": "Rediger profil",
+    "intro": "Oppdater navn, e-post og informasjon om deg selv. Hold profilen enkel, tydelig og relevant for bruk av løsningen.",
+    "sidebar": {
+      "title": "Profil",
+      "back": "Tilbake til min side",
+      "current": "Rediger profil",
+      "tipsTitle": "Tips",
+      "tipsBody": "Bruk fullt navn og en kort tekst om interesser. Det gjør profilen mer troverdig og nyttig i fellesturer og sosial turplanlegging."
+    },
+    "form": {
+      "title": "Din profil",
+      "subtitle": "Informasjonen under brukes i kontoen din og på profilsiden.",
+      "firstName": "Fornavn",
+      "lastName": "Etternavn",
+      "email": "E-post",
+      "emailHint": "Hvis du endrer e-postadressen vil du kunne måtte bekrefte den på nytt.",
+      "birthDate": "Fødselsdato",
+      "birthDateHint": "Valgfritt felt. Kan brukes for tilpasning av profil og statistikk.",
+      "birthDatePlaceholder": "DD.MM.ÅÅÅÅ",
+      "aboutMe": "Om meg",
+      "aboutMeHint": "Skriv en kort tekst om deg og friluftsinteressene dine.",
+      "save": "Lagre endringer",
+      "saving": "Lagrer...",
+      "saved": "Endringene ble lagret.",
+      "errorFetch": "Kunne ikke hente profil",
+      "errorSave": "Kunne ikke lagre profil",
+      "errorGeneric": "Noe gikk galt. Prøv igjen."
+    }
+  }
+}

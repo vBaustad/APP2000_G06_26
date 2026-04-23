@@ -1,0 +1,64 @@
+{
+  "title": "Meldinger",
+  "signedOut": {
+    "description": "Logg inn for å se gruppechatter fra turer og starte direktemeldinger med andre brukere.",
+    "loginButton": "Logg inn"
+  },
+  "header": {
+    "description": "Her finner du direktechatter og gruppechatter du er med i.",
+    "newChat": "Ny chat"
+  },
+  "errors": {
+    "fetchInbox": "Kunne ikke hente meldinger.",
+    "fetchChat": "Kunne ikke hente chatten.",
+    "searchUsers": "Kunne ikke søke etter brukere.",
+    "emptyMessage": "Skriv en melding før du sender.",
+    "sendMessage": "Kunne ikke sende meldingen.",
+    "uploadImage": "Kunne ikke laste opp bildet.",
+    "approveImage": "Kunne ikke godkjenne bildet.",
+    "createChat": "Kunne ikke opprette chat."
+  },
+  "inbox": {
+    "title": "Innboks",
+    "countOne": "{{n}} chat",
+    "countOther": "{{n}} chatter",
+    "loading": "Laster meldinger...",
+    "empty": "Du har ingen chatter ennå. Start en ny samtale eller vent til en gruppetur blir låst.",
+    "noMessagesYet": "Ingen meldinger ennå"
+  },
+  "chat": {
+    "loading": "Laster samtale...",
+    "loadFailed": "Kunne ikke laste samtalen.",
+    "noneSelected": "Ingen chat valgt",
+    "selectHint": "Velg en samtale i innboksen, eller start en ny chat.",
+    "participants": "{{n}} deltakere",
+    "empty": "Ingen meldinger ennå. Send den første meldingen for å starte samtalen.",
+    "image": {
+      "hidden": "Bildet er skjult til du godkjenner det",
+      "approvedCount": "{{n}} har allerede godkjent",
+      "approveButton": "Godkjenn og vis bilde",
+      "approvingButton": "Godkjenner..."
+    },
+    "sentImage": "Sendte et bilde",
+    "imageAlt": "Opplastet i chat",
+    "input": {
+      "placeholder": "Skriv en melding...",
+      "imageUpload": "Bilde",
+      "imageUploading": "Laster opp...",
+      "send": "Send",
+      "sending": "Sender...",
+      "counter": "{{length}}/1000"
+    }
+  },
+  "newChat": {
+    "title": "Start ny chat",
+    "description": "Søk etter en bruker og opprett en direktemelding.",
+    "searchPlaceholder": "Søk på navn eller e-post...",
+    "minChars": "Skriv minst to tegn for å søke etter brukere.",
+    "searching": "Søker...",
+    "noResults": "Ingen brukere matchet søket ditt.",
+    "startChat": "Start chat",
+    "creating": "Oppretter...",
+    "closeAria": "Lukk"
+  }
+}
