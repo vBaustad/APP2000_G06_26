@@ -1,6 +1,9 @@
 /**
  * Fil: annonsor.tsx
- * Utvikler(e): Vebjørn Baustad, Synne Nilsen Oppberget. Copilot og ChatGPt er brukt som guide og lærer i utviklingen av denne siden. 
+ * Utvikler(e): Vebjørn Baustad, Synne Nilsen Oppberget. Copilot (Windws) og ChatGPT (Open AI)  er brukt som guide og lærer i utviklingen av denne siden. 
+ * ChatGPT har gitt steg for steg instruksjoner og kode samt forklart viktig konspeter og hvordan koden fungerer.
+ * Copilot er brukkt for å genrere deler av kode innhold og forklare konsepter og kode på spesifikke steder.
+ * Copilot og ChatGPT er også brukt i feilsøking. All kode er gått igjennom manuelt og endret på ved behov.
  * Beskrivelse: Annonsørside og tilgangssjekk for annonsørroller.
  */
 

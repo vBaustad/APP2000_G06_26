@@ -1,7 +1,13 @@
 /**
  * Fil: OpprettAnnonsor.tsx
- * Beskrivelse: Side for å opprette en ny annonse i annonsørportalen.
- * Utvikler(e): Synne Nilsen Oppberget. Koden er laget med hjelp av Copilot som lærer og guide.
+ * Beskrivelse: Side for å opprette en ny annonse i annonsørportalen..
+ *  Utvikler(e) Synne Nilsen Oppberget. Copilot (Windws) og ChatGPT (Open AI)  er brukt som guide og lærer i utviklingen av denne siden. 
+ * ChatGPT har gitt steg for steg instruksjoner og kode samt forklart viktig konspeter og hvordan koden fungerer.
+ * Copilot er brukkt for å genrere kode innhold og forklare konsepter og kode på spesifikke steder.
+ * Copilot og ChatGPT er også brukt i feilsøking. All kode er gått igjennom manuelt og endret på ved behov. 
+ * Beskrivelse: Annonsørside og tilgangssjekk for annonsørroller.
+ * 
+ * 
  */
 
 import { useEffect, useState } from "react";
