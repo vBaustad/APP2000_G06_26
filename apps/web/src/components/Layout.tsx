@@ -5,21 +5,31 @@
  * og navigasjon for hele applikasjonen.
  */
 
+/**
+ * Fil: Layout.tsx
+ * Utvikler(e): Vebjørn Baustad
+ * Beskrivelse: Layout-komponent som definerer den overordnede strukturen for alle sider.
+ */
+
 import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./layout/Footer";
 
 export default function Layout() {
-    const location = useLocation();
+  const location = useLocation();
 
-    // hvilke ruter skal ha transparent navbar?
-    const transparentRoutes = ["/"];
-    const isTransparent = transparentRoutes.includes(location.pathname);
-    return(
-        <div className="min-h-screen bg-gray-100 text-gray-900">            
-            <Navbar variant={isTransparent ? "transparent" : "solid"} />
-            <Outlet />
-            <Footer /> 
-        </div>
-    );
+  const transparentRoutes = ["/"];
+  const isTransparent = transparentRoutes.includes(location.pathname);
+
+  return (
+    <div className="min-h-screen bg-gray-100 text-gray-900">
+      <Navbar variant={isTransparent ? "transparent" : "solid"} />
+
+      <main className={isTransparent ? "" : "pt-[116px]"}>
+        <Outlet />
+      </main>
+
+      <Footer />
+    </div>
+  );
 }

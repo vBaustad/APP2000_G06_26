@@ -4,7 +4,7 @@
  * Beskrivelse: Oversikt over turer og hytter med kart som viser lokasjoner 
  */
 /*
- * Videreutviklet av: Ramona Cretulescu
+ * Videreutviklet av: Ramona Cretulescu. Copilot er brukt som guide og lærer i utviklingen av denne siden.
  * Endringer:
  * Leser valgt aktivitet fra URL-en (f.eks. /map?activity=skitur) Filterer hver turliste på aktivitet i tilegg til eksisterende tekstsøk.
  * f.eks.("/map?activity=skytur") viser kun skyturer.

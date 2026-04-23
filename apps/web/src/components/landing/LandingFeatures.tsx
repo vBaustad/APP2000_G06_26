@@ -1,7 +1,6 @@
-
 /**
  * Fil: LandingFeatures.tsx
- * Utvikler(e): Ramona Cretulescu
+ * Utvikler(e): Ramona Cretulescu. Copilot er brukt som guide og lærer i utviklingen av denne siden.
  * Beskrivelse:
  * Seksjon på landingssiden som presenterer sentrale funksjoner i løsningen
  * på en tydelig og oppgavenær måte. Kortene leder brukeren videre til
@@ -71,7 +70,7 @@ const featureCards: FeatureCard[] = [
       "Planlegg tur med flere etapper",
       "Knytt turen til kartvisning",
     ],
-    to: "/tour-routes",
+    to: "/kart",
     cta: "Planlegg tur",
     icon: Route,
     badge: "Ruter",
@@ -128,7 +127,10 @@ export default function LandingFeatures() {
                     const PointIcon = pointIcons[index] || ArrowRight;
 
                     return (
-                      <li key={point} className="flex items-start gap-3 text-slate-800">
+                      <li
+                        key={point}
+                        className="flex items-start gap-3 text-slate-800"
+                      >
                         <PointIcon className="mt-1 h-4 w-4 shrink-0 text-[#0f3d2e]" />
                         <span>{point}</span>
                       </li>

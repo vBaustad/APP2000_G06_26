@@ -1,6 +1,6 @@
 /**
  * Fil: App.tsx
- * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu
+ * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu. Copilot er brukt som guide og lærer i utviklingen av denne siden.
  * Beskrivelse: Hovedkomponenten for applikasjonen som håndterer ruting og
  * hvilke sider som vises basert på URL.
  */

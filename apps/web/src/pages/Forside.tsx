@@ -1,6 +1,6 @@
 /**
  * Fil: Forside.tsx
- * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu, Synne Oppberget
+ * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu, Synne Oppberget. Copilot er brukt som guide og lærer i utviklingen av denne siden.
  * Beskrivelse:
  * Hovedkomponent for landingssiden som setter sammen og strukturerer alle
  * underseksjoner på forsiden. Består av hero-seksjon, feature-presentasjon,

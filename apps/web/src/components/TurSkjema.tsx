@@ -1,7 +1,7 @@
 
 /**
  * Fil: TurSkjema.tsx
- * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu.
+ * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu. Copilot er brukt som guide og lærer i utviklingen av denne siden.
  * Beskrivelse: Skjema for å opprette og redigere turer.
  */
 

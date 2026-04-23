@@ -4,20 +4,13 @@
  *
  * Beskrivelse:
  * Footer-komponent for nettsiden som viser logo, kort prosjektbeskrivelse,
- * navigasjonslenker, kontaktinformasjon, sosiale medier og juridiske lenker.
+ * navigasjonslenker, kontaktinformasjon og juridiske lenker.
  * Personvern og vilkår vises som modaler over siden.
  */
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  Facebook,
-  Instagram,
-  Youtube,
-  Mail,
-  Phone,
-  MapPin,
-} from "lucide-react";
+import { Mail } from "lucide-react";
 import LegalModal from "./LegalModal";
 
 export default function Footer() {
@@ -30,11 +23,13 @@ export default function Footer() {
           <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
             {/* Logo + intro */}
             <div className="space-y-5">
-              <img
-                src="/logos/utopia-footer-logo.png"
-                alt="Utopia"
-                className="h-12 w-auto object-contain"
-              />
+              <Link to="/" aria-label="Gå til forsiden">
+                <img
+                  src="/logos/utopia-footer-logo.png"
+                  alt="Utopia"
+                  className="h-12 w-auto object-contain"
+                />
+              </Link>
 
               <p className="max-w-xs text-sm leading-8 text-white/90">
                 Utopia gjør det enklere å utforske turer, kart og hytter på ett
@@ -53,18 +48,18 @@ export default function Footer() {
               <ul className="space-y-4 text-sm text-white/90">
                 <li>
                   <Link
-                    to="/turer"
+                    to="/"
                     className="transition hover:text-white hover:underline"
                   >
-                    Utforsker
+                    Forside
                   </Link>
                 </li>
                 <li>
                   <Link
-                    to="/min-side"
+                    to="/turer"
                     className="transition hover:text-white hover:underline"
                   >
-                    Mine turer
+                    Turer
                   </Link>
                 </li>
                 <li>
@@ -77,52 +72,44 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link
-                    to="/turer"
-                    className="transition hover:text-white hover:underline"
-                  >
-                    Turforslag
-                  </Link>
-                </li>
-                <li>
-                  <Link
                     to="/hytter"
                     className="transition hover:text-white hover:underline"
                   >
                     Hytter
                   </Link>
                 </li>
+                <li>
+                  <Link
+                    to="/min-side"
+                    className="transition hover:text-white hover:underline"
+                  >
+                    Min side
+                  </Link>
+                </li>
               </ul>
             </div>
 
-            {/* Informasjon */}
+            {/* Konto */}
             <div>
               <h3 className="mb-5 text-sm font-semibold uppercase tracking-[0.18em] text-white/80">
-                Informasjon
+                Konto
               </h3>
 
               <ul className="space-y-4 text-sm text-white/90">
                 <li>
                   <Link
-                    to="/kart"
+                    to="/logg-inn"
                     className="transition hover:text-white hover:underline"
                   >
-                    Vær og forhold
+                    Logg inn
                   </Link>
                 </li>
                 <li>
                   <Link
-                    to="/turer"
+                    to="/registrer"
                     className="transition hover:text-white hover:underline"
                   >
-                    Fellesturer
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/turer"
-                    className="transition hover:text-white hover:underline"
-                  >
-                    Turaktiviteter
+                    Registrer
                   </Link>
                 </li>
                 <li>
@@ -130,7 +117,7 @@ export default function Footer() {
                     to="/om-oss"
                     className="transition hover:text-white hover:underline"
                   >
-                    Om prosjektet
+                    Om Utopia
                   </Link>
                 </li>
               </ul>
@@ -144,59 +131,23 @@ export default function Footer() {
 
               <ul className="space-y-4 text-sm text-white/90">
                 <li className="flex items-start gap-3">
-                  <Phone className="mt-0.5 h-4 w-4 shrink-0 text-white/70" />
-                  <span>+47 00 000 000 (man–fre 09–17)</span>
-                </li>
-
-                <li className="flex items-start gap-3">
                   <Mail className="mt-0.5 h-4 w-4 shrink-0 text-white/70" />
-                  <span>post@utopia.com</span>
+                  <a
+                    href="mailto:post@utopia.com"
+                    className="transition hover:text-white hover:underline"
+                  >
+                    post@utopia.com
+                  </a>
                 </li>
-
-                <li className="flex items-start gap-3">
-                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-white/70" />
-                  <span>Utopiaveien 1, 0123 Utopia</span>
-                </li>
-
                 <li>
                   <Link
                     to="/kontakt"
                     className="transition hover:text-white hover:underline"
                   >
-                    Kontaktside
+                    Kontakt
                   </Link>
                 </li>
               </ul>
-
-              <div className="mt-8">
-                <p className="mb-3 text-sm font-medium text-white/80">Følg oss</p>
-
-                <div className="flex gap-3">
-                  <a
-                    href="#"
-                    aria-label="Facebook"
-                    className="rounded-xl bg-white/10 p-3 transition hover:bg-white/20"
-                  >
-                    <Facebook className="h-5 w-5" />
-                  </a>
-
-                  <a
-                    href="#"
-                    aria-label="Instagram"
-                    className="rounded-xl bg-white/10 p-3 transition hover:bg-white/20"
-                  >
-                    <Instagram className="h-5 w-5" />
-                  </a>
-
-                  <a
-                    href="#"
-                    aria-label="YouTube"
-                    className="rounded-xl bg-white/10 p-3 transition hover:bg-white/20"
-                  >
-                    <Youtube className="h-5 w-5" />
-                  </a>
-                </div>
-              </div>
             </div>
           </div>
 
