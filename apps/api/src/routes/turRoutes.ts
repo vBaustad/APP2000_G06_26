@@ -313,9 +313,39 @@ turRouter.get("/", async (_req, res) => {
         max_deltakere: true,
         status: true,
         leder_bruker_id: true,
+        bruker: {
+          select: {
+            fornavn: true,
+            etternavn: true,
+          },
+        },
         created_at: true,
         updated_at: true,
         antall_netter: true,
+        tur_rating: {
+          select: {
+            rating: true,
+          },
+        },
+        tur_kommentar: {
+          select: {
+            id: true,
+            body: true,
+            created_at: true,
+            bruker: {
+              select: {
+                fornavn: true,
+                etternavn: true,
+              },
+            },
+          },
+          orderBy: { created_at: "desc" },
+        },
+        favoritt: {
+          select: {
+            id: true,
+          },
+        },
         tur_tursti: {
           select: {
             rekkefolge: true,
@@ -374,6 +404,50 @@ turRouter.get("/", async (_req, res) => {
   }
 });
 
+// AUTH: Turer der innlogget bruker er leder (dashboard for turleder).
+// Må ligge før GET "/:id" slik at Express ikke tolker "mine-leder" som en id.
+turRouter.get("/mine-leder", requireAuth, async (req: AuthedRequest, res) => {
+  const brukerId = req.user?.id;
+  if (!brukerId) {
+    return res.status(401).json({ error: "Ikke innlogget" });
+  }
+
+  try {
+    const turer = await prisma.tur.findMany({
+      where: { leder_bruker_id: brukerId },
+      orderBy: { id: "desc" },
+      select: {
+        id: true,
+        tittel: true,
+        status: true,
+        omrade: true,
+        antall_netter: true,
+        created_at: true,
+        tur_dato: {
+          orderBy: { start_at: "asc" },
+          select: {
+            id: true,
+            tittel: true,
+            start_at: true,
+            end_at: true,
+            status: true,
+            tidlig_pamelding_frist: true,
+            rabatt_prosent: true,
+            tur_pamelding: {
+              select: { id: true, status: true },
+            },
+          },
+        },
+      },
+    });
+
+    res.json(turer);
+  } catch (error) {
+    console.error("Feil i GET /api/turer/mine-leder:", error);
+    res.status(500).json({ error: "Intern serverfeil." });
+  }
+});
+
 // PUBLIC: Se én tur.
 turRouter.get("/:id", async (req, res) => {
   const id = Number(req.params.id);
@@ -398,6 +472,12 @@ turRouter.get("/:id", async (req, res) => {
         max_deltakere: true,
         status: true,
         leder_bruker_id: true,
+        bruker: {
+          select: {
+            fornavn: true,
+            etternavn: true,
+          },
+        },
         created_at: true,
         updated_at: true,
         tur_dato: {
@@ -473,6 +553,198 @@ turRouter.get("/:id", async (req, res) => {
     res.status(500).json({ error: "Intern serverfeil." });
   }
 });
+
+// AUTH (leder): Legg til en tur_dato på en tur. Kun turlederen kan gjøre dette.
+turRouter.post("/:id/datoer", requireAuth, async (req: AuthedRequest, res) => {
+  const turId = Number(req.params.id);
+  const brukerId = req.user?.id;
+  if (!Number.isFinite(turId)) {
+    return res.status(400).json({ error: "Ugyldig tur-id." });
+  }
+  if (!brukerId) {
+    return res.status(401).json({ error: "Ikke innlogget" });
+  }
+
+  const {
+    tittel,
+    start_at,
+    end_at,
+    tidlig_pamelding_frist,
+    rabatt_prosent,
+  } = req.body as {
+    tittel?: string;
+    start_at?: string;
+    end_at?: string;
+    tidlig_pamelding_frist?: string | null;
+    rabatt_prosent?: number | string | null;
+  };
+
+  if (!start_at || !end_at) {
+    return res.status(400).json({ error: "start_at og end_at er påkrevd." });
+  }
+  const start = new Date(start_at);
+  const slutt = new Date(end_at);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(slutt.getTime())) {
+    return res.status(400).json({ error: "Ugyldig datoformat." });
+  }
+  if (start >= slutt) {
+    return res.status(400).json({ error: "Sluttdato må være etter startdato." });
+  }
+
+  let fristDato: Date | null = null;
+  if (tidlig_pamelding_frist) {
+    const d = new Date(tidlig_pamelding_frist);
+    if (Number.isNaN(d.getTime())) {
+      return res.status(400).json({ error: "Ugyldig tidlig_pamelding_frist." });
+    }
+    if (d >= start) {
+      return res.status(400).json({
+        error: "Tidlig påmeldings-frist må være før startdato.",
+      });
+    }
+    fristDato = d;
+  }
+
+  let rabatt: number | null = null;
+  if (rabatt_prosent !== undefined && rabatt_prosent !== null && rabatt_prosent !== "") {
+    const r = Number(rabatt_prosent);
+    if (!Number.isFinite(r) || r < 0 || r > 100) {
+      return res.status(400).json({ error: "rabatt_prosent må være 0–100." });
+    }
+    rabatt = Math.round(r);
+  }
+
+  try {
+    const tur = await prisma.tur.findUnique({
+      where: { id: turId },
+      select: { id: true, leder_bruker_id: true },
+    });
+    if (!tur) return res.status(404).json({ error: "Fant ikke turen." });
+    if (tur.leder_bruker_id !== brukerId) {
+      return res.status(403).json({ error: "Kun turlederen kan legge til datoer." });
+    }
+
+    const turDato = await prisma.tur_dato.create({
+      data: {
+        tur_id: turId,
+        tittel: tittel?.trim() || null,
+        start_at: start,
+        end_at: slutt,
+        tidlig_pamelding_frist: fristDato,
+        rabatt_prosent: rabatt,
+      },
+    });
+
+    res.status(201).json(turDato);
+  } catch (error) {
+    console.error("Feil i POST /api/turer/:id/datoer:", error);
+    res.status(500).json({ error: "Intern serverfeil." });
+  }
+});
+
+// AUTH (leder): Endre status på en tur_dato — lås eller avlys.
+// Ved låsing: andre tur_dato på samme tur fristilles, og påmeldinger oppdateres
+// i tråd med tilstandsmaskinen i domenemodellen.
+turRouter.patch(
+  "/datoer/:id/status",
+  requireAuth,
+  async (req: AuthedRequest, res) => {
+    const datoId = Number(req.params.id);
+    const brukerId = req.user?.id;
+    if (!Number.isFinite(datoId)) {
+      return res.status(400).json({ error: "Ugyldig dato-id." });
+    }
+    if (!brukerId) {
+      return res.status(401).json({ error: "Ikke innlogget" });
+    }
+
+    const { status } = req.body as { status?: string };
+    if (status !== "locked" && status !== "cancelled") {
+      return res.status(400).json({
+        error: "status må være 'locked' eller 'cancelled'.",
+      });
+    }
+
+    try {
+      const dato = await prisma.tur_dato.findUnique({
+        where: { id: datoId },
+        select: {
+          id: true,
+          status: true,
+          tur_id: true,
+          tur: { select: { leder_bruker_id: true } },
+        },
+      });
+      if (!dato) return res.status(404).json({ error: "Fant ikke datoen." });
+      if (dato.tur.leder_bruker_id !== brukerId) {
+        return res.status(403).json({ error: "Kun turlederen kan endre status." });
+      }
+      if (dato.status === "locked" || dato.status === "cancelled") {
+        return res.status(409).json({
+          error: "Datoen har allerede endelig status og kan ikke endres.",
+        });
+      }
+
+      const resultat = await prisma.$transaction(async (tx) => {
+        if (status === "cancelled") {
+          await tx.tur_dato.update({
+            where: { id: datoId },
+            data: { status: "cancelled" },
+          });
+          await tx.tur_pamelding.updateMany({
+            where: { tur_dato_id: datoId },
+            data: { status: "freed" },
+          });
+          return { locked: false };
+        }
+
+        // status === "locked"
+        await tx.tur_dato.update({
+          where: { id: datoId },
+          data: { status: "locked" },
+        });
+        // Bindende påmeldinger på låst dato bekreftes.
+        await tx.tur_pamelding.updateMany({
+          where: { tur_dato_id: datoId, status: "binding" },
+          data: { status: "locked" },
+        });
+        // Pending (kun interesse) på låst dato fristilles — de har ikke forpliktet seg.
+        await tx.tur_pamelding.updateMany({
+          where: { tur_dato_id: datoId, status: "pending" },
+          data: { status: "freed" },
+        });
+
+        // Alle andre tur_dato på samme tur fristilles.
+        const andreDatoer = await tx.tur_dato.findMany({
+          where: {
+            tur_id: dato.tur_id,
+            id: { not: datoId },
+            status: { in: ["planned"] },
+          },
+          select: { id: true },
+        });
+        const andreIds = andreDatoer.map((d) => d.id);
+        if (andreIds.length > 0) {
+          await tx.tur_dato.updateMany({
+            where: { id: { in: andreIds } },
+            data: { status: "freed" },
+          });
+          await tx.tur_pamelding.updateMany({
+            where: { tur_dato_id: { in: andreIds } },
+            data: { status: "freed" },
+          });
+        }
+
+        return { locked: true, fristilteDatoer: andreIds.length };
+      });
+
+      res.json(resultat);
+    } catch (error) {
+      console.error("Feil i PATCH /api/turer/datoer/:id/status:", error);
+      res.status(500).json({ error: "Intern serverfeil." });
+    }
+  },
+);
 
 // PUBLIC: Hent alle kommentarer for en tur
 turRouter.get("/:id/kommentarer", async (req, res) => {

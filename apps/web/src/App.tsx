@@ -26,6 +26,7 @@ import LoggetUt from "./pages/LoggetUt";
 import Admin from "./pages/Admin";
 import Hytter from "./pages/Hytter";
 import HytteDetaljer from "./pages/HytteDetaljer";
+import MineTurerLeder from "./pages/MineTurerLeder";
 import Meldinger from "./pages/Meldinger";
 
 export default function App() {
@@ -42,6 +43,7 @@ export default function App() {
           <Route path="/min-side" element={<MinSide />} />
           <Route path="/meldinger" element={<Meldinger />} />
           <Route path="/mine-hytter" element={<MineHytter />} />
+          <Route path="/mine-turer-leder" element={<MineTurerLeder />} />
           <Route path="/hytter" element={<Hytter />} />
           <Route path="/hytter/:id" element={<HytteDetaljer />} />
           <Route path="/rediger-profil" element={<RedigerProfil />} />

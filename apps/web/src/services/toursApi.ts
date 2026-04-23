@@ -1,6 +1,6 @@
 /**
  * Fil: toursApi.ts
- * Utvikler(e): Ramona Cretulescu
+ * Utvikler(e): Ramona Cretulescu. Copilot er brukt som guide og lærer i utviklingen av denne siden.
  * Beskrivelse: Henter turer fra backend-API og mapper dataene til formatet som brukes i frontend.
  */
 
@@ -39,6 +39,24 @@ type ApiTurDato = {
   rabatt_prosent?: number | null;
 };
 
+type ApiTurRating = {
+  rating: number;
+};
+
+type ApiTurKommentar = {
+  id: number;
+  body?: string | null;
+  created_at: string;
+  bruker?: {
+    fornavn?: string | null;
+    etternavn?: string | null;
+  } | null;
+};
+
+type ApiFavoritt = {
+  id: number;
+};
+
 type ApiTour = {
   id: number;
   tittel: string;
@@ -54,8 +72,15 @@ type ApiTour = {
   leder_bruker_id?: number | null;
   created_at?: string;
   updated_at?: string;
+  bruker?: {
+    fornavn?: string | null;
+    etternavn?: string | null;
+  } | null;
   tur_tursti?: ApiTurTursti[];
   tur_dato?: ApiTurDato[];
+  tur_rating?: ApiTurRating[];
+  tur_kommentar?: ApiTurKommentar[];
+  favoritt?: ApiFavoritt[];
 };
 
 function getRegionFromOmrade(omrade?: string | null): Region {
@@ -199,7 +224,44 @@ function getRoutePointsFromTurstier(turstier?: ApiTurTursti[]): TourPoint[] {
   );
 }
 
+function getLatestCommentUserName(kommentarer?: ApiTurKommentar[]) {
+  const latest = kommentarer?.[0];
+  if (!latest?.bruker) return null;
+
+  const fullName = `${latest.bruker.fornavn ?? ""} ${latest.bruker.etternavn ?? ""}`.trim();
+  return fullName || null;
+}
+
+function getLatestCommentFirstName(kommentarer?: ApiTurKommentar[]) {
+  const latest = kommentarer?.[0];
+  const firstName = latest?.bruker?.fornavn?.trim();
+
+  return firstName || null;
+}
+
+function getAverageRating(ratings?: ApiTurRating[]) {
+  if (!Array.isArray(ratings) || ratings.length === 0) return null;
+
+  const total = ratings.reduce((sum, item) => sum + Number(item.rating ?? 0), 0);
+  return Number((total / ratings.length).toFixed(1));
+}
+
+function getOwnerFullName(
+  bruker?: { fornavn?: string | null; etternavn?: string | null } | null,
+) {
+  if (!bruker) return null;
+
+  const fullName = `${bruker.fornavn ?? ""} ${bruker.etternavn ?? ""}`.trim();
+  return fullName || null;
+}
+
 function mapTour(tour: ApiTour): Tour {
+  const kommentarer = Array.isArray(tour.tur_kommentar) ? tour.tur_kommentar : [];
+  const ratings = Array.isArray(tour.tur_rating) ? tour.tur_rating : [];
+  const favoritter = Array.isArray(tour.favoritt) ? tour.favoritt : [];
+  const ownerFullName = getOwnerFullName(tour.bruker);
+  const ownerFirstName = tour.bruker?.fornavn?.trim() || null;
+
   return {
     id: String(tour.id),
     title: tour.tittel ?? "Ukjent tur",
@@ -224,6 +286,16 @@ function mapTour(tour: ApiTour): Tour {
           status: d.status,
         }))
       : [],
+    social: {
+      averageRating: getAverageRating(ratings),
+      commentCount: kommentarer.length,
+      likeCount: favoritter.length,
+      latestCommentUserName: getLatestCommentUserName(kommentarer),
+      latestCommentFirstName: getLatestCommentFirstName(kommentarer),
+      latestCommentCreatedAt: kommentarer[0]?.created_at ?? null,
+      ownerFirstName,
+      ownerFullName,
+    },
   };
 }
 
