@@ -1,7 +1,7 @@
 /**
  * Fil: RedigerProfil.tsx
  * Utvikler (Logikk & API-integrasjon): Parasto Jamshidi
- * Design & UI-oppsett: Ramona Cretulescu
+ * Design & UI-oppsett: Ramona Cretulescu. Copilot er brukt som guide og lærer i utviklingen av denne siden.
  *
  * Beskrivelse:
  * Denne komponenten utgjør brukergrensesnittet for å redigere profilinformasjon i Utopia-portalen.
@@ -12,8 +12,7 @@
  * - Håndterer lokal tilstand (state) for skjemaet og synkronisering av input-felter.
  * - Sender oppdaterte profilendringer til serveren via PUT-forespørsler.
  * - Implementerer logikk for visning av statusmeldinger (loading, saving, suksess).
- *
- * Visuelt design (utviklet av Ramona):
+ * videreutviklet av Ramona):
  * - Utforming av layout og stil ved bruk av Tailwind CSS.
  * - Integrasjon av ikoner og sikring av at siden følger den grafiske profilen til prosjektet.
  */

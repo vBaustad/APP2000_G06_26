@@ -1,13 +1,16 @@
 /**
  * Fil: LandingActivities.tsx
- * Utvikler(e): Ramona Cretulescu
+ * Utvikler(e): Ramona Cretulescu. Copilot er brukt som guide og lærer i utviklingen av denne siden.
  * Beskrivelse:
  * Seksjon på landingssiden som viser ulike aktivitetskategorier.
  * Hver kategori sender brukeren videre til relevant side for utforsking
  * eller kartvisning med tilpasset filtrering.
  */
 
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getTours } from "../../services/toursApi";
+import type { Tour } from "../../types/tour";
 import {
   Footprints,
   Snowflake,
@@ -21,137 +24,255 @@ import {
 
 type ActivityCard = {
   title: string;
-  count: string;
+  description: string;
   icon: LucideIcon;
-  bgColor: string;
-  iconColor: string;
+  iconWrapClass: string;
+  iconClass: string;
   query: string;
+  matchTerms?: string[];
+  target: "kart" | "hytter";
 };
 
 const activityCards: ActivityCard[] = [
   {
     title: "Fottur",
-    count: "19 000 turer",
+    description: "Nærturer, dagsturer og lengre vandringer i variert terreng.",
     icon: Footprints,
-    bgColor: "bg-[#dcebe4]",
-    iconColor: "#0f3d2e",
+    iconWrapClass: "bg-emerald-50",
+    iconClass: "text-emerald-900",
     query: "fottur",
+    matchTerms: ["fottur", "fotturer", "vandring", "gåtur", "tur"],
+    target: "kart",
   },
   {
     title: "Sykkeltur",
-    count: "2 110 turer",
+    description: "Turer og ruter som passer for sykkel i ulike områder.",
     icon: Bike,
-    bgColor: "bg-[#dcebe4]",
-    iconColor: "#0f3d2e",
+    iconWrapClass: "bg-emerald-50",
+    iconClass: "text-emerald-900",
     query: "sykkeltur",
+    matchTerms: ["sykkeltur", "sykkel", "sykling"],
+    target: "kart",
   },
   {
     title: "Hyttetur",
-    count: "16 hytter",
+    description: "Hytter og overnatting som passer som stopp eller mål for turen.",
     icon: Home,
-    bgColor: "bg-[#dcebe4]",
-    iconColor: "#0f3d2e",
+    iconWrapClass: "bg-emerald-50",
+    iconClass: "text-emerald-900",
     query: "hyttetur",
+    target: "hytter",
   },
   {
     title: "Skitur",
-    count: "4 307 turer",
+    description: "Områder og turer som er relevante for ski og vinteraktiviteter.",
     icon: Snowflake,
-    bgColor: "bg-[#dff1f6]",
-    iconColor: "#1593a3",
+    iconWrapClass: "bg-sky-50",
+    iconClass: "text-sky-700",
     query: "skitur",
+    matchTerms: ["skitur", "langrenn", "ski"],
+    target: "kart",
   },
   {
     title: "Topptur på ski",
-    count: "1 130 turer",
+    description: "Mer krevende vinterturer og toppturrelaterte områder.",
     icon: MountainSnow,
-    bgColor: "bg-[#dff1f6]",
-    iconColor: "#1593a3",
+    iconWrapClass: "bg-sky-50",
+    iconClass: "text-sky-700",
     query: "topptur",
+    matchTerms: ["topptur", "topptur på ski", "randonee"],
+    target: "kart",
   },
   {
     title: "Padletur",
-    count: "619 turer",
+    description: "Forslag for kajakk, kano og andre rolige padleopplevelser.",
     icon: Waves,
-    bgColor: "bg-[#dff1f6]",
-    iconColor: "#1593a3",
+    iconWrapClass: "bg-sky-50",
+    iconClass: "text-sky-700",
     query: "padletur",
+    matchTerms: ["padletur", "padling", "kajakk", "kano"],
+    target: "kart",
   },
 ];
 
+function normalize(text?: string) {
+  return (text ?? "").toLowerCase().trim();
+}
+
+function formatCount(count: number) {
+  return new Intl.NumberFormat("nb-NO").format(count);
+}
+
+function matchesTerms(tour: Tour, terms: string[]) {
+  const haystack = [
+    normalize(tour.title),
+    normalize(tour.location),
+    normalize(tour.type),
+    normalize(tour.region),
+    normalize(tour.difficulty),
+  ].join(" ");
+
+  return terms.some((term) => haystack.includes(normalize(term)));
+}
+
 export default function LandingActivities() {
   const navigate = useNavigate();
+
+  const [allTours, setAllTours] = useState<Tour[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadTours() {
+      try {
+        setLoading(true);
+        setHasError(false);
+
+        const data = await getTours();
+
+        if (isMounted) {
+          setAllTours(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error("Kunne ikke hente turdata til aktivitetsseksjonen:", error);
+        if (isMounted) {
+          setAllTours([]);
+          setHasError(true);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadTours();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const activityCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+
+    for (const activity of activityCards) {
+      if (!activity.matchTerms || activity.target !== "kart") continue;
+
+      counts[activity.title] = allTours.filter((tour) =>
+        matchesTerms(tour, activity.matchTerms!)
+      ).length;
+    }
+
+    return counts;
+  }, [allTours]);
 
   function handleGoToTours() {
     navigate("/turer");
   }
 
-  function handleActivityClick(query: string) {
-    navigate(`/kart?activity=${encodeURIComponent(query)}`);
+  function handleActivityClick(activity: ActivityCard) {
+    if (activity.target === "hytter") {
+      navigate("/hytter");
+      return;
+    }
+
+    navigate(`/kart?activity=${encodeURIComponent(activity.query)}`);
+  }
+
+  function getMetaText(activity: ActivityCard) {
+    if (activity.target === "hytter") {
+      return "Hytter og overnatting";
+    }
+
+    if (loading) {
+      return "Henter turer…";
+    }
+
+    if (hasError) {
+      return "Data utilgjengelig";
+    }
+
+    const count = activityCounts[activity.title] ?? 0;
+
+    if (count <= 0) {
+      return "Utforsk aktivitet";
+    }
+
+    return `${formatCount(count)} ${count === 1 ? "tur" : "turer"}`;
   }
 
   return (
-    <section className="rounded-[2rem] border border-[#d8e6de] bg-[#eef5f1] px-6 py-10 md:px-8 md:py-12">
-      <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <section className="rounded-[2rem] border border-[#d9e3dd] bg-[#eff5f1] px-6 py-10 md:px-8 md:py-12">
+      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="max-w-3xl">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#0f3d2e]">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#214a37]">
             Aktiviteter og filtrering
           </p>
 
-          <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">
+          <h2 className="text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
             Utforsk etter aktivitet
           </h2>
 
-          <p className="mt-3 text-lg leading-8 text-slate-600">
-            Velg aktivitet og gå videre til turer og kartvisning med relevante
-            forslag og filtrering.
+          <p className="mt-3 max-w-2xl text-lg leading-8 text-slate-600">
+            Velg aktivitet og gå videre til relevante turer, hytter og kartvisning.
           </p>
         </div>
 
         <button
           type="button"
           onClick={handleGoToTours}
-          className="inline-flex items-center gap-2 font-medium text-[#0f3d2e] transition hover:underline"
+          className="inline-flex items-center gap-2 rounded-full border border-[#cad8cf] bg-white px-4 py-2 text-sm font-semibold text-[#214a37] transition hover:bg-[#f8fbf9]"
         >
           Gå til turer
           <ArrowRight className="h-4 w-4" />
         </button>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {activityCards.map((activity) => {
-          const Icon = activity.icon;
+      <div className="overflow-x-auto pb-2">
+        <div className="flex min-w-max gap-5 snap-x snap-mandatory scroll-px-1">
+          {activityCards.map((activity) => {
+            const Icon = activity.icon;
 
-          return (
-            <button
-              key={activity.title}
-              type="button"
-              onClick={() => handleActivityClick(activity.query)}
-              className="group rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm transition duration-200 hover:-translate-y-1 hover:border-[#b7d1c3] hover:shadow-lg"
-            >
-              <div
-                className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full ${activity.bgColor}`}
+            return (
+              <button
+                key={activity.title}
+                type="button"
+                onClick={() => handleActivityClick(activity)}
+                className="group flex w-[260px] flex-shrink-0 snap-start flex-col rounded-[1.4rem] border border-slate-200 bg-white p-6 text-left shadow-sm transition duration-200 hover:-translate-y-1 hover:border-[#bdd0c4] hover:shadow-md"
               >
-                <Icon
-                  color={activity.iconColor}
-                  strokeWidth={2.4}
-                  className="h-7 w-7 transition group-hover:scale-105"
-                />
-              </div>
+                <div
+                  className={`mb-5 flex h-16 w-16 items-center justify-center rounded-2xl ${activity.iconWrapClass}`}
+                >
+                  <Icon className={`h-8 w-8 ${activity.iconClass}`} strokeWidth={2.1} />
+                </div>
 
-              <h3 className="mb-1 text-xl font-semibold text-slate-900">
-                {activity.title}
-              </h3>
+                <div className="flex-1">
+                  <h3 className="text-[2rem] font-semibold leading-tight tracking-tight text-slate-900">
+                    {activity.title}
+                  </h3>
 
-              <p className="mb-4 text-sm text-slate-500">{activity.count}</p>
+                  <p className="mt-2 text-sm font-semibold text-[#214a37]">
+                    {getMetaText(activity)}
+                  </p>
 
-              <span className="inline-flex items-center gap-1 text-sm font-medium text-[#0f3d2e] opacity-0 transition group-hover:opacity-100">
-                Se turer
-                <ArrowRight className="h-3.5 w-3.5" />
-              </span>
-            </button>
-          );
-        })}
+                  <p className="mt-4 text-base leading-7 text-slate-600">
+                    {activity.description}
+                  </p>
+                </div>
+
+                <div className="mt-6 border-t border-slate-100 pt-4">
+                  <span className="inline-flex items-center gap-2 text-sm font-semibold text-[#214a37]">
+                    {activity.target === "hytter" ? "Se hytter" : "Se turer"}
+                    <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </section>
   );

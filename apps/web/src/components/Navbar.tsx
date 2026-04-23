@@ -1,59 +1,92 @@
 /**
  * Fil: Navbar.tsx
- * Utvikler(e): Vebjørn Baustad, Alex, Ramona Cretulescu
- * Beskrivelse: Navigasjonskomponent som viser hovedmenyen og tilpasser
- * utseende basert på side (transparent eller solid bakgrunn). Viser forskjellige navbar meny items basert på om bruker er logget inn og hvilken rolle de har.
+ * Utvikler(e): Vebjørn Baustad, Ramona Cretulescu. Copilot er brukt som guide og lærer i utviklingen av denne siden.
+ * Beskrivelse:
+ * Navigasjonskomponent som viser hovedmenyen og tilpasser utseende basert på side.
  */
 
-import { useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom"; 
+import { useEffect, useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { Menu, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 type NavbarVariant = "transparent" | "solid";
 type NavbarProps = { variant?: NavbarVariant };
 
 export default function Navbar({ variant = "solid" }: NavbarProps) {
-  const isTransparent = variant === "transparent";
-    const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
+
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  const isTransparent = variant === "transparent";
+  const showDarkStyle = isTransparent && !scrolled;
   const isLoggedIn = !!user;
-  const isHytteeier = user?.roller?.includes("hytteeier");
-  const isAnnonsor = user?.roller?.includes("annonsor");
-  const isAdmin = user?.roller?.includes("admin");
-  const [profileOpen, setProfileOpen] = useState(false);
 
-  const topBarClass = isTransparent
-    ? "absolute top-0 left-0 z-[10000] w-full bg-[#17331C]/95 py-2 text-center text-sm font-medium text-white/90 backdrop-blur"
-    : "relative z-[10000] w-full bg-[#17331C] py-2 text-center text-sm font-medium text-white/90";
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
-  const headerClass = isTransparent
-    ? "absolute top-8 left-0 z-[9999] w-full bg-gradient-to-b from-black/40 to-transparent text-white"
-    : "relative z-[9999] w-full border-b border-gray-200 bg-white/95 text-gray-900 shadow-sm backdrop-blur";
+  const topBarClass =
+    "fixed top-0 left-0 z-[11000] flex h-8 w-full items-center justify-center border-b border-gray-200 bg-white px-4 text-center text-[12px] font-medium text-gray-700";
 
-  const navClass = "mx-auto flex max-w-7xl items-center justify-between px-6 py-2";
+  const headerClass = `fixed left-0 right-0 top-8 z-[10990] border-b transition-all duration-300 ${
+    showDarkStyle
+      ? "border-white/10 bg-[#17331C]/86 text-white backdrop-blur-md"
+      : "border-gray-200 bg-white/96 text-gray-900 shadow-sm backdrop-blur"
+  }`;
 
-  const logoClass = isTransparent
-    ? "h-16 w-auto object-contain brightness-0 invert drop-shadow-[0_3px_8px_rgba(0,0,0,0.7)]"
-    : "h-16 w-auto object-contain";
-
-  const linkBase = "transition font-medium";
   const linkClass = ({ isActive }: { isActive: boolean }) => {
-    if (isTransparent) {
-      return `${linkBase} ${
-        isActive ? "text-white" : "text-white/80 hover:text-white"
+    const base =
+      "relative text-[15px] font-semibold transition-colors duration-200 after:absolute after:left-0 after:-bottom-1.5 after:h-[2px] after:rounded-full after:transition-all after:duration-200";
+
+    if (showDarkStyle) {
+      return `${base} ${
+        isActive
+          ? "text-white after:w-full after:bg-white"
+          : "text-white/85 hover:text-white after:w-0 after:bg-white"
       }`;
     }
-    return `${linkBase} ${
-      isActive ? "text-gray-900" : "text-gray-600 hover:text-gray-900"
+
+    return `${base} ${
+      isActive
+        ? "text-[#17331C] after:w-full after:bg-[#17331C]"
+        : "text-gray-700 hover:text-[#17331C] after:w-0 after:bg-[#17331C]"
     }`;
   };
 
-  const profileButtonClass = isTransparent
-    ? "flex items-center gap-2 rounded-md border border-white/50 bg-white/20 px-4 py-2 text-sm font-semibold text-white backdrop-blur hover:bg-white/30"
-    : "flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500";
+  const loginButtonClass = showDarkStyle
+    ? "inline-flex items-center rounded-full border border-white/25 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+    : "inline-flex items-center rounded-full border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50";
 
-  const dropdownLinkClass =
-    "block rounded-lg px-3 py-2 text-gray-800 hover:bg-gray-100";
+  const registerButtonClass =
+    "inline-flex items-center rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500";
+
+  const mobileLinkClass = ({ isActive }: { isActive: boolean }) => {
+    const base = "block rounded-lg px-3 py-2.5 text-sm font-medium transition";
+
+    if (showDarkStyle) {
+      return `${base} ${
+        isActive
+          ? "bg-white/10 text-white"
+          : "text-white/90 hover:bg-white/10 hover:text-white"
+      }`;
+    }
+
+    return `${base} ${
+      isActive
+        ? "bg-gray-100 text-[#17331C]"
+        : "text-gray-700 hover:bg-gray-100 hover:text-[#17331C]"
+    }`;
+  };
+
+  const mobilePanelClass = showDarkStyle
+    ? "border-t border-white/10 bg-[#17331C]/95 text-white backdrop-blur-md"
+    : "border-t border-gray-200 bg-white text-gray-900 shadow-sm";
 
   return (
     <>
@@ -62,124 +95,132 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
       </div>
 
       <header className={headerClass}>
-        <nav className={navClass}>
-          <NavLink
-            to="/"
-            className="flex items-center transition-transform duration-200 hover:scale-105"
-          >
+        <nav className="mx-auto flex h-[84px] max-w-7xl items-center justify-between px-5 md:px-8">
+          <NavLink to="/" aria-label="Gå til forsiden" className="flex items-center">
             <img
               src="/logos/utopia-logo.png"
               alt="Utopia logo"
-              className={logoClass}
+              className={showDarkStyle ? "h-[56px] w-auto object-contain brightness-0 invert md:h-[68px]" : "h-[56px] w-auto object-contain md:h-[68px]"}
             />
           </NavLink>
 
-          <ul className="hidden items-center gap-8 font-medium md:flex">
-            <li>
-              <NavLink to="/" className={linkClass}>
-                Hjem
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/kart" className={linkClass}>
-                Kart
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/turer" className={linkClass}>
-                Turer
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/hytter" className={linkClass}>Hytter</NavLink>
-            </li>
-            {!isLoggedIn ? (
-              <>
-                <li>
-                  <NavLink to="/logg-inn" className={linkClass}>
-                    Logg inn
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink to="/registrer" className={linkClass}>
-                    Registrer
-                  </NavLink>
-                </li>
-              </>
-            ) : (
-              <li className="relative z-40">
-                <button
-                  onClick={() => setProfileOpen((prev) => !prev)}
-                  className={profileButtonClass}
-                >
-                  Profil
-                  <span className="text-xs">▾</span>
-                </button>
+          <div className="hidden items-center gap-10 lg:flex">
+            <ul className="flex items-center gap-10">
+              <li>
+                <NavLink to="/" className={linkClass}>
+                  Forside
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/kart" className={linkClass}>
+                  Kart
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/turer" className={linkClass}>
+                  Turer
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/hytter" className={linkClass}>
+                  Hytter
+                </NavLink>
+              </li>
+            </ul>
 
-                {profileOpen && (
-                  <div className="absolute right-0 z-[10000] mt-3 w-48 rounded-xl border border-gray-200 bg-white p-2 text-sm shadow-xl">
-                    <NavLink
-                      to="/min-side"
-                      className={dropdownLinkClass}
-                      onClick={() => setProfileOpen(false)}
-                    >
+            {!isLoggedIn ? (
+              <div className="flex items-center gap-3">
+                <NavLink to="/logg-inn" className={loginButtonClass}>
+                  Logg inn
+                </NavLink>
+                <NavLink to="/registrer" className={registerButtonClass}>
+                  Registrer
+                </NavLink>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <NavLink to="/min-side" className={loginButtonClass}>
+                  Min side
+                </NavLink>
+                <button
+                  type="button"
+                  onClick={() => {
+                    logout();
+                    navigate("/logget-ut");
+                  }}
+                  className={registerButtonClass}
+                >
+                  Logg ut
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setMobileOpen((prev) => !prev)}
+            className={`rounded-lg p-2 transition lg:hidden ${
+              showDarkStyle
+                ? "text-white hover:bg-white/10"
+                : "text-gray-800 hover:bg-gray-100"
+            }`}
+            aria-label={mobileOpen ? "Lukk meny" : "Åpne meny"}
+          >
+            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </nav>
+
+        {mobileOpen && (
+          <div className={`lg:hidden ${mobilePanelClass}`}>
+            <div className="mx-auto max-w-7xl px-5 py-4 md:px-6">
+              <div className="space-y-2">
+                <NavLink to="/" className={mobileLinkClass}>
+                  Forside
+                </NavLink>
+                <NavLink to="/kart" className={mobileLinkClass}>
+                  Kart
+                </NavLink>
+                <NavLink to="/turer" className={mobileLinkClass}>
+                  Turer
+                </NavLink>
+                <NavLink to="/hytter" className={mobileLinkClass}>
+                  Hytter
+                </NavLink>
+
+                {!isLoggedIn ? (
+                  <>
+                    <NavLink to="/logg-inn" className={mobileLinkClass}>
+                      Logg inn
+                    </NavLink>
+                    <NavLink to="/registrer" className={mobileLinkClass}>
+                      Registrer
+                    </NavLink>
+                  </>
+                ) : (
+                  <>
+                    <NavLink to="/min-side" className={mobileLinkClass}>
                       Min side
                     </NavLink>
-
-                    <NavLink
-                      to="/meldinger"
-                      className={dropdownLinkClass}
-                      onClick={() => setProfileOpen(false)}
-                    >
-                      Meldinger
-                    </NavLink>
-
-                    {isHytteeier && (
-                      <NavLink
-                        to="/mine-hytter"
-                        className={dropdownLinkClass}
-                        onClick={() => setProfileOpen(false)}
-                      >
-                        Mine hytter
-                      </NavLink>
-                    )}
-
-                    {isAnnonsor && (
-                      <NavLink
-                        to="/annonsor"
-                        className={dropdownLinkClass}
-                        onClick={() => setProfileOpen(false)}
-                      >
-                        Annonsør
-                      </NavLink>
-                    )}
-
-                    {isAdmin && (
-                      <NavLink
-                        to="/admin"
-                        className={dropdownLinkClass}
-                        onClick={() => setProfileOpen(false)}
-                      >
-                        Admin
-                      </NavLink>
-                    )}
-
                     <button
+                      type="button"
                       onClick={() => {
-                        setProfileOpen(false);
                         logout();
-                          navigate("/logget-ut"); 
+                        navigate("/logget-ut");
                       }}
-                      className="mt-1 block w-full rounded-lg px-3 py-2 text-left text-red-600 hover:bg-red-50"
+                      className={`block w-full rounded-lg px-3 py-2.5 text-left text-sm transition ${
+                        showDarkStyle
+                          ? "text-red-200 hover:bg-white/10 hover:text-red-100"
+                          : "text-red-600 hover:bg-red-50"
+                      }`}
                     >
                       Logg ut
                     </button>
-                  </div>
+                  </>
                 )}
-              </li>
-            )}
-          </ul>
-        </nav>
+              </div>
+            </div>
+          </div>
+        )}
       </header>
     </>
   );

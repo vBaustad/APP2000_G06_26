@@ -1,6 +1,7 @@
 /**
  * Fil: TurDetaljer.tsx
- * Utvikler(e): Ramona Cretulescu, Vebjørn Baustad
+ * Utvikler(e): Ramona Cretulescu, Vebjørn Baustad. Copilot er brukt som guide og lærer i utviklingen av denne siden.
+ * Copilot er brukt som guide og lærer i utviklingen av denne siden.
  * Beskrivelse: Detaljside for en tur. Viser turinfo, kart, kommentarer,
  * favoritt-toggle, liste over tur-datoer og innlogget brukers egen
  * påmeldingsstatus på turen.
@@ -170,7 +171,9 @@ export default function TurDetaljer() {
   const [signupLoading, setSignupLoading] = useState(false);
   const [signupMessage, setSignupMessage] = useState("");
 
-  const [avmeldKandidat, setAvmeldKandidat] = useState<MinPamelding | null>(null);
+  const [avmeldKandidat, setAvmeldKandidat] = useState<MinPamelding | null>(
+    null,
+  );
   const [avmeldBusy, setAvmeldBusy] = useState(false);
   const [avmeldFeil, setAvmeldFeil] = useState<string | null>(null);
 
@@ -182,7 +185,7 @@ export default function TurDetaljer() {
   }, [tour]);
 
   const gear: string[] = useMemo(
-    () => (Array.isArray(tour?.gear) ? tour!.gear : []),
+    () => (Array.isArray(tour?.gear) ? tour.gear : []),
     [tour],
   );
 
@@ -195,7 +198,8 @@ export default function TurDetaljer() {
   const datoer = tour?.datoer ?? [];
   const pameldteDatoIds = new Set(minePameldinger.map((p) => p.tur_dato.id));
   const token = safeGet("token") || safeGet("auth_token");
-  const lasedeChatPameldinger = minePameldinger.filter((pamelding) => {
+
+  const lasteChatPameldinger = minePameldinger.filter((pamelding) => {
     const dato = datoer.find((item) => item.id === pamelding.tur_dato.id);
     return dato?.status === "locked" && pamelding.status !== "freed";
   });
@@ -260,6 +264,7 @@ export default function TurDetaljer() {
       setMinePameldinger([]);
       return;
     }
+
     let active = true;
 
     fetch(`${import.meta.env.VITE_API_URL}/api/favoritter`, {
@@ -325,7 +330,7 @@ export default function TurDetaljer() {
   }, [avmeldKandidat, avmeldBusy]);
 
   useEffect(() => {
-    if (!token || lasedeChatPameldinger.length === 0) {
+    if (!token || lasteChatPameldinger.length === 0) {
       setChatLenker({});
       return;
     }
@@ -335,7 +340,7 @@ export default function TurDetaljer() {
     async function loadChatLenker() {
       try {
         const entries = await Promise.all(
-          lasedeChatPameldinger.map(async (pamelding) => {
+          lasteChatPameldinger.map(async (pamelding) => {
             const res = await fetch(
               `${import.meta.env.VITE_API_URL}/api/turer/datoer/${pamelding.tur_dato.id}/chat`,
               {
@@ -358,7 +363,11 @@ export default function TurDetaljer() {
         if (!active) return;
 
         setChatLenker(
-          Object.fromEntries(entries.filter((entry): entry is readonly [number, number] => entry !== null)),
+          Object.fromEntries(
+            entries.filter(
+              (entry): entry is readonly [number, number] => entry !== null,
+            ),
+          ),
         );
       } catch (error) {
         console.error("Feil ved henting av chat-lenker:", error);
@@ -373,14 +382,14 @@ export default function TurDetaljer() {
     return () => {
       active = false;
     };
-  }, [lasedeChatPameldinger, token]);
+  }, [lasteChatPameldinger, token]);
 
   if (loading) {
     return (
       <main className="min-h-[70vh] bg-gray-50">
         <section className="mx-auto max-w-7xl px-6 py-10">
           <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow">
-            <p className="text-gray-600">Laster turdetaljer...</p>
+            <p className="text-gray-600">Laster turdetaljer…</p>
           </div>
         </section>
       </main>
@@ -420,9 +429,10 @@ export default function TurDetaljer() {
 
   async function handleShare() {
     const url = window.location.href;
+
     try {
       if (navigator.share) {
-        await navigator.share({ title: tour!.title, url });
+        await navigator.share({ title: tour.title, url });
         return;
       }
     } catch {
@@ -464,7 +474,7 @@ export default function TurDetaljer() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ tur_dato_id: turDatoId }),
-        }
+        },
       );
 
       const data = (await res.json().catch(() => null)) as
@@ -518,6 +528,7 @@ export default function TurDetaljer() {
       return;
     }
     if (!tid || favorittBusy) return;
+
     setFavorittBusy(true);
     try {
       if (favorittId) {
@@ -550,6 +561,7 @@ export default function TurDetaljer() {
       alert("Du må være innlogget for å kommentere.");
       return;
     }
+
     const token = safeGet("token") || safeGet("auth_token");
     if (!token || !tid) return;
 
@@ -561,6 +573,7 @@ export default function TurDetaljer() {
 
     setKommentarBusy(true);
     setKommentarFeil(null);
+
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/api/turer/${tid}/kommentarer`,
@@ -573,16 +586,20 @@ export default function TurDetaljer() {
           body: JSON.stringify({ body: tekst }),
         },
       );
+
       const data = (await res.json().catch(() => null)) as
         | (Kommentar & { error?: string })
         | null;
+
       if (!res.ok) {
         setKommentarFeil(data?.error ?? "Kunne ikke lagre kommentar.");
         return;
       }
+
       if (data && typeof data.id === "number") {
         setKommentarer((prev) => [data, ...prev]);
       }
+
       setKommentarTekst("");
     } catch {
       setKommentarFeil("Nettverksfeil. Prøv igjen.");
@@ -592,7 +609,7 @@ export default function TurDetaljer() {
   }
 
   function handleReport() {
-    alert("Rapportering er en demo her. (Koble til backend senere)");
+    alert("Rapportering er en demo her. Koble til backend senere.");
   }
 
   function handleAvbrytAvmeld() {
@@ -604,6 +621,7 @@ export default function TurDetaljer() {
   async function handleBekreftAvmeld() {
     if (!avmeldKandidat) return;
     const token = safeGet("token") || safeGet("auth_token");
+
     if (!token) {
       setAvmeldFeil("Fant ikke gyldig innlogging.");
       return;
@@ -611,15 +629,18 @@ export default function TurDetaljer() {
 
     setAvmeldBusy(true);
     setAvmeldFeil(null);
+
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/api/turer/pamelding/${avmeldKandidat.id}`,
         { method: "DELETE", headers: { Authorization: `Bearer ${token}` } },
       );
+
       if (!res.ok) {
         setAvmeldFeil("Kunne ikke melde deg av. Prøv igjen.");
         return;
       }
+
       setMinePameldinger((prev) =>
         prev.filter((p) => p.id !== avmeldKandidat.id),
       );
@@ -637,14 +658,14 @@ export default function TurDetaljer() {
     const gpx = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="Utopia TiU">
   <wpt lat="${lat}" lon="${lon}">
-    <name>${tour!.title}</name>
+    <name>${tour.title}</name>
   </wpt>
 </gpx>`;
 
     const blob = new Blob([gpx], { type: "application/gpx+xml" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `${tour!.title.replaceAll(" ", "_")}.gpx`;
+    a.download = `${tour.title.replaceAll(" ", "_")}.gpx`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -683,16 +704,15 @@ export default function TurDetaljer() {
                   {tour.type}
                 </span>
               )}
-
             </div>
 
             <h1 className="mt-3 text-4xl font-semibold text-white md:text-5xl">
               {tour.title}
             </h1>
 
-            <div className="mt-2 flex items-center gap-2 text-white/85">
+            <div className="mt-2 flex items-center gap-2 text-sm text-white/85">
               <MapPin className="h-4 w-4" />
-              <p className="text-sm">{tour.location}</p>
+              <p>{tour.location}</p>
             </div>
 
             <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -707,7 +727,7 @@ export default function TurDetaljer() {
                   {pameldteDatoIds.has(datoer[0].id)
                     ? "Du er påmeldt"
                     : signupLoading
-                      ? "Melder på..."
+                      ? "Melder på…"
                       : "Meld meg på"}
                 </button>
               ) : datoer.length > 1 ? (
@@ -757,46 +777,44 @@ export default function TurDetaljer() {
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-10">
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
-            <div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Route className="h-4 w-4 text-emerald-700" />
-                <span>Distanse</span>
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-gray-900">
-                {tour.distanceKm} km
-              </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Route className="h-4 w-4 text-emerald-700" />
+              <span>Distanse</span>
             </div>
-
-            <div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Clock className="h-4 w-4 text-emerald-700" />
-                <span>Varighet</span>
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-gray-900">
-                {tour.durationHours} t
-              </div>
+            <div className="mt-1 text-2xl font-semibold text-gray-900">
+              {tour.distanceKm} km
             </div>
+          </div>
 
-            <div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Mountain className="h-4 w-4 text-emerald-700" />
-                <span>Stigning</span>
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-gray-900">
-                {tour.elevationM} m
-              </div>
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Clock className="h-4 w-4 text-emerald-700" />
+              <span>Varighet</span>
             </div>
+            <div className="mt-1 text-2xl font-semibold text-gray-900">
+              {tour.durationHours} t
+            </div>
+          </div>
 
-            <div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Star className="h-4 w-4 text-emerald-700" />
-                <span>Kommentarer</span>
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-gray-900">
-                {kommentarer.length}
-              </div>
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Mountain className="h-4 w-4 text-emerald-700" />
+              <span>Stigning</span>
+            </div>
+            <div className="mt-1 text-2xl font-semibold text-gray-900">
+              {tour.elevationM} m
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Star className="h-4 w-4 text-emerald-700" />
+              <span>Tilbakemeldinger</span>
+            </div>
+            <div className="mt-1 text-2xl font-semibold text-gray-900">
+              {kommentarer.length}
             </div>
           </div>
         </div>
@@ -823,12 +841,14 @@ export default function TurDetaljer() {
                     {formatDateNo(p.tur_dato.start_at)} –{" "}
                     {formatDateNo(p.tur_dato.end_at)}
                   </div>
+
                   <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${PAMELDING_STYLE[p.status]}`}
                     >
                       {PAMELDING_LABEL[p.status]}
                     </span>
+
                     <button
                       type="button"
                       onClick={() => {
@@ -846,7 +866,7 @@ export default function TurDetaljer() {
           </div>
         )}
 
-        {lasedeChatPameldinger.length > 0 && (
+        {lasteChatPameldinger.length > 0 && (
           <div className="mt-6 rounded-2xl border border-sky-100 bg-white p-5 shadow">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -857,15 +877,17 @@ export default function TurDetaljer() {
                   </h2>
                 </div>
                 <p className="mt-1 text-sm text-slate-600">
-                  Du har {lasedeChatPameldinger.length} låst{" "}
-                  {lasedeChatPameldinger.length === 1 ? "turdato" : "turdatoer"} med
+                  Du har {lasteChatPameldinger.length} låst{" "}
+                  {lasteChatPameldinger.length === 1 ? "turdato" : "turdatoer"} med
                   egen gruppesamtale. Åpne dem i meldingssiden.
                 </p>
               </div>
+
               <Link
                 to={
-                  lasedeChatPameldinger[0] && chatLenker[lasedeChatPameldinger[0].tur_dato.id]
-                    ? `/meldinger?chat=${chatLenker[lasedeChatPameldinger[0].tur_dato.id]}`
+                  lasteChatPameldinger[0] &&
+                  chatLenker[lasteChatPameldinger[0].tur_dato.id]
+                    ? `/meldinger?chat=${chatLenker[lasteChatPameldinger[0].tur_dato.id]}`
                     : "/meldinger"
                 }
                 className="inline-flex items-center gap-2 self-start rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700"
@@ -876,7 +898,7 @@ export default function TurDetaljer() {
             </div>
 
             <ul className="mt-4 space-y-2 text-sm text-slate-600">
-              {lasedeChatPameldinger.map((pamelding) => (
+              {lasteChatPameldinger.map((pamelding) => (
                 <li
                   key={pamelding.id}
                   className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
@@ -889,6 +911,7 @@ export default function TurDetaljer() {
                     {formatDateNo(pamelding.tur_dato.start_at)} –{" "}
                     {formatDateNo(pamelding.tur_dato.end_at)}
                   </div>
+
                   <Link
                     to={
                       chatLenker[pamelding.tur_dato.id]
@@ -898,7 +921,9 @@ export default function TurDetaljer() {
                     className="inline-flex items-center gap-2 self-start rounded-xl border border-sky-200 bg-white px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50"
                   >
                     <MessageCircle className="h-3.5 w-3.5" />
-                    {chatLenker[pamelding.tur_dato.id] ? "Åpne chat" : "Gå til meldinger"}
+                    {chatLenker[pamelding.tur_dato.id]
+                      ? "Åpne chat"
+                      : "Gå til meldinger"}
                   </Link>
                 </li>
               ))}
@@ -930,6 +955,7 @@ export default function TurDetaljer() {
               {datoer.map((d) => {
                 const erPameldt = pameldteDatoIds.has(d.id);
                 const kanMelde = isLoggedIn && !erPameldt && d.status === "planned";
+
                 return (
                   <li
                     key={d.id}
@@ -973,7 +999,7 @@ export default function TurDetaljer() {
                           className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           <Calendar className="h-3.5 w-3.5" />
-                          {signupLoading ? "Melder på..." : "Meld meg på"}
+                          {signupLoading ? "Melder på…" : "Meld meg på"}
                         </button>
                       )}
                     </div>
@@ -999,30 +1025,22 @@ export default function TurDetaljer() {
                   <MapPin className="mt-0.5 h-5 w-5 text-emerald-700" />
                   <div>
                     <div className="font-semibold">{tour.location}</div>
-                    <div className="text-sm text-gray-500">
-                      {tour.region}
-                    </div>
+                    <div className="text-sm text-gray-500">{tour.region}</div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
                   <Footprints className="h-5 w-5 text-emerald-700" />
                   <div>
-                    <div className="font-semibold">
-                      {tour.type || "Fottur"}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {tour.difficulty}
-                    </div>
+                    <div className="font-semibold">{tour.type || "Fottur"}</div>
+                    <div className="text-sm text-gray-500">{tour.difficulty}</div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
                   <Repeat className="h-5 w-5 text-emerald-700" />
                   <div>
-                    <div className="font-semibold">
-                      Tur basert på koblede turstier
-                    </div>
+                    <div className="font-semibold">Tur basert på koblede turstier</div>
                     <div className="text-sm text-gray-500">Rute</div>
                   </div>
                 </div>
@@ -1030,9 +1048,7 @@ export default function TurDetaljer() {
                 <div className="flex items-center gap-3">
                   <Calendar className="h-5 w-5 text-emerald-700" />
                   <div>
-                    <div className="font-semibold">
-                      Hele året (væravhengig)
-                    </div>
+                    <div className="font-semibold">Hele året (væravhengig)</div>
                     <div className="text-sm text-gray-500">Sesong</div>
                   </div>
                 </div>
@@ -1044,7 +1060,7 @@ export default function TurDetaljer() {
 
               <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
                 <div className="text-sm font-semibold text-emerald-900">
-                  Turvett (klassisk og smart)
+                  Turvett
                 </div>
                 <p className="mt-1 text-sm text-emerald-900/80">
                   Hold deg på stien der det er mulig, vis hensyn, og ta med søppel hjem.
@@ -1055,7 +1071,7 @@ export default function TurDetaljer() {
                   className="mt-3 inline-flex rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
                   onClick={() =>
                     alert(
-                      "Demo: Her kan dere lenke til info-side om turvett/verneregler."
+                      "Demo: Her kan dere lenke til info-side om turvett eller verneregler.",
                     )
                   }
                 >
@@ -1094,7 +1110,7 @@ export default function TurDetaljer() {
                     const [lat, lng] = mapCenter;
                     window.open(
                       `https://www.openstreetmap.org/#map=13/${lat}/${lng}`,
-                      "_blank"
+                      "_blank",
                     );
                   }}
                 >
@@ -1119,7 +1135,7 @@ export default function TurDetaljer() {
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <Star className="h-5 w-5 text-emerald-700" />
-              <h2 className="text-xl font-semibold">Kommentarer</h2>
+              <h2 className="text-xl font-semibold">Tilbakemeldinger</h2>
               <span className="ml-2 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
                 {kommentarer.length}
               </span>
@@ -1147,7 +1163,7 @@ export default function TurDetaljer() {
                     setKommentarTekst(e.target.value);
                     setKommentarFeil(null);
                   }}
-                  placeholder="Skriv kort om opplevelsen din..."
+                  placeholder="Skriv kort om opplevelsen din…"
                   maxLength={500}
                   className="min-h-[100px] w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
                 />
@@ -1168,7 +1184,7 @@ export default function TurDetaljer() {
                     disabled={kommentarBusy}
                     className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
                   >
-                    {kommentarBusy ? "Publiserer..." : "Publiser kommentar"}
+                    {kommentarBusy ? "Publiserer…" : "Publiser kommentar"}
                   </button>
                 </div>
               </div>
@@ -1191,6 +1207,7 @@ export default function TurDetaljer() {
                     ? `${k.bruker.fornavn ?? ""} ${k.bruker.etternavn ?? ""}`.trim() ||
                       "Bruker"
                     : "Bruker";
+
                   return (
                     <div
                       key={k.id}
@@ -1204,6 +1221,7 @@ export default function TurDetaljer() {
                           </div>
                         </div>
                       </div>
+
                       <p className="mt-3 text-sm leading-relaxed text-gray-700">
                         {k.body}
                       </p>
@@ -1241,10 +1259,7 @@ export default function TurDetaljer() {
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
           >
-            <h3
-              id="avmeld-tittel"
-              className="text-lg font-semibold text-slate-900"
-            >
+            <h3 id="avmeld-tittel" className="text-lg font-semibold text-slate-900">
               Meld deg av turdato?
             </h3>
 
@@ -1281,7 +1296,7 @@ export default function TurDetaljer() {
                 disabled={avmeldBusy}
                 className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {avmeldBusy ? "Melder av..." : "Meld av"}
+                {avmeldBusy ? "Melder av…" : "Meld av"}
               </button>
             </div>
           </div>

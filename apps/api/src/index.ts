@@ -18,6 +18,7 @@ import { adminRouter } from "./routes/adminRoutes";
 import { favorittRouter } from "./routes/favorittRoutes";
 import { turstiRouter } from "./routes/turstiRoutes";
 import { chatRouter } from "./routes/chatRoutes";
+import { weatherRouter } from "./routes/weatherRoutes";
 
 const app = express();
 
@@ -39,7 +40,7 @@ app.use("/api/bruker", userRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/favoritter", favorittRouter);
 app.use("/api/chats", chatRouter);
-
+app.use("/api/weather", weatherRouter);
 // Helsesjekk
 app.get('/', (req, res) => {
   res.send('API is running!');
