@@ -205,23 +205,25 @@ function getMapCenterFromTurstier(turstier?: ApiTurTursti[]) {
 function getRoutePointsFromTurstier(turstier?: ApiTurTursti[]): TourPoint[] {
   if (!Array.isArray(turstier) || turstier.length === 0) return [];
 
-  return turstier.flatMap((item) =>
-    (item.tursti?.tursti_punkt ?? [])
-      .map((point) => {
-        const lat = Number(point.lat);
-        const lng = Number(point.lng);
+  return [...turstier]
+    .sort((a, b) => a.rekkefolge - b.rekkefolge)
+    .flatMap((item) =>
+      [...(item.tursti?.tursti_punkt ?? [])]
+        .sort((a, b) => a.rekkefolge - b.rekkefolge)
+        .map((point) => {
+          const lat = Number(point.lat);
+          const lng = Number(point.lng);
 
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
 
-        return {
-          lat,
-          lng,
-          rekkefolge: point.rekkefolge,
-        } satisfies TourPoint;
-      })
-      .filter((point): point is TourPoint => point !== null)
-      .sort((a, b) => a.rekkefolge - b.rekkefolge),
-  );
+          return {
+            lat,
+            lng,
+            rekkefolge: point.rekkefolge,
+          } satisfies TourPoint;
+        })
+        .filter((point): point is TourPoint => point !== null),
+    );
 }
 
 function getLatestCommentUserName(kommentarer?: ApiTurKommentar[]) {
