@@ -142,6 +142,13 @@ function storyForTour(tour: Tour) {
 }
 
 function pickLatLngFromTour(tour: Tour): LatLng | null {
+  if (Array.isArray(tour.routePoints) && tour.routePoints.length > 0) {
+    const firstPoint = tour.routePoints[0];
+    if (Number.isFinite(firstPoint.lat) && Number.isFinite(firstPoint.lng)) {
+      return [firstPoint.lat, firstPoint.lng];
+    }
+  }
+
   const center = tour.mapCenter;
   if (Array.isArray(center) && center.length === 2) {
     const lat = Number(center[0]);
@@ -186,6 +193,15 @@ export default function TurDetaljer() {
 
   const gear: string[] = useMemo(
     () => (Array.isArray(tour?.gear) ? tour.gear : []),
+    [tour],
+  );
+  const routePoints = useMemo<LatLng[]>(
+    () =>
+      Array.isArray(tour?.routePoints)
+        ? tour.routePoints
+            .map((point) => [point.lat, point.lng] as LatLng)
+            .filter(([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng))
+        : [],
     [tour],
   );
 
@@ -1127,7 +1143,7 @@ export default function TurDetaljer() {
               </div>
             </div>
 
-            <TurMap center={mapCenter} title={tour.title} />
+            <TurMap center={mapCenter} title={tour.title} routePoints={routePoints} />
           </div>
         </div>
 
