@@ -18,10 +18,7 @@ import {
   Footprints,
   LogOut,
   Plus,
-  Users,
-  House,
   Bell,
-  MapPinned,
   Megaphone,
   X,
 } from "lucide-react";
@@ -112,7 +109,6 @@ export default function MinSide() {
   const [activeTab, setActiveTab] = useState<TabKey>("oversikt");
 
   const isAnnonsor = authUser?.roller?.includes("annonsor") ?? false;
-  const isTurleder = authUser?.roller?.includes("turleder") ?? false;
   const [soknadStatus, setSoknadStatus] = useState<AnnonsorSoknadStatus>(null);
   const [soknadOpen, setSoknadOpen] = useState(false);
   const [soknadNavn, setSoknadNavn] = useState("");
@@ -299,15 +295,13 @@ export default function MinSide() {
                 Opprett tur
               </NavLink>
 
-              {isTurleder && (
-                <NavLink
-                  to="/opprett-tur"
-                  className="inline-flex items-center gap-2 rounded-xl border border-[#dcebe4] bg-[#eef5f1] px-4 py-3 font-medium text-[#0f3d2e] hover:bg-[#e4efe9]"
-                >
-                  <Users className="h-4 w-4" />
-                  Ny fellestur
-                </NavLink>
-              )}
+              <NavLink
+                to="/mine-turer-leder"
+                className="inline-flex items-center gap-2 rounded-xl border border-[#dcebe4] bg-[#eef5f1] px-4 py-3 font-medium text-[#0f3d2e] hover:bg-[#e4efe9]"
+              >
+                <CalendarDays className="h-4 w-4" />
+                Mine turer som leder
+              </NavLink>
 
               {!isAnnonsor && soknadStatus?.status !== "pending" && (
                 <button
@@ -444,27 +438,6 @@ export default function MinSide() {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-900">Snarveier</h3>
-
-            <div className="mt-4 space-y-3">
-              <NavLink
-                to="/turer"
-                className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-slate-700 hover:bg-slate-50"
-              >
-                <MapPinned className="h-4 w-4 text-[#0f8f5b]" />
-                Utforsk turer
-              </NavLink>
-
-              <NavLink
-                to="/hytter"
-                className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-slate-700 hover:bg-slate-50"
-              >
-                <House className="h-4 w-4 text-[#0f8f5b]" />
-                Finn hytter
-              </NavLink>
-            </div>
-          </section>
         </aside>
 
         <section className="space-y-6">

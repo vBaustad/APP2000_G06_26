@@ -269,7 +269,7 @@ export default function Turer() {
 
   return (
     <main>
-      <section className="relative h-[38vh] min-h-[320px]">
+      <section className="relative h-[38vh] min-h-80">
         <img
           src="/images/explore-hero.jpg"
           alt=""

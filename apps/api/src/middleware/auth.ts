@@ -5,11 +5,11 @@
  */
 
 import { Request, Response, NextFunction } from "express";
-import { verifyToken } from "../auth/jwt";
 import { prisma } from "../prisma"
+import passport from "../auth/passport";
 
 export type AuthedRequest = Request & {
-  user?: { id: number; email: string; roles: string[] };
+    user?: { id: number; email: string; roles: string[] };
 };
 
 function getBearerToken(req: Request) {
@@ -20,37 +20,14 @@ function getBearerToken(req: Request) {
   return token;
 }
 
-export async function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
-  try {
-    const token = getBearerToken(req);
-    if (!token) return res.status(401).json({ error: "Missing Bearer token" });
-
-    const { userId } = verifyToken(token);
-
-    // Hent roller via join: bruker_rolle -> rolle
-    const user = await prisma.bruker.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        epost: true,
-        bruker_rolle: {
-          select: {
-            rolle: { select: { kode: true } },
-          },
-        },
-      },
-    });
-
-    if (!user) return res.status(401).json({ error: "User not found" });
-
-    const roles = user.bruker_rolle.map((ur: { rolle: { kode: any; }; }) => ur.rolle.kode);
-
-    req.user = { id: user.id, email: user.epost, roles };
-    next();
-  } catch {
-    return res.status(401).json({ error: "Invalid token" });
+export function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
+    passport.authenticate("jwt", { session: false }, (err: unknown, user: AuthedRequest["user"] | false) => {
+      if (err) return res.status(500).json({ error: "Auth error" });
+      if (!user) return res.status(401).json({ error: "Invalid or missing token" });
+      req.user = user;
+      next();
+    })(req, res, next);
   }
-}
 
 export function requireRole(role: string) {
   return (req: AuthedRequest, res: Response, next: NextFunction) => {

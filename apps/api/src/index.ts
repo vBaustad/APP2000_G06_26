@@ -7,6 +7,7 @@
 import "dotenv/config";
 import express from 'express';
 import cors from 'cors';
+import passport from "./auth/passport"
 import { authRouter } from './routes/authRoutes';
 import { hytteRouter } from "./routes/hytteRoutes";
 import { turRouter } from "./routes/turRoutes";
@@ -23,6 +24,7 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(passport.initialize());
 
 // API-ruter
 app.use('/api/auth', authRouter);
