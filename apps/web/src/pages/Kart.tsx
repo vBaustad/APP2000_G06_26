@@ -21,7 +21,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import {
+  MapContainer,
+  Marker,
+  Polyline,
+  TileLayer,
+  useMap,
+} from "react-leaflet";
 import L from "leaflet";
 import type { LatLngExpression } from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -57,6 +63,29 @@ const cabinIcon = L.divIcon({
   iconSize: [32, 32],
   iconAnchor: [16, 16],
   popupAnchor: [0, -16],
+});
+
+const endMarkerIcon = L.divIcon({
+  className: "custom-end-marker",
+  html: `
+    <div style="
+      width: 28px;
+      height: 28px;
+      border-radius: 9999px;
+      background: #dc2626;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      border: 2px solid white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    ">S</div>
+  `,
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+  popupAnchor: [0, -14],
 });
 
 const TOUR_IMAGES = [
@@ -95,6 +124,7 @@ type MapCabin = Cabin & {
 };
 
 type ViewTab = "all" | "tours" | "cabins";
+type LatLng = [number, number];
 
 function MapViewportUpdater({ coords, zoom }: { coords: LatLngExpression; zoom: number }) {
   const map = useMap();
@@ -104,6 +134,37 @@ function MapViewportUpdater({ coords, zoom }: { coords: LatLngExpression; zoom: 
   }, [coords, map, zoom]);
 
   return null;
+}
+
+function SelectedRouteOverlay({ trip }: { trip: MapTour }) {
+  const map = useMap();
+  const routePoints: LatLng[] = Array.isArray(trip.routePoints)
+    ? trip.routePoints
+        .map((point) => [point.lat, point.lng] as LatLng)
+        .filter(([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng))
+    : [];
+  const endPoint = routePoints.length >= 2 ? routePoints[routePoints.length - 1] : null;
+
+  useEffect(() => {
+    if (routePoints.length >= 2) {
+      map.fitBounds(routePoints, {
+        padding: [20, 20],
+        maxZoom: 13,
+      });
+    }
+  }, [map, routePoints]);
+
+  if (routePoints.length < 2) return null;
+
+  return (
+    <>
+      <Polyline
+        positions={routePoints}
+        pathOptions={{ color: "#047857", weight: 6, opacity: 0.9 }}
+      />
+      {endPoint ? <Marker position={endPoint} icon={endMarkerIcon} /> : null}
+    </>
+  );
 }
 
 function buildHighlights(tour: Tour) {
@@ -671,6 +732,7 @@ export default function Kart() {
               zoom={selectedZoom}
             />
           )}
+          {selectedTrip ? <SelectedRouteOverlay trip={selectedTrip} /> : null}
           {displayedTrips.map((trip) => (
             <Marker
               key={trip.id}
@@ -680,24 +742,7 @@ export default function Kart() {
               }}
               position={trip.coords}
               eventHandlers={{ click: () => handleSelectTrip(trip) }}
-            >
-              <Popup>
-                <div className="w-[220px] overflow-hidden rounded-xl">
-                  <img
-                    src={trip.imageUrl || "/images/trip-card-placeholder.jpg"}
-                    alt={trip.title}
-                    className="h-28 w-full rounded-lg object-cover"
-                  />
-                  <div className="pt-3">
-                    <strong className="block text-base text-slate-900">{trip.title}</strong>
-                    <p className="mt-1 text-sm text-slate-600">
-                      {trip.location} • {trip.region}
-                    </p>
-                    <p className="mt-2 text-xs text-slate-500">{trip.dateLabel}</p>
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
+            />
           ))}
           {displayedCabins.map((cabin) => (
             <Marker
@@ -708,33 +753,7 @@ export default function Kart() {
               }}
               position={cabin.coords}
               eventHandlers={{ click: () => handleSelectCabin(cabin) }}
-            >
-              <Popup>
-                <div className="w-[220px] overflow-hidden rounded-xl">
-                  <img
-                    src={cabin.imageUrl || "/images/cabins/u0wj3hct0e98ocz1bqwy.webp"}
-                    alt={cabin.navn}
-                    className="h-28 w-full rounded-lg object-cover"
-                  />
-                  <div className="pt-3">
-                    <strong className="block text-base text-slate-900">{cabin.navn}</strong>
-                    <p className="mt-1 text-sm text-slate-600">
-                      {cabin.omrade || cabin.adresse || "Ukjent område"}
-                    </p>
-                    <p className="mt-2 text-xs text-slate-500">
-                      {cabin.kapasitet_senger} senger
-                      {cabin.pris_per_natt ? ` • ${cabin.pris_per_natt} kr/natt` : ""}
-                    </p>
-                    <Link
-                      to={`/hytter/${cabin.id}`}
-                      className="mt-3 inline-flex text-sm font-semibold text-emerald-700 hover:underline"
-                    >
-                      Se hytte →
-                    </Link>
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
+            />
           ))}
         </MapContainer>
       </section>
