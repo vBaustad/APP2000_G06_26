@@ -26,8 +26,11 @@ import {
   Footprints,
   MessageCircle,
   PencilLine,
+  Lock,
+  XCircle,
 } from "lucide-react";
 import TurMap from "../components/TurMap";
+import { erDatoAktiv } from "../utils/turDato";
 
 type LatLng = [number, number];
 
@@ -151,6 +154,9 @@ export default function TurDetaljer() {
   const [avmeldBusy, setAvmeldBusy] = useState(false);
   const [avmeldFeil, setAvmeldFeil] = useState<string | null>(null);
 
+  const [statusBusyId, setStatusBusyId] = useState<number | null>(null);
+  const [historikkApen, setHistorikkApen] = useState(false);
+
   const tid = String(tour?.id ?? id ?? "");
   const dateLocale = i18n.resolvedLanguage === "en" ? "en-US" : "nb-NO";
   const canEdit = useMemo(() => {
@@ -219,6 +225,14 @@ export default function TurDetaljer() {
   }
 
   const datoer = useMemo(() => tour?.datoer ?? [], [tour]);
+  const aktiveDatoer = useMemo(
+    () => datoer.filter((d) => erDatoAktiv(d.endAt, d.status)),
+    [datoer],
+  );
+  const historiskeDatoer = useMemo(
+    () => datoer.filter((d) => !erDatoAktiv(d.endAt, d.status)),
+    [datoer],
+  );
   const pameldteDatoIds = useMemo(
     () => new Set(minePameldinger.map((p) => p.tur_dato.id)),
     [minePameldinger],
@@ -631,6 +645,61 @@ export default function TurDetaljer() {
     setAvmeldFeil(null);
   }
 
+  async function handleDatoStatus(datoId: number, nyStatus: "locked" | "cancelled") {
+    const statusToken = safeGet("token") || safeGet("auth_token");
+    if (!statusToken) {
+      alert(t("detail.mustLoginToken"));
+      return;
+    }
+
+    const confirmMsg =
+      nyStatus === "locked"
+        ? t("detail.confirmLock")
+        : t("detail.confirmCancel");
+    if (!window.confirm(confirmMsg)) return;
+
+    setStatusBusyId(datoId);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/turer/datoer/${datoId}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${statusToken}`,
+          },
+          body: JSON.stringify({ status: nyStatus }),
+        },
+      );
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        alert(data?.error ?? t("detail.statusError"));
+        return;
+      }
+      // Refetch turen og mine påmeldinger for å få oppdaterte statuser.
+      if (id) {
+        const fresh = await getTourById(id);
+        setTour(ensureTourImage(fresh));
+      }
+      try {
+        const meRes = await fetch(`${import.meta.env.VITE_API_URL}/api/bruker/me`, {
+          headers: { Authorization: `Bearer ${statusToken}` },
+        });
+        if (meRes.ok) {
+          const meData = (await meRes.json()) as { tur_pamelding?: MinPamelding[] };
+          const alle = Array.isArray(meData.tur_pamelding) ? meData.tur_pamelding : [];
+          setMinePameldinger(alle.filter((p) => p.tur_dato?.tur?.id === Number(tid)));
+        }
+      } catch {
+        // Ikke-kritisk — brukeren kan reloade hvis statusene ser gamle ut.
+      }
+    } catch {
+      alert(t("detail.commentNetworkError"));
+    } finally {
+      setStatusBusyId(null);
+    }
+  }
+
   async function handleBekreftAvmeld() {
     if (!avmeldKandidat) return;
     const avToken = safeGet("token") || safeGet("auth_token");
@@ -680,7 +749,6 @@ export default function TurDetaljer() {
     a.remove();
   }
 
-  const dateCount = datoer.length;
   const lockedCount = lasedeChatPameldinger.length;
 
   return (
@@ -728,28 +796,28 @@ export default function TurDetaljer() {
             </div>
 
             <div className="mt-5 flex flex-wrap items-center gap-3">
-              {dateCount === 1 ? (
+              {aktiveDatoer.length === 1 ? (
                 <button
                   type="button"
-                  onClick={() => handleSignup(datoer[0].id)}
-                  disabled={signupLoading || pameldteDatoIds.has(datoer[0].id)}
+                  onClick={() => handleSignup(aktiveDatoer[0].id)}
+                  disabled={signupLoading || pameldteDatoIds.has(aktiveDatoer[0].id)}
                   className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   <Calendar className="h-4 w-4" />
-                  {pameldteDatoIds.has(datoer[0].id)
+                  {pameldteDatoIds.has(aktiveDatoer[0].id)
                     ? t("detail.signedUp")
                     : signupLoading
                       ? t("detail.signingUp")
                       : t("detail.signUp")}
                 </button>
-              ) : dateCount > 1 ? (
+              ) : aktiveDatoer.length > 1 ? (
                 <button
                   type="button"
                   onClick={scrollToDatoer}
                   className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
                 >
                   <Calendar className="h-4 w-4" />
-                  {t("detail.chooseDate", { count: dateCount })}
+                  {t("detail.chooseDate", { count: aktiveDatoer.length })}
                 </button>
               ) : null}
 
@@ -948,7 +1016,7 @@ export default function TurDetaljer() {
           </div>
         )}
 
-        {dateCount > 0 && (
+        {(aktiveDatoer.length > 0 || historiskeDatoer.length > 0) && (
           <div
             id="datoalternativer"
             className="mt-6 scroll-mt-24 rounded-2xl border border-gray-100 bg-white p-6 shadow"
@@ -957,16 +1025,23 @@ export default function TurDetaljer() {
               <Calendar className="h-5 w-5 text-emerald-700" />
               <h2 className="text-lg font-semibold">{t("detail.dateOptionsTitle")}</h2>
               <span className="ml-2 rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700">
-                {dateCount} {dateCount === 1 ? t("detail.dateSingular") : t("detail.datePlural")}
+                {aktiveDatoer.length}{" "}
+                {aktiveDatoer.length === 1 ? t("detail.dateSingular") : t("detail.datePlural")}
               </span>
             </div>
 
-            {dateCount > 1 && (
+            {aktiveDatoer.length > 1 && (
               <p className="mt-2 text-sm text-gray-600">{t("detail.datesIntro")}</p>
             )}
 
+            {aktiveDatoer.length === 0 && (
+              <p className="mt-4 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
+                {t("detail.noActiveDates")}
+              </p>
+            )}
+
             <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-              {datoer.map((d) => {
+              {aktiveDatoer.map((d) => {
                 const erPameldt = pameldteDatoIds.has(d.id);
                 const kanMelde = isLoggedIn && !erPameldt && d.status === "planned";
                 return (
@@ -1016,10 +1091,80 @@ export default function TurDetaljer() {
                         </button>
                       )}
                     </div>
+
+                    {canEdit && d.status === "planned" && (
+                      <div className="flex flex-wrap gap-2 border-t border-gray-200 pt-2">
+                        <button
+                          type="button"
+                          disabled={statusBusyId === d.id}
+                          onClick={() => handleDatoStatus(d.id, "locked")}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-[#0f3d2e] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#12351d] disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <Lock className="h-3.5 w-3.5" />
+                          {t("detail.lockDate")}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={statusBusyId === d.id}
+                          onClick={() => handleDatoStatus(d.id, "cancelled")}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <XCircle className="h-3.5 w-3.5" />
+                          {t("detail.cancelDate")}
+                        </button>
+                      </div>
+                    )}
+                    {canEdit && d.status === "locked" && (
+                      <div className="flex items-center gap-1.5 border-t border-gray-200 pt-2 text-xs font-semibold text-blue-900">
+                        <Lock className="h-3.5 w-3.5" />
+                        {t("detail.dateIsLocked")}
+                      </div>
+                    )}
+                    {canEdit && d.status === "cancelled" && (
+                      <div className="flex items-center gap-1.5 border-t border-gray-200 pt-2 text-xs font-semibold text-slate-600">
+                        <XCircle className="h-3.5 w-3.5" />
+                        {t("detail.dateIsCancelled")}
+                      </div>
+                    )}
                   </li>
                 );
               })}
             </ul>
+
+            {historiskeDatoer.length > 0 && (
+              <div className="mt-6 border-t border-gray-100 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setHistorikkApen((v) => !v)}
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900"
+                >
+                  {historikkApen
+                    ? t("detail.hideHistory", { count: historiskeDatoer.length })
+                    : t("detail.showHistory", { count: historiskeDatoer.length })}
+                </button>
+
+                {historikkApen && (
+                  <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {historiskeDatoer.map((d) => (
+                      <li
+                        key={d.id}
+                        className="flex flex-col gap-1 rounded-xl border border-gray-100 bg-slate-50 p-3 text-sm text-slate-700"
+                      >
+                        <div className="font-medium text-slate-800">
+                          {d.tittel ?? t("detail.dateNoLabel")}
+                        </div>
+                        <div className="text-xs text-slate-600">
+                          {formatDate(d.startAt)} – {formatDate(d.endAt)}
+                        </div>
+                        <div className="text-xs uppercase tracking-wider text-slate-500">
+                          {d.status}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -1107,6 +1252,56 @@ export default function TurDetaljer() {
                 )}
               </div>
             </div>
+
+            {tour.hytter.length > 0 && (
+              <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow">
+                <h2 className="flex items-center gap-2 text-xl font-semibold">
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">
+                    H
+                  </span>
+                  {t("detail.cabinsHeading")}
+                </h2>
+                <p className="mt-1 text-sm text-gray-600">
+                  {t("detail.cabinsIntro", { count: tour.hytter.length })}
+                </p>
+
+                <ul className="mt-4 space-y-3">
+                  {tour.hytter.map((h, i) => (
+                    <li
+                      key={h.id}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0f3d2e] text-xs font-semibold text-white">
+                          {i + 1}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="truncate font-semibold text-gray-900">{h.navn}</div>
+                          <div className="text-xs text-gray-500">
+                            {[
+                              h.omrade,
+                              h.betjent
+                                ? t(`detail.cabinBetjent.${h.betjent}`)
+                                : null,
+                              `${h.kapasitetSenger} senger`,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </div>
+                        </div>
+                      </div>
+
+                      <Link
+                        to={`/hytter/${h.id}`}
+                        className="shrink-0 text-sm font-semibold text-emerald-700 hover:underline"
+                      >
+                        {t("detail.viewCabin")}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow">
@@ -1137,7 +1332,17 @@ export default function TurDetaljer() {
               </div>
             </div>
 
-            <TurMap center={mapCenter} title={tour.title} routePoints={routePoints} />
+            <TurMap
+              center={mapCenter}
+              title={tour.title}
+              routePoints={routePoints}
+              cabins={tour.hytter
+                .filter(
+                  (h): h is typeof h & { lat: number; lng: number } =>
+                    h.lat !== null && h.lng !== null,
+                )
+                .map((h) => ({ id: h.id, navn: h.navn, lat: h.lat, lng: h.lng }))}
+            />
           </div>
         </div>
 

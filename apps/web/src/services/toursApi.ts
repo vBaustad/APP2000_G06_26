@@ -29,6 +29,21 @@ type ApiTurTursti = {
   tursti: ApiTursti;
 };
 
+type ApiTurHytte = {
+  rekkefolge: number;
+  hytte: {
+    id: number;
+    navn: string;
+    omrade: string | null;
+    betjent: "betjent" | "selvbetjent" | "ubetjent" | null;
+    bilde_url: string | null;
+    kapasitet_senger: number;
+    pris_per_natt: number | string | null;
+    lat: number | string | null;
+    lng: number | string | null;
+  };
+};
+
 type ApiTurDato = {
   id: number;
   tittel?: string | null;
@@ -77,6 +92,7 @@ type ApiTour = {
     etternavn?: string | null;
   } | null;
   tur_tursti?: ApiTurTursti[];
+  tur_hytte?: ApiTurHytte[];
   tur_dato?: ApiTurDato[];
   tur_rating?: ApiTurRating[];
   tur_kommentar?: ApiTurKommentar[];
@@ -289,6 +305,29 @@ function mapTour(tour: ApiTour): Tour {
         }))
       : [],
     ownerId: tour.leder_bruker_id ?? null,
+    hytter: Array.isArray(tour.tur_hytte)
+      ? [...tour.tur_hytte]
+          .sort((a, b) => a.rekkefolge - b.rekkefolge)
+          .map((item) => {
+            const lat = item.hytte.lat !== null ? Number(item.hytte.lat) : null;
+            const lng = item.hytte.lng !== null ? Number(item.hytte.lng) : null;
+            return {
+              id: item.hytte.id,
+              navn: item.hytte.navn,
+              omrade: item.hytte.omrade,
+              betjent: item.hytte.betjent,
+              bildeUrl: item.hytte.bilde_url,
+              kapasitetSenger: item.hytte.kapasitet_senger,
+              prisPerNatt:
+                item.hytte.pris_per_natt !== null
+                  ? Number(item.hytte.pris_per_natt)
+                  : null,
+              lat: lat !== null && Number.isFinite(lat) ? lat : null,
+              lng: lng !== null && Number.isFinite(lng) ? lng : null,
+              rekkefolge: item.rekkefolge,
+            };
+          })
+      : [],
     social: {
       averageRating: getAverageRating(ratings),
       commentCount: kommentarer.length,

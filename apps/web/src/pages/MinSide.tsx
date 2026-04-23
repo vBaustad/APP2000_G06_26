@@ -40,6 +40,12 @@ type TabKey =
   | "bookinger"
   | "konto";
 
+type OpprettetTurDato = {
+  id: number;
+  end_at?: string | null;
+  status?: string | null;
+};
+
 type OpprettetTur = {
   id: number;
   tittel: string;
@@ -48,7 +54,7 @@ type OpprettetTur = {
   vanskelighetsgrad: string | null;
   omrade: string | null;
   updated_at: string;
-  tur_dato?: { id: number }[];
+  tur_dato?: OpprettetTurDato[];
 };
 
 type MinKommentar = {
@@ -104,8 +110,8 @@ type TurPameldingItem = {
 
 type FavorittItem = {
   id: number;
-  tur?: { tittel: string } | null;
-  hytte?: { navn: string } | null;
+  tur?: { id: number; tittel: string } | null;
+  hytte?: { id: number; navn: string } | null;
 };
 
 type BrukerProfil = {
@@ -753,6 +759,14 @@ export default function MinSide() {
                 {opprettedeTurer.length > 0 ? (
                   opprettedeTurer.map((tur) => {
                     const erFellestur = (tur.tur_dato?.length ?? 0) > 0;
+                    const harAktivDato = erFellestur
+                      ? (tur.tur_dato ?? []).some(
+                          (d) =>
+                            d.status === "planned" &&
+                            !!d.end_at &&
+                            new Date(d.end_at).getTime() >= Date.now(),
+                        )
+                      : true;
                     return (
                       <div
                         key={tur.id}
@@ -760,9 +774,24 @@ export default function MinSide() {
                       >
                         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                           <div className="min-w-0">
-                            <h3 className="text-xl font-semibold text-slate-900">
-                              {tur.tittel}
-                            </h3>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className="text-xl font-semibold text-slate-900">
+                                {tur.tittel}
+                              </h3>
+                              {erFellestur && (
+                                <span
+                                  className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                                    harAktivDato
+                                      ? "bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200"
+                                      : "bg-slate-200 text-slate-700 ring-1 ring-slate-300"
+                                  }`}
+                                >
+                                  {harAktivDato
+                                    ? t("minside.createdTours.active")
+                                    : t("minside.createdTours.finished")}
+                                </span>
+                              )}
+                            </div>
                             <p className="mt-1 text-sm text-slate-500">
                               {[
                                 tur.omrade,
@@ -813,20 +842,30 @@ export default function MinSide() {
                   favoriteItems.map((fav) => {
                     const navn = fav.tur?.tittel ?? fav.hytte?.navn ?? t("minside.favorites.unknown");
                     const type = fav.tur ? t("minside.favorites.typeTour") : t("minside.favorites.typeCabin");
+                    const href = fav.tur
+                      ? `/turer/${fav.tur.id}`
+                      : fav.hytte
+                        ? `/hytter/${fav.hytte.id}`
+                        : null;
 
-                    return (
-                      <div
-                        key={fav.id}
-                        className="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300"
-                      >
+                    const card = (
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300 hover:bg-white">
                         <div className="flex items-start justify-between gap-3">
-                          <div>
+                          <div className="min-w-0">
                             <p className="text-xl font-semibold text-slate-900">{navn}</p>
                             <p className="mt-2 text-slate-500">{type}</p>
                           </div>
-                          <Heart className="h-5 w-5 fill-[#0f8f5b] text-[#0f8f5b]" />
+                          <Heart className="h-5 w-5 shrink-0 fill-[#0f8f5b] text-[#0f8f5b]" />
                         </div>
                       </div>
+                    );
+
+                    return href ? (
+                      <NavLink key={fav.id} to={href} className="block">
+                        {card}
+                      </NavLink>
+                    ) : (
+                      <div key={fav.id}>{card}</div>
                     );
                   })
                 ) : (

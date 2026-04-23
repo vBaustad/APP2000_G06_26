@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
+import { erDatoAktiv } from "../utils/turDato";
 
 type TurDatoStatus = "planned" | "locked" | "cancelled" | "freed";
 type PameldingStatus = "pending" | "binding" | "freed" | "locked";
@@ -83,6 +84,7 @@ export default function MineTurerLeder() {
   const [skjemaBusy, setSkjemaBusy] = useState(false);
   const [skjemaFeil, setSkjemaFeil] = useState<string | null>(null);
   const [statusBusyId, setStatusBusyId] = useState<number | null>(null);
+  const [historikkApenFor, setHistorikkApenFor] = useState<Set<number>>(new Set());
 
   function formatDato(iso: string): string {
     try {
@@ -413,13 +415,27 @@ export default function MineTurerLeder() {
                 </form>
               )}
 
-              {tur.tur_dato.length === 0 ? (
-                <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                  {t("turerLeder.noDates")}
-                </p>
-              ) : (
-                <ul className="flex flex-col gap-3">
-                  {tur.tur_dato.map((dato) => {
+              {(() => {
+                const aktive = tur.tur_dato.filter((d) => erDatoAktiv(d.end_at, d.status));
+                const historiske = tur.tur_dato.filter((d) => !erDatoAktiv(d.end_at, d.status));
+
+                if (tur.tur_dato.length === 0) {
+                  return (
+                    <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                      {t("turerLeder.noDates")}
+                    </p>
+                  );
+                }
+
+                return (
+                  <>
+                    {aktive.length === 0 ? (
+                      <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                        {t("turerLeder.noActiveDates")}
+                      </p>
+                    ) : (
+                      <ul className="flex flex-col gap-3">
+                        {aktive.map((dato) => {
                     const antallPending = dato.tur_pamelding.filter(
                       (p) => p.status === "pending",
                     ).length;
@@ -501,8 +517,53 @@ export default function MineTurerLeder() {
                       </li>
                     );
                   })}
-                </ul>
-              )}
+                        </ul>
+                    )}
+
+                    {historiske.length > 0 && (
+                      <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-3">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setHistorikkApenFor((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(tur.id)) next.delete(tur.id);
+                              else next.add(tur.id);
+                              return next;
+                            })
+                          }
+                          className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900"
+                        >
+                          {historikkApenFor.has(tur.id)
+                            ? t("turerLeder.hideHistory", { count: historiske.length })
+                            : t("turerLeder.showHistory", { count: historiske.length })}
+                        </button>
+
+                        {historikkApenFor.has(tur.id) && (
+                          <ul className="mt-3 flex flex-col gap-2">
+                            {historiske.map((dato) => (
+                              <li
+                                key={dato.id}
+                                className="flex flex-col gap-1 rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-700"
+                              >
+                                <div className="font-medium text-slate-800">
+                                  {dato.tittel ?? t("turerLeder.dateLabel")}
+                                </div>
+                                <div className="text-xs text-slate-600">
+                                  {formatDato(dato.start_at)} – {formatDato(dato.end_at)}
+                                </div>
+                                <div className="text-xs uppercase tracking-wider text-slate-500">
+                                  {dato.status}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </section>
           ))}
         </div>

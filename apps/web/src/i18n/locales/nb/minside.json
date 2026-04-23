@@ -32,6 +32,8 @@
       "create": "Opprett ny tur",
       "groupTour": "Fellestur",
       "regularTour": "Vanlig tur",
+      "active": "Aktiv",
+      "finished": "Ferdig",
       "view": "Se tur",
       "edit": "Rediger",
       "empty": "Du har ikke opprettet noen turer enda."
@@ -146,6 +148,10 @@
       "errorStatus": "Kunne ikke oppdatere status."
     },
     "noDates": "Ingen datoer lagt til ennå. Legg til minst én dato så brukere kan melde seg på.",
+    "noActiveDates": "Ingen aktive datoer. Historikk vises nedenfor hvis den finnes.",
+    "showHistory": "Vis tidligere datoer ({{count}})",
+    "hideHistory": "Skjul tidligere datoer ({{count}})",
+    "dateLabel": "Dato",
     "datoStatus": {
       "planned": "Foreslått",
       "locked": "Låst",

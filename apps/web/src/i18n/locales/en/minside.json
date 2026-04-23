@@ -32,6 +32,8 @@
       "create": "Create new tour",
       "groupTour": "Group tour",
       "regularTour": "Regular tour",
+      "active": "Active",
+      "finished": "Finished",
       "view": "View tour",
       "edit": "Edit",
       "empty": "You haven't created any tours yet."
@@ -146,6 +148,10 @@
       "errorStatus": "Could not update status."
     },
     "noDates": "No dates added yet. Add at least one date so users can register.",
+    "noActiveDates": "No active dates. Previous dates are shown below if any.",
+    "showHistory": "Show previous dates ({{count}})",
+    "hideHistory": "Hide previous dates ({{count}})",
+    "dateLabel": "Date",
     "datoStatus": {
       "planned": "Proposed",
       "locked": "Locked",

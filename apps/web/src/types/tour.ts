@@ -27,6 +27,19 @@ export type TourDato = {
   status: string;
 };
 
+export type TourHytte = {
+  id: number;
+  navn: string;
+  omrade: string | null;
+  betjent: "betjent" | "selvbetjent" | "ubetjent" | null;
+  bildeUrl: string | null;
+  kapasitetSenger: number;
+  prisPerNatt: number | null;
+  lat: number | null;
+  lng: number | null;
+  rekkefolge: number;
+};
+
 export type TourSocial = {
   averageRating: number | null;
   commentCount: number;
@@ -55,6 +68,7 @@ export type Tour = {
   mapCenter: [number, number] | null;
   routePoints: TourPoint[];
   datoer: TourDato[];
+  hytter: TourHytte[];
   ownerId: number | null;
   social: TourSocial;
 };

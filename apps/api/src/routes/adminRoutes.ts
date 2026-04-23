@@ -13,7 +13,17 @@ export const adminRouter = Router();
 
 // PUBLIC: Tilbakestill alle testdata. Bevisst uten auth så sensor kan
 // nullstille systemet under testing. UI-en krever confirm-modal før kall.
+// Enkel mutex hindrer at to samtidige kall korrupterer databasen midtveis.
+let resetBusy = false;
+
 adminRouter.post("/reset-testdata", async (_req, res) => {
+  if (resetBusy) {
+    return res.status(429).json({
+      ok: false,
+      error: "En tilbakestilling pågår allerede. Prøv igjen om noen sekunder.",
+    });
+  }
+  resetBusy = true;
   try {
     await clearAllData();
     await seedAll();
@@ -27,6 +37,8 @@ adminRouter.post("/reset-testdata", async (_req, res) => {
       ok: false,
       error: "Kunne ikke tilbakestille testdata.",
     });
+  } finally {
+    resetBusy = false;
   }
 });
 

@@ -25,6 +25,7 @@ import {
   MapContainer,
   Marker,
   Polyline,
+  Popup,
   TileLayer,
   useMap,
 } from "react-leaflet";
@@ -245,6 +246,7 @@ export default function Kart() {
   const [selectedTrip, setSelectedTrip] = useState<MapTour | null>(null);
   const [selectedCabin, setSelectedCabin] = useState<MapCabin | null>(null);
   const [userPosition, setUserPosition] = useState<[number, number] | null>(null);
+  const [locateTrigger, setLocateTrigger] = useState(0);
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState<string | null>(null);
 
@@ -260,6 +262,7 @@ export default function Kart() {
         setUserPosition([pos.coords.latitude, pos.coords.longitude]);
         setSelectedTrip(null);
         setSelectedCabin(null);
+        setLocateTrigger((n) => n + 1);
         setLocating(false);
       },
       (err) => {
@@ -405,7 +408,24 @@ export default function Kart() {
   }, [allCabins, query]);
 
   const displayedTrips = currentView === "cabins" ? [] : filteredTrips;
-  const displayedCabins = currentView === "tours" ? [] : visibleCabins;
+  const displayedCabinsRaw = currentView === "tours" ? [] : visibleCabins;
+
+  // Forskyv hytte-markører hvis de ligger rett oppå en tur-markør, slik at
+  // T- og H-ikoner ikke rendres på samme punkt.
+  const displayedCabins = useMemo(() => {
+    const TOL = 0.0005;
+    const NUDGE = 0.0018;
+    const tourCoords = displayedTrips.map((trip) => trip.coords);
+    return displayedCabinsRaw.map((cabin) => {
+      const [cLat, cLng] = cabin.coords;
+      const overlapper = tourCoords.some(
+        ([tLat, tLng]) => Math.abs(cLat - tLat) < TOL && Math.abs(cLng - tLng) < TOL,
+      );
+      return overlapper
+        ? { ...cabin, coords: [cLat, cLng + NUDGE] as [number, number] }
+        : cabin;
+    });
+  }, [displayedCabinsRaw, displayedTrips]);
 
   useEffect(() => {
     if (selectedCabinId || currentView === "cabins") return;
@@ -812,8 +832,12 @@ export default function Kart() {
               zoom={selectedZoom}
             />
           )}
-          {userPosition && !selectedTrip && !selectedCabin && (
-            <MapViewportUpdater coords={userPosition as LatLngExpression} zoom={12} />
+          {userPosition && (
+            <MapViewportUpdater
+              key={`locate-${locateTrigger}`}
+              coords={userPosition as LatLngExpression}
+              zoom={13}
+            />
           )}
           {userPosition && (
             <Marker position={userPosition} icon={userPositionIcon}>

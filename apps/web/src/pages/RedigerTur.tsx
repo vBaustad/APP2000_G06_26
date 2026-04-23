@@ -624,14 +624,34 @@ export default function RedigerTur() {
                 </h2>
               </div>
 
-              <button
-                type="button"
-                onClick={apneTegneModal}
-                className="inline-flex items-center gap-2 rounded-xl border border-[#0f3d2e] bg-white px-3 py-2 text-sm font-semibold text-[#0f3d2e] hover:bg-[#eef5f1]"
-              >
-                <PencilLine className="h-4 w-4" />
-                {t("page.drawTrail")}
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#0f3d2e] bg-white px-3 py-2 text-sm font-semibold text-[#0f3d2e] hover:bg-[#eef5f1]">
+                  <Upload className="h-4 w-4" />
+                  {t("draw.uploadGpx")}
+                  <input
+                    type="file"
+                    accept=".gpx,application/gpx+xml,text/xml"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) {
+                        apneTegneModal();
+                        void handleGpxFile(f);
+                      }
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={apneTegneModal}
+                  className="inline-flex items-center gap-2 rounded-xl border border-[#0f3d2e] bg-white px-3 py-2 text-sm font-semibold text-[#0f3d2e] hover:bg-[#eef5f1]"
+                >
+                  <PencilLine className="h-4 w-4" />
+                  {t("page.drawTrail")}
+                </button>
+              </div>
             </div>
             <p className="text-sm text-slate-600">{t("page.trailsHelp")}</p>
 

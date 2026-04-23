@@ -683,8 +683,10 @@ turRouter.patch(
         },
       });
       if (!dato) return res.status(404).json({ error: "Fant ikke datoen." });
-      if (dato.tur.leder_bruker_id !== brukerId) {
-        return res.status(403).json({ error: "Kun turlederen kan endre status." });
+      const erAdmin = req.user?.roles.includes("admin") ?? false;
+      const erLeder = dato.tur.leder_bruker_id === brukerId;
+      if (!erLeder && !erAdmin) {
+        return res.status(403).json({ error: "Kun turlederen eller admin kan endre status." });
       }
       if (dato.status === "locked" || dato.status === "cancelled") {
         return res.status(409).json({
