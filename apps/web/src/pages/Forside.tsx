@@ -18,7 +18,9 @@ import LandingActivities from "../components/landing/LandingActivities";
 import LandingCommunitySection from "../components/landing/LandingCommunitySection";
 import LandingSidebarSection from "../components/landing/LandingSidebarSection";
 import EasterTripsSection from "../components/sections/EasterTripSection";
+import ForsideAds from "../components/sections/ForsideAds";
 import PartnersSection from "../components/sections/PartnerSection";
+import ResetTestdataSection from "../components/sections/ResetTestdataSection";
 import { getTours } from "../services/toursApi";
 import type { Tour } from "../types/tour";
 
@@ -53,15 +55,17 @@ export default function Forside() {
     <>
       <LandingHero />
 
-      <main className="mx-auto max-w-6xl space-y-20 px-4 py-16">
+      <main className="mx-auto max-w-7xl space-y-20 px-4 py-16">
         <LandingFeatures />
         <LandingActivities />
+        <ForsideAds />
         <LandingCommunitySection tours={tours} />
         <EasterTripsSection tours={tours} />
         <LandingSidebarSection />
       </main>
 
       <PartnersSection />
+      <ResetTestdataSection />
     </>
   );
 }

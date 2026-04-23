@@ -1,7 +1,7 @@
 /**
  * Fil: Kart.tsx
  * Utvikler(e): Vebjørn Baustad
- * Beskrivelse: Oversikt over turer og hytter med kart som viser lokasjoner 
+ * Beskrivelse: Oversikt over turer og hytter med kart som viser lokasjoner
  */
 /*
  * Videreutviklet av: Ramona Cretulescu. Copilot er brukt som guide og lærer i utviklingen av denne siden.
@@ -25,31 +25,25 @@ import {
   MapContainer,
   Marker,
   Polyline,
+  Popup,
   TileLayer,
   useMap,
 } from "react-leaflet";
 import L from "leaflet";
 import type { LatLngExpression } from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useTranslation } from "react-i18next";
+import { LocateFixed } from "lucide-react";
 import { getTours } from "../services/toursApi";
 import type { Tour } from "../types/tour";
 
-const defaultIcon = L.icon({
-  iconUrl: new URL("leaflet/dist/images/marker-icon.png", import.meta.url).toString(),
-  shadowUrl: new URL("leaflet/dist/images/marker-shadow.png", import.meta.url).toString(),
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-});
-
-const cabinIcon = L.divIcon({
-  className: "custom-cabin-marker",
-  html: `
+function circleMarkerHtml(letter: string, bgColor: string) {
+  return `
     <div style="
       width: 32px;
       height: 32px;
       border-radius: 9999px;
-      background: #059669;
+      background: ${bgColor};
       color: white;
       display: flex;
       align-items: center;
@@ -58,11 +52,41 @@ const cabinIcon = L.divIcon({
       font-weight: 700;
       border: 2px solid white;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-    ">H</div>
-  `,
+    ">${letter}</div>
+  `;
+}
+
+const tourIcon = L.divIcon({
+  className: "custom-tour-marker",
+  html: circleMarkerHtml("T", "#b45309"),
   iconSize: [32, 32],
   iconAnchor: [16, 16],
   popupAnchor: [0, -16],
+});
+
+const cabinIcon = L.divIcon({
+  className: "custom-cabin-marker",
+  html: circleMarkerHtml("H", "#059669"),
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  popupAnchor: [0, -16],
+});
+
+const userPositionIcon = L.divIcon({
+  className: "custom-user-marker",
+  html: `
+    <div style="
+      width: 18px;
+      height: 18px;
+      border-radius: 9999px;
+      background: #2563eb;
+      border: 3px solid white;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25), 0 4px 12px rgba(0, 0, 0, 0.25);
+    "></div>
+  `,
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+  popupAnchor: [0, -9],
 });
 
 const endMarkerIcon = L.divIcon({
@@ -191,6 +215,7 @@ function ensureTourImage(tour: Tour): Tour {
 function resolveCabinImageUrl(url: string | null): string | null {
   if (!url) return null;
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("/images/")) return url;
   if (url.startsWith("/")) return `${import.meta.env.VITE_API_URL}${url}`;
   return url;
 }
@@ -214,45 +239,101 @@ function mapCabinToMarker(cabin: Cabin): MapCabin | null {
   };
 }
 
-function buildDateLabel(tour: Tour) {
-  if (!tour.datoer?.length) return "Ingen fastsatte datoer";
-  if (tour.datoer.length === 1) return "1 tilgjengelig turdato";
-  return `${tour.datoer.length} tilgjengelige turdatoer`;
-}
-
-function mapTourToCard(tour: Tour): MapTour | null {
-  if (!tour.mapCenter) return null;
-
-  return {
-    ...tour,
-    coords: tour.mapCenter,
-    highlights: buildHighlights(tour),
-    dateLabel: buildDateLabel(tour),
-  };
-}
-
-function collectActiveFilters(searchParams: URLSearchParams) {
-  const filters: Array<{ key: string; label: string }> = [];
-  const difficulty = searchParams.get("difficulty");
-  const region = searchParams.get("region");
-  const fellestur = searchParams.get("fellestur");
-
-  if (difficulty) filters.push({ key: "difficulty", label: `Vanskelighet: ${difficulty}` });
-  if (region) filters.push({ key: "region", label: `Region: ${region}` });
-  if (fellestur === "1") filters.push({ key: "fellestur", label: "Kun fellesturer" });
-
-  return filters;
-}
-
 export default function Kart() {
+  const { t } = useTranslation("kart");
   const [searchParams, setSearchParams] = useSearchParams();
   const [allTours, setAllTours] = useState<Tour[]>([]);
   const [allCabins, setAllCabins] = useState<Cabin[]>([]);
   const [selectedTrip, setSelectedTrip] = useState<MapTour | null>(null);
   const [selectedCabin, setSelectedCabin] = useState<MapCabin | null>(null);
+  const [userPosition, setUserPosition] = useState<[number, number] | null>(null);
+  const [locateTrigger, setLocateTrigger] = useState(0);
+  const [locating, setLocating] = useState(false);
+  const [locateError, setLocateError] = useState<string | null>(null);
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+
+  function updateSearchParam(key: string, value: string | null) {
+    const next = new URLSearchParams(searchParams);
+    if (value === null || value === "") {
+      next.delete(key);
+    } else {
+      next.set(key, value);
+    }
+    setSearchParams(next, { replace: true });
+  }
+
+  function handleLocate() {
+    if (!("geolocation" in navigator)) {
+      setLocateError(t("locate.unsupported"));
+      return;
+    }
+    setLocating(true);
+    setLocateError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserPosition([pos.coords.latitude, pos.coords.longitude]);
+        setSelectedTrip(null);
+        setSelectedCabin(null);
+        setLocateTrigger((n) => n + 1);
+        setLocating(false);
+      },
+      (err) => {
+        setLocating(false);
+        if (err.code === err.PERMISSION_DENIED) {
+          setLocateError(t("locate.denied"));
+        } else if (err.code === err.POSITION_UNAVAILABLE) {
+          setLocateError(t("locate.unavailable"));
+        } else {
+          setLocateError(t("locate.generic"));
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
+    );
+  }
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
   const tourMarkerRefs = useRef<Record<string, L.Marker | null>>({});
   const cabinMarkerRefs = useRef<Record<string, L.Marker | null>>({});
+
+  function buildHighlights(tour: Tour): string[] {
+    return [
+      `${tour.distanceKm} km`,
+      `${tour.durationHours} t`,
+      tour.difficulty,
+      tour.type || t("fallbacks.defaultType"),
+    ];
+  }
+
+  function buildDateLabel(tour: Tour): string {
+    if (!tour.datoer?.length) return t("dates.none");
+    if (tour.datoer.length === 1) return t("dates.one");
+    return t("dates.many", { n: tour.datoer.length });
+  }
+
+  function mapTourToCard(tour: Tour): MapTour | null {
+    if (!tour.mapCenter) return null;
+
+    return {
+      ...tour,
+      coords: tour.mapCenter,
+      highlights: buildHighlights(tour),
+      dateLabel: buildDateLabel(tour),
+    };
+  }
+
+  function collectActiveFilters(params: URLSearchParams): Array<{ key: string; label: string }> {
+    const filters: Array<{ key: string; label: string }> = [];
+    const difficulty = params.get("difficulty");
+    const region = params.get("region");
+    const fellestur = params.get("fellestur");
+    const activity = params.get("activity");
+
+    if (difficulty) filters.push({ key: "difficulty", label: t("filters.difficulty", { value: difficulty }) });
+    if (region) filters.push({ key: "region", label: t("filters.region", { value: region }) });
+    if (fellestur === "1") filters.push({ key: "fellestur", label: t("filters.fellestur") });
+    if (activity) filters.push({ key: "activity", label: t("filters.activity", { value: activity }) });
+
+    return filters;
+  }
 
   useEffect(() => {
     let active = true;
@@ -304,12 +385,27 @@ export default function Kart() {
   const difficultyFilter = searchParams.get("difficulty");
   const regionFilter = searchParams.get("region");
   const fellesturOnly = searchParams.get("fellestur") === "1";
+  const activityFilter = searchParams.get("activity");
+
+  // Map fra aktivitet-query på landingssiden til faktisk DB-type-enum.
+  const activityTypeMap: Record<string, string> = {
+    fottur: "fottur",
+    sykkeltur: "sykkel",
+    skitur: "ski",
+  };
+  const activityTypeMatch = activityFilter ? activityTypeMap[activityFilter] : null;
+
+  // Scroll til toppen når siden mountes (ellers kan man havne midt i
+  // sidebaren etter navigering fra forsiden).
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const filteredTrips = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
     return allTours
-      .map(mapTourToCard)
+      .map((tour) => mapTourToCard(tour))
       .filter((tour): tour is MapTour => tour !== null)
       .filter((tour) => {
         const matchesQuery =
@@ -320,10 +416,19 @@ export default function Kart() {
         const matchesDifficulty = !difficultyFilter || tour.difficulty === difficultyFilter;
         const matchesRegion = !regionFilter || tour.region === regionFilter;
         const matchesFellestur = !fellesturOnly || (tour.datoer?.length ?? 0) > 0;
+        const matchesActivity =
+          !activityTypeMatch ||
+          (tour.type ?? "").toLowerCase() === activityTypeMatch;
 
-        return matchesQuery && matchesDifficulty && matchesRegion && matchesFellestur;
+        return (
+          matchesQuery &&
+          matchesDifficulty &&
+          matchesRegion &&
+          matchesFellestur &&
+          matchesActivity
+        );
       });
-  }, [allTours, difficultyFilter, fellesturOnly, query, regionFilter]);
+  }, [allTours, activityTypeMatch, difficultyFilter, fellesturOnly, query, regionFilter, t]);
 
   const visibleCabins = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -340,8 +445,31 @@ export default function Kart() {
       });
   }, [allCabins, query]);
 
+  const hasTourFilter = Boolean(
+    activityTypeMatch || difficultyFilter || regionFilter || fellesturOnly,
+  );
   const displayedTrips = currentView === "cabins" ? [] : filteredTrips;
-  const displayedCabins = currentView === "tours" ? [] : visibleCabins;
+  const displayedCabinsRaw =
+    currentView === "tours" || (currentView === "all" && hasTourFilter)
+      ? []
+      : visibleCabins;
+
+  // Forskyv hytte-markører hvis de ligger rett oppå en tur-markør, slik at
+  // T- og H-ikoner ikke rendres på samme punkt.
+  const displayedCabins = useMemo(() => {
+    const TOL = 0.0005;
+    const NUDGE = 0.0018;
+    const tourCoords = displayedTrips.map((trip) => trip.coords);
+    return displayedCabinsRaw.map((cabin) => {
+      const [cLat, cLng] = cabin.coords;
+      const overlapper = tourCoords.some(
+        ([tLat, tLng]) => Math.abs(cLat - tLat) < TOL && Math.abs(cLng - tLng) < TOL,
+      );
+      return overlapper
+        ? { ...cabin, coords: [cLat, cLng + NUDGE] as [number, number] }
+        : cabin;
+    });
+  }, [displayedCabinsRaw, displayedTrips]);
 
   useEffect(() => {
     if (selectedCabinId || currentView === "cabins") return;
@@ -461,6 +589,7 @@ export default function Kart() {
     next.delete("difficulty");
     next.delete("region");
     next.delete("fellestur");
+    next.delete("activity");
     next.delete("tourId");
     next.delete("cabinId");
     setSearchParams(next);
@@ -496,20 +625,36 @@ export default function Kart() {
   return (
     <div className="flex min-h-[calc(100vh-64px)] flex-col bg-slate-50 lg:h-[calc(100vh-64px)] lg:flex-row lg:overflow-hidden">
       <aside className="flex w-full flex-col bg-white p-6 lg:flex-[0.6] lg:overflow-y-auto">
-        <h1 className="text-2xl font-semibold text-slate-900">Planlegg neste opplevelse i kartet</h1>
-        <p className="mb-6 text-sm text-slate-500">
-          Bruk kartet til å oppdage turer, hytter eller begge deler, og få rask oversikt over området.
+        <h1 className="text-2xl font-semibold text-slate-900">{t("heading")}</h1>
+        <p className="mb-4 text-sm text-slate-500">
+          {t("subheading")}
         </p>
+
+        <button
+          type="button"
+          onClick={handleLocate}
+          disabled={locating}
+          className="mb-4 inline-flex w-fit items-center gap-2 rounded-xl border border-blue-300 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-900 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <LocateFixed className="h-4 w-4" />
+          {locating ? t("locate.busy") : t("locate.button")}
+        </button>
+
+        {locateError && (
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {locateError}
+          </div>
+        )}
 
         <div className="mb-6">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Vis i kart
+            {t("viewToggle.label")}
           </p>
           <div className="grid grid-cols-3 rounded-2xl bg-slate-100 p-1">
             {([
-              { key: "tours", label: "Turer" },
-              { key: "cabins", label: "Hytter" },
-              { key: "all", label: "Begge" },
+              { key: "tours", label: t("viewToggle.tours") },
+              { key: "cabins", label: t("viewToggle.cabins") },
+              { key: "all", label: t("viewToggle.all") },
             ] as { key: ViewTab; label: string }[]).map((tab) => (
               <button
                 key={tab.key}
@@ -534,7 +679,7 @@ export default function Kart() {
               onClick={clearFilters}
               className="text-sm font-medium text-slate-500 underline hover:text-slate-800"
             >
-              Fjern kartfiltre
+              {t("filters.clear")}
             </button>
           </div>
         )}
@@ -552,17 +697,110 @@ export default function Kart() {
           </div>
         )}
 
+        <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <button
+            type="button"
+            onClick={() => setFilterPanelOpen((v) => !v)}
+            className="flex w-full items-center justify-between text-sm font-semibold text-slate-800 hover:text-slate-900"
+          >
+            <span className="inline-flex items-center gap-2">
+              {t("filtersPanel.title")}
+              {activeFilters.length > 0 && (
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1.5 text-xs font-bold text-white">
+                  {activeFilters.length}
+                </span>
+              )}
+            </span>
+            <span className="text-xs">{filterPanelOpen ? "▲" : "▼"}</span>
+          </button>
+
+          {filterPanelOpen && (
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  {t("filtersPanel.activity")}
+                </label>
+                <select
+                  value={activityFilter ?? ""}
+                  onChange={(e) => updateSearchParam("activity", e.target.value || null)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-500"
+                >
+                  <option value="">{t("filtersPanel.any")}</option>
+                  <option value="fottur">{t("filtersPanel.activityFoot")}</option>
+                  <option value="sykkeltur">{t("filtersPanel.activityBike")}</option>
+                  <option value="skitur">{t("filtersPanel.activitySki")}</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  {t("filtersPanel.difficulty")}
+                </label>
+                <select
+                  value={difficultyFilter ?? ""}
+                  onChange={(e) => updateSearchParam("difficulty", e.target.value || null)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-500"
+                >
+                  <option value="">{t("filtersPanel.any")}</option>
+                  <option value="Lett">{t("filtersPanel.diffEasy")}</option>
+                  <option value="Middels">{t("filtersPanel.diffMedium")}</option>
+                  <option value="Krevende">{t("filtersPanel.diffHard")}</option>
+                  <option value="Ekspert">{t("filtersPanel.diffExpert")}</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  {t("filtersPanel.region")}
+                </label>
+                <select
+                  value={regionFilter ?? ""}
+                  onChange={(e) => updateSearchParam("region", e.target.value || null)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-500"
+                >
+                  <option value="">{t("filtersPanel.any")}</option>
+                  <option value="Nord-Norge">{t("filtersPanel.regionNorth")}</option>
+                  <option value="Trøndelag">{t("filtersPanel.regionTrondelag")}</option>
+                  <option value="Vestlandet">{t("filtersPanel.regionWest")}</option>
+                  <option value="Østlandet">{t("filtersPanel.regionEast")}</option>
+                  <option value="Sørlandet">{t("filtersPanel.regionSouth")}</option>
+                </select>
+              </div>
+
+              <label className="flex items-center gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={fellesturOnly}
+                  onChange={(e) => updateSearchParam("fellestur", e.target.checked ? "1" : null)}
+                  className="h-4 w-4"
+                />
+                {t("filtersPanel.onlyFellestur")}
+              </label>
+
+              {activeFilters.length > 0 && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  {t("filtersPanel.clearAll")}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
         <div className="mb-6 space-y-2">
           <label
             htmlFor="trip-search"
             className="text-xs font-semibold uppercase tracking-wider text-slate-500"
           >
-            Søk etter tur eller sted
+            {t("search.label")}
           </label>
           <input
             id="trip-search"
             type="search"
-            placeholder="F.eks. Hardangervidda eller Lofoten"
+            placeholder={t("search.placeholder")}
             value={query}
             onChange={(event) => handleQueryChange(event.target.value)}
             className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-800 outline-none focus:border-slate-500 focus:bg-white"
@@ -573,27 +811,27 @@ export default function Kart() {
           {selectedCabin ? (
             <div className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
               <div className="flex items-start justify-between gap-3">
-                <p className="text-xs uppercase tracking-wider text-emerald-700">Valgt hytte</p>
+                <p className="text-xs uppercase tracking-wider text-emerald-700">{t("selected.cabinLabel")}</p>
                 <button
                   type="button"
                   onClick={clearSelection}
                   className="rounded-full px-2 py-1 text-sm font-semibold text-slate-500 hover:bg-white/70 hover:text-slate-800"
-                  aria-label="Lukk valgt hytte"
+                  aria-label={t("selected.closeCabinAria")}
                 >
                   ×
                 </button>
               </div>
               <h2 className="text-xl font-semibold text-slate-900">{selectedCabin.navn}</h2>
               <p className="text-sm text-slate-600">
-                {selectedCabin.omrade || selectedCabin.adresse || "Ukjent område"}
+                {selectedCabin.omrade || selectedCabin.adresse || t("fallbacks.unknownArea")}
               </p>
               <div className="flex flex-wrap gap-2 pt-2">
                 <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600">
-                  {selectedCabin.kapasitet_senger} senger
+                  {t("selected.beds", { n: selectedCabin.kapasitet_senger })}
                 </span>
                 {selectedCabin.pris_per_natt && (
                   <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600">
-                    {selectedCabin.pris_per_natt} kr/natt
+                    {t("selected.pricePerNight", { price: selectedCabin.pris_per_natt })}
                   </span>
                 )}
               </div>
@@ -601,7 +839,7 @@ export default function Kart() {
                 to={`/hytter/${selectedCabin.id}`}
                 className="inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
               >
-                Se hyttedetaljer
+                {t("selected.cabinDetails")}
               </Link>
             </div>
           ) : selectedTrip ? (
@@ -611,7 +849,7 @@ export default function Kart() {
                   type="button"
                   onClick={clearSelection}
                   className="rounded-full px-2 py-1 text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-800"
-                  aria-label="Lukk valgt tur"
+                  aria-label={t("selected.closeTripAria")}
                 >
                   ×
                 </button>
@@ -627,7 +865,7 @@ export default function Kart() {
                 {selectedTrip.location} • {selectedTrip.region}
               </p>
               <p className="text-sm text-slate-700">
-                {selectedTrip.description || "Se turdetaljer for mer informasjon om denne ruten."}
+                {selectedTrip.description || t("selected.tripFallbackDescription")}
               </p>
               <div className="flex flex-wrap gap-2 pt-2">
                 {selectedTrip.highlights.map((highlight) => (
@@ -643,7 +881,7 @@ export default function Kart() {
                 to={`/turer/${selectedTrip.id}`}
                 className="inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
               >
-                Se turdetaljer
+                {t("selected.tripDetails")}
               </Link>
             </div>
           ) : null}
@@ -651,7 +889,7 @@ export default function Kart() {
           {currentView !== "cabins" && (displayedTrips.length > 0 || currentView !== "tours") && (
             <div className="mt-6 space-y-3">
               <p className="text-xs uppercase tracking-wider text-slate-500">
-                Turer i kartresultatet ({displayedTrips.length})
+                {t("results.tours", { n: displayedTrips.length })}
               </p>
               <div className="space-y-2">
                 {displayedTrips.map((trip) => {
@@ -681,7 +919,7 @@ export default function Kart() {
           {(displayedCabins.length > 0 || currentView !== "cabins") && (
             <div className="mt-6 space-y-3">
               <p className="text-xs uppercase tracking-wider text-slate-500">
-                Hytter i kartresultatet ({displayedCabins.length})
+                {t("results.cabins", { n: displayedCabins.length })}
               </p>
               <div className="space-y-2">
                 {displayedCabins.map((cabin) => {
@@ -699,7 +937,7 @@ export default function Kart() {
                     >
                       <p className="text-sm font-semibold">{cabin.navn}</p>
                       <p className="text-xs opacity-80">
-                        {cabin.omrade || cabin.adresse || "Ukjent område"}
+                        {cabin.omrade || cabin.adresse || t("fallbacks.unknownArea")}
                       </p>
                     </button>
                   );
@@ -711,10 +949,10 @@ export default function Kart() {
           {displayedTrips.length === 0 && displayedCabins.length === 0 && (
             <div className="mt-10 flex flex-1 items-center justify-center rounded-xl border border-dashed border-slate-300 p-6 text-center text-slate-500">
             {currentView === "tours"
-              ? "Ingen turer med kartkoordinater matcher filtrene dine akkurat nå."
+              ? t("empty.tours")
               : currentView === "cabins"
-                ? "Ingen hytter med kartkoordinater matcher filtrene dine akkurat nå."
-                : "Ingen turer eller hytter med kartkoordinater matcher filtrene dine akkurat nå."}
+                ? t("empty.cabins")
+                : t("empty.all")}
             </div>
           )}
         </>
@@ -723,7 +961,7 @@ export default function Kart() {
       <section className="min-h-80 flex-1 lg:flex-[1.4] lg:h-full">
         <MapContainer center={mapCenter} zoom={6} className="h-full min-h-80 overflow-hidden" scrollWheelZoom>
           <TileLayer
-            attribution="&copy; OpenStreetMap-bidragsytere"
+            attribution={t("map.attribution")}
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           {(selectedTrip || selectedCabin) && (
@@ -732,11 +970,23 @@ export default function Kart() {
               zoom={selectedZoom}
             />
           )}
+          {userPosition && (
+            <MapViewportUpdater
+              key={`locate-${locateTrigger}`}
+              coords={userPosition as LatLngExpression}
+              zoom={13}
+            />
+          )}
+          {userPosition && (
+            <Marker position={userPosition} icon={userPositionIcon}>
+              <Popup>{t("locate.popup")}</Popup>
+            </Marker>
+          )}
           {selectedTrip ? <SelectedRouteOverlay trip={selectedTrip} /> : null}
           {displayedTrips.map((trip) => (
             <Marker
               key={trip.id}
-              icon={defaultIcon}
+              icon={tourIcon}
               ref={(ref) => {
                 tourMarkerRefs.current[trip.id] = ref;
               }}
@@ -753,7 +1003,34 @@ export default function Kart() {
               }}
               position={cabin.coords}
               eventHandlers={{ click: () => handleSelectCabin(cabin) }}
-            />
+            >
+              <Popup>
+                <div className="w-[220px] overflow-hidden rounded-xl">
+                  <img
+                    src={cabin.imageUrl || "/images/cabins/u0wj3hct0e98ocz1bqwy.webp"}
+                    alt={cabin.navn}
+                    className="h-28 w-full rounded-lg object-cover"
+                  />
+                  <div className="pt-3">
+                    <strong className="block text-base text-slate-900">{cabin.navn}</strong>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {cabin.omrade || cabin.adresse || t("fallbacks.unknownArea")}
+                    </p>
+                    <p className="mt-2 text-xs text-slate-500">
+                      {cabin.pris_per_natt
+                        ? t("popup.bedsWithPrice", { beds: cabin.kapasitet_senger, price: cabin.pris_per_natt })
+                        : t("popup.bedsOnly", { beds: cabin.kapasitet_senger })}
+                    </p>
+                    <Link
+                      to={`/hytter/${cabin.id}`}
+                      className="mt-3 inline-flex text-sm font-semibold text-emerald-700 hover:underline"
+                    >
+                      {t("popup.viewCabin")}
+                    </Link>
+                  </div>
+                </div>
+              </Popup>
+            </Marker>
           ))}
         </MapContainer>
       </section>

@@ -192,10 +192,7 @@ annonseRouter.get(
 
 // Annonsør: create annonse
 annonseRouter.post("/", requireAuth, async (req, res) => {
-  console.log("POST /annonser traff backend");
-
   try {
-    
 
 
     const annonsor = await getCurrentAnnonsor(req as AuthedRequest);

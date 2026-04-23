@@ -1,0 +1,69 @@
+{
+  "logoAlt": "Utopia",
+  "logoLinkAria": "Go to homepage",
+  "intro": "Utopia makes it easier to explore tours, maps and cabins in one place, with inspiration and useful information for trip planning.",
+  "studentProject": "Student project at USN.",
+  "sections": {
+    "content": "Content",
+    "info": "Information",
+    "account": "Account",
+    "contact": "Contact"
+  },
+  "links": {
+    "home": "Home",
+    "tours": "Tours",
+    "explorer": "Explorer",
+    "myTours": "My tours",
+    "myPage": "My page",
+    "map": "Map",
+    "tourSuggestions": "Tour suggestions",
+    "cabins": "Cabins",
+    "weather": "Weather and conditions",
+    "groupTours": "Group tours",
+    "activities": "Tour activities",
+    "login": "Log in",
+    "register": "Register",
+    "about": "About Utopia",
+    "contactPage": "Contact"
+  },
+  "contact": {
+    "phone": "+47 00 000 000 (Mon–Fri 09–17)",
+    "email": "post@utopia.com",
+    "address": "Utopiaveien 1, 0123 Utopia"
+  },
+  "follow": "Follow us",
+  "copyright": "© 2026 Utopia",
+  "privacy": "Privacy",
+  "terms": "Terms",
+  "partners": "Thanks to our partners",
+  "legal": {
+    "updatedLabel": "Last updated:",
+    "close": "Close",
+    "understood": "I understand",
+    "updatedAt": "31.3.2026"
+  },
+  "privacyModal": {
+    "title": "Privacy Statement",
+    "intro": "Utopia is developed as a <1>student project</1> at the University of South-Eastern Norway (USN). Information stored in the solution is used only to demonstrate how the application works in an educational context.",
+    "s1Title": "1. What information may be stored?",
+    "s1Body": "The solution may store information that you create or enter yourself, such as user profile, tours, activities and other content relevant to using the application.",
+    "s2Title": "2. What is the information used for?",
+    "s2Body": "The information is used only to display and test features in the system. It is not shared as part of commercial operations and is not used for marketing or further distribution.",
+    "s3Title": "3. How long is data stored?",
+    "s3Body": "Data entered into the solution is intended for the project period and may be removed when the school project ends or when it is no longer needed.",
+    "s4Title": "4. Contact and deletion",
+    "s4Body": "If you want content or user data to be removed, you can contact the student group behind the project."
+  },
+  "termsModal": {
+    "title": "Terms of Use",
+    "intro": "By using Utopia you accept that the solution is a <1>student project</1> developed as part of teaching at USN. The service is made for learning, demonstration and testing.",
+    "s1Title": "1. Use of the solution",
+    "s1Body": "The application should be used responsibly. Content and features are designed to show how a hiking platform can be built, not as a finished commercial service.",
+    "s2Title": "2. Limited liability",
+    "s2Body": "The student group makes no guarantee that the solution is always available or error-free. Users should therefore avoid storing sensitive or critical information in the system.",
+    "s3Title": "3. Good conduct",
+    "s3Body": "It is not permitted to attempt to damage the solution, bypass security, upload inappropriate content or use the service in a way that may negatively affect other users.",
+    "s4Title": "4. Changes",
+    "s4Body": "Content, features and text may be adjusted during the project as part of further development and testing."
+  }
+}

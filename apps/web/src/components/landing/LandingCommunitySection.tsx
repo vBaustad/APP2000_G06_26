@@ -8,6 +8,7 @@
  */
 
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   ArrowRight,
   Clock3,
@@ -45,32 +46,6 @@ function getFallbackImage(index: number) {
   return fallbackImages[index % fallbackImages.length];
 }
 
-function buildReview(tour: Tour) {
-  if (tour.description && tour.description.trim()) {
-    return tour.description;
-  }
-
-  return "Fin tur med gode opplevelser underveis. Se turdetaljer for mer informasjon.";
-}
-
-function formatPostedAgo(dateString?: string | null) {
-  if (!dateString) return null;
-
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return null;
-
-  const diffMs = Date.now() - date.getTime();
-  const diffHours = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60)));
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffHours < 1) return "Nylig";
-  if (diffHours < 24) return `${diffHours} timer siden`;
-  if (diffDays === 1) return "1 dag siden";
-  if (diffDays < 7) return `${diffDays} dager siden`;
-
-  return "For en stund siden";
-}
-
 function getDisplayName(tour: Tour) {
   const comments = tour.social?.commentCount ?? 0;
   const rating = tour.social?.averageRating ?? null;
@@ -98,24 +73,50 @@ function hasDisplayableSocialProof(tour: Tour) {
   return hasName && (comments > 0 || rating !== null || likes > 0);
 }
 
-function getSubtitleText(tour: Tour) {
-  const comments = tour.social?.commentCount ?? 0;
-
-  if (comments > 0) {
-    return formatPostedAgo(tour.social?.latestCommentCreatedAt) ?? "Nylig";
-  }
-
-  if ((tour.social?.averageRating ?? null) !== null) {
-    return "Har gitt vurdering";
-  }
-
-  return null;
-}
-
 export default function LandingCommunitySection({
   tours,
 }: LandingCommunitySectionProps) {
+  const { t } = useTranslation("forside");
   const recommendedTours = tours.filter(hasDisplayableSocialProof).slice(0, 6);
+
+  function buildReview(tour: Tour) {
+    if (tour.description && tour.description.trim()) {
+      return tour.description;
+    }
+    return t("community.fallbackReview");
+  }
+
+  function formatPostedAgo(dateString?: string | null) {
+    if (!dateString) return null;
+
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return null;
+
+    const diffMs = Date.now() - date.getTime();
+    const diffHours = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60)));
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffHours < 1) return t("community.time.recent");
+    if (diffHours < 24) return t("community.time.hoursAgo", { count: diffHours });
+    if (diffDays === 1) return t("community.time.dayAgo");
+    if (diffDays < 7) return t("community.time.daysAgo", { count: diffDays });
+
+    return t("community.time.whileAgo");
+  }
+
+  function getSubtitleText(tour: Tour) {
+    const comments = tour.social?.commentCount ?? 0;
+
+    if (comments > 0) {
+      return formatPostedAgo(tour.social?.latestCommentCreatedAt) ?? t("community.time.recent");
+    }
+
+    if ((tour.social?.averageRating ?? null) !== null) {
+      return t("community.rated");
+    }
+
+    return null;
+  }
 
   if (recommendedTours.length === 0) {
     return null;
@@ -126,16 +127,15 @@ export default function LandingCommunitySection({
       <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="max-w-3xl">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#0f3d2e]">
-            Brukeromtaler og anbefalinger
+            {t("community.eyebrow")}
           </p>
 
           <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">
-            Turer andre anbefaler
+            {t("community.title")}
           </h2>
 
           <p className="mt-3 text-lg leading-8 text-slate-600">
-            Se korte omtaler fra brukere som har gått turene før deg, og finn
-            inspirasjon til neste tur.
+            {t("community.intro")}
           </p>
         </div>
 
@@ -143,7 +143,7 @@ export default function LandingCommunitySection({
           to="/turer"
           className="inline-flex items-center gap-2 font-medium text-[#0f3d2e] hover:underline"
         >
-          Se flere turer
+          {t("community.seeMore")}
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
@@ -157,7 +157,7 @@ export default function LandingCommunitySection({
           const userName = getDisplayName(tour);
           if (!userName) return null;
 
-          const subtitleText = getSubtitleText(tour) || "Nylig";
+          const subtitleText = getSubtitleText(tour) || t("community.time.recent");
           const averageRating = tour.social?.averageRating ?? null;
           const likes = tour.social?.likeCount ?? 0;
           const comments = tour.social?.commentCount ?? 0;
@@ -209,7 +209,7 @@ export default function LandingCommunitySection({
                 </span>
                 <span className="inline-flex items-center gap-1">
                   <Clock3 className="h-4 w-4 text-[#0f3d2e]" />
-                  {tour.durationHours} timer
+                  {tour.durationHours} {t("community.unitHours")}
                 </span>
               </div>
 
@@ -233,7 +233,7 @@ export default function LandingCommunitySection({
                   to={`/turer/${tour.id}`}
                   className="inline-flex items-center gap-2 font-semibold text-[#0f3d2e] hover:underline"
                 >
-                  Se tur
+                  {t("community.seeTour")}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>

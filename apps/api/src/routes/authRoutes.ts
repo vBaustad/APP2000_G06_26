@@ -2,6 +2,10 @@
  * Fil: authRoutes.ts
  * Utvikler(e): Vebjørn Baustad & Parasto Jamshidi
  * Beskrivelse: API-ruter for innlogging og registrering av brukere.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import { Router } from "express";

@@ -1,0 +1,87 @@
+{
+  "heading": "Planlegg neste opplevelse i kartet",
+  "subheading": "Bruk kartet til å oppdage turer, hytter eller begge deler, og få rask oversikt over området.",
+  "viewToggle": {
+    "label": "Vis i kart",
+    "tours": "Turer",
+    "cabins": "Hytter",
+    "all": "Begge"
+  },
+  "locate": {
+    "button": "Vis min posisjon",
+    "busy": "Finner posisjon...",
+    "popup": "Her er du",
+    "unsupported": "Nettleseren din støtter ikke geolokasjon.",
+    "denied": "Du har avslått stedstilgang. Aktiver det i nettleserinnstillingene.",
+    "unavailable": "Fant ikke posisjon akkurat nå. Prøv igjen utendørs.",
+    "generic": "Kunne ikke hente posisjon. Prøv igjen."
+  },
+  "filters": {
+    "clear": "Fjern kartfiltre",
+    "difficulty": "Vanskelighet: {{value}}",
+    "region": "Region: {{value}}",
+    "fellestur": "Kun fellesturer",
+    "activity": "Aktivitet: {{value}}"
+  },
+  "filtersPanel": {
+    "title": "Filtre",
+    "any": "Alle",
+    "activity": "Aktivitet",
+    "activityFoot": "Fottur",
+    "activityBike": "Sykkel",
+    "activitySki": "Ski",
+    "difficulty": "Vanskelighetsgrad",
+    "diffEasy": "Lett",
+    "diffMedium": "Middels",
+    "diffHard": "Krevende",
+    "diffExpert": "Ekspert",
+    "region": "Region",
+    "regionNorth": "Nord-Norge",
+    "regionTrondelag": "Trøndelag",
+    "regionWest": "Vestlandet",
+    "regionEast": "Østlandet",
+    "regionSouth": "Sørlandet",
+    "onlyFellestur": "Kun fellesturer",
+    "clearAll": "Fjern alle filtre"
+  },
+  "search": {
+    "label": "Søk etter tur eller sted",
+    "placeholder": "F.eks. Hardangervidda eller Lofoten"
+  },
+  "dates": {
+    "none": "Ingen fastsatte datoer",
+    "one": "1 tilgjengelig turdato",
+    "many": "{{n}} tilgjengelige turdatoer"
+  },
+  "fallbacks": {
+    "defaultType": "Tur",
+    "unknownArea": "Ukjent område"
+  },
+  "selected": {
+    "cabinLabel": "Valgt hytte",
+    "closeCabinAria": "Lukk valgt hytte",
+    "closeTripAria": "Lukk valgt tur",
+    "beds": "{{n}} senger",
+    "pricePerNight": "{{price}} kr/natt",
+    "cabinDetails": "Se hyttedetaljer",
+    "tripFallbackDescription": "Se turdetaljer for mer informasjon om denne ruten.",
+    "tripDetails": "Se turdetaljer"
+  },
+  "results": {
+    "tours": "Turer i kartresultatet ({{n}})",
+    "cabins": "Hytter i kartresultatet ({{n}})"
+  },
+  "empty": {
+    "tours": "Ingen turer med kartkoordinater matcher filtrene dine akkurat nå.",
+    "cabins": "Ingen hytter med kartkoordinater matcher filtrene dine akkurat nå.",
+    "all": "Ingen turer eller hytter med kartkoordinater matcher filtrene dine akkurat nå."
+  },
+  "popup": {
+    "bedsWithPrice": "{{beds}} senger • {{price}} kr/natt",
+    "bedsOnly": "{{beds}} senger",
+    "viewCabin": "Se hytte →"
+  },
+  "map": {
+    "attribution": "© OpenStreetMap-bidragsytere"
+  }
+}

@@ -10,10 +10,12 @@
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { Trans, useTranslation } from "react-i18next";
 import { Mail } from "lucide-react";
 import LegalModal from "./LegalModal";
 
 export default function Footer() {
+  const { t } = useTranslation("footer");
   const [openModal, setOpenModal] = useState<"privacy" | "terms" | null>(null);
 
   return (
@@ -23,26 +25,25 @@ export default function Footer() {
           <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
             {/* Logo + intro */}
             <div className="space-y-5">
-              <Link to="/" aria-label="Gå til forsiden">
+              <Link to="/" aria-label={t("logoLinkAria")}>
                 <img
                   src="/logos/utopia-footer-logo.png"
-                  alt="Utopia"
+                  alt={t("logoAlt")}
                   className="h-12 w-auto object-contain"
                 />
               </Link>
 
               <p className="max-w-xs text-sm leading-8 text-white/90">
-                Utopia gjør det enklere å utforske turer, kart og hytter på ett
-                sted, med inspirasjon og nyttig informasjon for turplanlegging.
+                {t("intro")}
               </p>
 
-              <p className="text-sm text-white/70">Studentprosjekt ved USN.</p>
+              <p className="text-sm text-white/70">{t("studentProject")}</p>
             </div>
 
             {/* Innhold */}
             <div>
               <h3 className="mb-5 text-sm font-semibold uppercase tracking-[0.18em] text-white/80">
-                Innhold
+                {t("sections.content")}
               </h3>
 
               <ul className="space-y-4 text-sm text-white/90">
@@ -51,7 +52,7 @@ export default function Footer() {
                     to="/"
                     className="transition hover:text-white hover:underline"
                   >
-                    Forside
+                    {t("links.home")}
                   </Link>
                 </li>
                 <li>
@@ -59,7 +60,7 @@ export default function Footer() {
                     to="/turer"
                     className="transition hover:text-white hover:underline"
                   >
-                    Turer
+                    {t("links.tours")}
                   </Link>
                 </li>
                 <li>
@@ -67,7 +68,7 @@ export default function Footer() {
                     to="/kart"
                     className="transition hover:text-white hover:underline"
                   >
-                    Kart
+                    {t("links.map")}
                   </Link>
                 </li>
                 <li>
@@ -75,7 +76,7 @@ export default function Footer() {
                     to="/hytter"
                     className="transition hover:text-white hover:underline"
                   >
-                    Hytter
+                    {t("links.cabins")}
                   </Link>
                 </li>
                 <li>
@@ -83,7 +84,7 @@ export default function Footer() {
                     to="/min-side"
                     className="transition hover:text-white hover:underline"
                   >
-                    Min side
+                    {t("links.myPage")}
                   </Link>
                 </li>
               </ul>
@@ -92,7 +93,7 @@ export default function Footer() {
             {/* Konto */}
             <div>
               <h3 className="mb-5 text-sm font-semibold uppercase tracking-[0.18em] text-white/80">
-                Konto
+                {t("sections.account")}
               </h3>
 
               <ul className="space-y-4 text-sm text-white/90">
@@ -101,7 +102,7 @@ export default function Footer() {
                     to="/logg-inn"
                     className="transition hover:text-white hover:underline"
                   >
-                    Logg inn
+                    {t("links.login")}
                   </Link>
                 </li>
                 <li>
@@ -109,7 +110,7 @@ export default function Footer() {
                     to="/registrer"
                     className="transition hover:text-white hover:underline"
                   >
-                    Registrer
+                    {t("links.register")}
                   </Link>
                 </li>
                 <li>
@@ -117,7 +118,7 @@ export default function Footer() {
                     to="/om-oss"
                     className="transition hover:text-white hover:underline"
                   >
-                    Om Utopia
+                    {t("links.about")}
                   </Link>
                 </li>
               </ul>
@@ -126,7 +127,7 @@ export default function Footer() {
             {/* Kontakt */}
             <div>
               <h3 className="mb-5 text-sm font-semibold uppercase tracking-[0.18em] text-white/80">
-                Kontakt
+                {t("sections.contact")}
               </h3>
 
               <ul className="space-y-4 text-sm text-white/90">
@@ -136,7 +137,7 @@ export default function Footer() {
                     href="mailto:post@utopia.com"
                     className="transition hover:text-white hover:underline"
                   >
-                    post@utopia.com
+                    {t("contact.email")}
                   </a>
                 </li>
                 <li>
@@ -144,7 +145,7 @@ export default function Footer() {
                     to="/kontakt"
                     className="transition hover:text-white hover:underline"
                   >
-                    Kontakt
+                    {t("links.contactPage")}
                   </Link>
                 </li>
               </ul>
@@ -154,7 +155,7 @@ export default function Footer() {
           {/* Nederste linje */}
           <div className="mt-12 border-t border-white/15 pt-6">
             <div className="flex flex-col gap-3 text-sm text-white/80 md:flex-row md:items-center md:justify-between">
-              <p>© 2026 Utopia</p>
+              <p>{t("copyright")}</p>
 
               <div className="flex gap-6">
                 <button
@@ -162,7 +163,7 @@ export default function Footer() {
                   onClick={() => setOpenModal("privacy")}
                   className="transition hover:text-white hover:underline"
                 >
-                  Personvern
+                  {t("privacy")}
                 </button>
 
                 <button
@@ -170,7 +171,7 @@ export default function Footer() {
                   onClick={() => setOpenModal("terms")}
                   className="transition hover:text-white hover:underline"
                 >
-                  Vilkår
+                  {t("terms")}
                 </button>
               </div>
             </div>
@@ -180,117 +181,90 @@ export default function Footer() {
 
       {openModal === "privacy" && (
         <LegalModal
-          title="Personvernerklæring"
-          updatedAt="31.3.2026"
-          buttonText="Lukk"
+          title={t("privacyModal.title")}
+          updatedAt={t("legal.updatedAt")}
+          buttonText={t("legal.close")}
           onClose={() => setOpenModal(null)}
         >
           <p>
-            Utopia er utviklet som et <strong>studentprosjekt</strong> ved
-            Universitetet i Sørøst-Norge (USN). Informasjonen som registreres i
-            løsningen brukes bare for å demonstrere hvordan applikasjonen
-            fungerer i undervisningssammenheng.
+            <Trans
+              i18nKey="privacyModal.intro"
+              ns="footer"
+              components={[<strong key="0" />]}
+            />
           </p>
 
           <div>
             <h3 className="mb-2 text-xl font-semibold text-white">
-              1. Hvilke opplysninger kan bli lagret?
+              {t("privacyModal.s1Title")}
             </h3>
-            <p>
-              Løsningen kan lagre informasjon som du selv oppretter eller fyller
-              inn, for eksempel brukerprofil, turer, aktiviteter og annet
-              innhold som er relevant for bruk av applikasjonen.
-            </p>
+            <p>{t("privacyModal.s1Body")}</p>
           </div>
 
           <div>
             <h3 className="mb-2 text-xl font-semibold text-white">
-              2. Hva brukes opplysningene til?
+              {t("privacyModal.s2Title")}
             </h3>
-            <p>
-              Opplysningene brukes bare for å vise og teste funksjoner i
-              systemet. De deles ikke som del av kommersiell drift, og de brukes
-              ikke til markedsføring eller videreformidling.
-            </p>
+            <p>{t("privacyModal.s2Body")}</p>
           </div>
 
           <div>
             <h3 className="mb-2 text-xl font-semibold text-white">
-              3. Hvor lenge blir data lagret?
+              {t("privacyModal.s3Title")}
             </h3>
-            <p>
-              Data som er lagt inn i løsningen er ment for prosjektperioden og
-              kan bli fjernet når skoleprosjektet avsluttes eller når det ikke
-              lenger er behov for å beholde dem.
-            </p>
+            <p>{t("privacyModal.s3Body")}</p>
           </div>
 
           <div>
             <h3 className="mb-2 text-xl font-semibold text-white">
-              4. Kontakt og sletting
+              {t("privacyModal.s4Title")}
             </h3>
-            <p>
-              Dersom du ønsker at innhold eller brukerdata skal fjernes, kan du
-              ta kontakt med studentgruppen som står bak prosjektet.
-            </p>
+            <p>{t("privacyModal.s4Body")}</p>
           </div>
         </LegalModal>
       )}
 
       {openModal === "terms" && (
         <LegalModal
-          title="Vilkår for bruk"
-          updatedAt="31.3.2026"
-          buttonText="Jeg forstår"
+          title={t("termsModal.title")}
+          updatedAt={t("legal.updatedAt")}
+          buttonText={t("legal.understood")}
           onClose={() => setOpenModal(null)}
         >
           <p>
-            Ved bruk av Utopia aksepterer du at løsningen er et
-            <strong> studentprosjekt</strong> utviklet som del av undervisning
-            ved USN. Tjenesten er laget for læring, demonstrasjon og testing.
+            <Trans
+              i18nKey="termsModal.intro"
+              ns="footer"
+              components={[<strong key="0" />]}
+            />
           </p>
 
           <div>
             <h3 className="mb-2 text-xl font-semibold text-white">
-              1. Bruk av løsningen
+              {t("termsModal.s1Title")}
             </h3>
-            <p>
-              Applikasjonen skal brukes på en forsvarlig måte. Innhold og
-              funksjoner er laget for å vise hvordan en turplattform kan bygges
-              opp, og ikke som en ferdig kommersiell tjeneste.
-            </p>
+            <p>{t("termsModal.s1Body")}</p>
           </div>
 
           <div>
             <h3 className="mb-2 text-xl font-semibold text-white">
-              2. Begrenset ansvar
+              {t("termsModal.s2Title")}
             </h3>
-            <p>
-              Studentgruppen gir ingen garanti for at løsningen alltid er
-              tilgjengelig eller feilfri. Brukere bør derfor unngå å lagre
-              sensitiv eller kritisk informasjon i systemet.
-            </p>
+            <p>{t("termsModal.s2Body")}</p>
           </div>
 
           <div>
             <h3 className="mb-2 text-xl font-semibold text-white">
-              3. God brukskikk
+              {t("termsModal.s3Title")}
             </h3>
-            <p>
-              Det er ikke tillatt å prøve å skade løsningen, omgå sikkerhet,
-              laste opp upassende innhold eller bruke tjenesten på en måte som
-              kan påvirke andre brukere negativt.
-            </p>
+            <p>{t("termsModal.s3Body")}</p>
           </div>
 
           <div>
             <h3 className="mb-2 text-xl font-semibold text-white">
-              4. Endringer
+              {t("termsModal.s4Title")}
             </h3>
-            <p>
-              Innhold, funksjoner og tekst kan bli justert underveis i
-              prosjektet som del av videre utvikling og testing.
-            </p>
+            <p>{t("termsModal.s4Body")}</p>
           </div>
         </LegalModal>
       )}

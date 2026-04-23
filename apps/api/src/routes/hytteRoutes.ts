@@ -3,6 +3,10 @@
  * Utvikler(e): Vebjørn Baustad
  * Beskrivelse: Implementerer CRUD-operasjoner for hytter ved bruk av Express og Prisma,
  * med støtte for autentisering og rollebasert tilgang.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 

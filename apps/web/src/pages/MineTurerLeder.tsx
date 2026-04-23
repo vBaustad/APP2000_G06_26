@@ -4,6 +4,10 @@
  * Beskrivelse: Dashboard for turleder. Viser turer der innlogget bruker er
  * leder, med tilhørende tur_dato, statuser og antall påmeldinger.
  * Turlederen kan legge til nye datoer og låse/avlyse eksisterende.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
@@ -16,7 +20,9 @@ import {
   Users,
   XCircle,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
+import { erDatoAktiv } from "../utils/turDato";
 
 type TurDatoStatus = "planned" | "locked" | "cancelled" | "freed";
 type PameldingStatus = "pending" | "binding" | "freed" | "locked";
@@ -47,31 +53,12 @@ type LederTur = {
   tur_dato: TurDato[];
 };
 
-const DATO_STATUS_LABEL: Record<TurDatoStatus, string> = {
-  planned: "Foreslått",
-  locked: "Låst",
-  cancelled: "Avlyst",
-  freed: "Fristilt",
-};
-
 const DATO_STATUS_STYLE: Record<TurDatoStatus, string> = {
   planned: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
   locked: "bg-blue-100 text-blue-900 ring-1 ring-blue-200",
   cancelled: "bg-red-100 text-red-900 ring-1 ring-red-200",
   freed: "bg-amber-100 text-amber-900 ring-1 ring-amber-200",
 };
-
-function formatDato(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString("no-NO", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return iso;
-  }
-}
 
 type NyDatoSkjema = {
   tittel: string;
@@ -90,6 +77,8 @@ const TOMT_SKJEMA: NyDatoSkjema = {
 };
 
 export default function MineTurerLeder() {
+  const { t, i18n } = useTranslation("minside");
+  const locale = i18n.resolvedLanguage === "en" ? "en-US" : "nb-NO";
   const { token } = useAuth();
   const [turer, setTurer] = useState<LederTur[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,6 +88,22 @@ export default function MineTurerLeder() {
   const [skjemaBusy, setSkjemaBusy] = useState(false);
   const [skjemaFeil, setSkjemaFeil] = useState<string | null>(null);
   const [statusBusyId, setStatusBusyId] = useState<number | null>(null);
+  const [historikkApenFor, setHistorikkApenFor] = useState<Set<number>>(new Set());
+
+  function formatDato(iso: string): string {
+    try {
+      return new Date(iso).toLocaleDateString(locale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return iso;
+    }
+  }
+
+  const datoStatusLabel = (status: TurDatoStatus): string =>
+    t(`turerLeder.datoStatus.${status}`);
 
   async function hentTurer() {
     if (!token) {
@@ -111,13 +116,13 @@ export default function MineTurerLeder() {
         { headers: { Authorization: `Bearer ${token}` } },
       );
       if (!res.ok) {
-        throw new Error("Kunne ikke hente turer.");
+        throw new Error(t("turerLeder.form.errorFetch"));
       }
       const data = (await res.json()) as LederTur[];
       setTurer(data);
       setFeil(null);
     } catch (err) {
-      setFeil(err instanceof Error ? err.message : "Ukjent feil.");
+      setFeil(err instanceof Error ? err.message : t("shared.unknownError"));
     } finally {
       setLoading(false);
     }
@@ -144,7 +149,7 @@ export default function MineTurerLeder() {
     e.preventDefault();
     if (!token) return;
     if (!skjema.startAt || !skjema.endAt) {
-      setSkjemaFeil("Startdato og sluttdato er påkrevd.");
+      setSkjemaFeil(t("turerLeder.form.errorDatesRequired"));
       return;
     }
 
@@ -170,12 +175,12 @@ export default function MineTurerLeder() {
       );
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? "Kunne ikke legge til dato.");
+        throw new Error(data.error ?? t("turerLeder.form.errorSave"));
       }
       lukkSkjema();
       await hentTurer();
     } catch (err) {
-      setSkjemaFeil(err instanceof Error ? err.message : "Ukjent feil.");
+      setSkjemaFeil(err instanceof Error ? err.message : t("shared.unknownError"));
     } finally {
       setSkjemaBusy(false);
     }
@@ -188,8 +193,8 @@ export default function MineTurerLeder() {
     if (!token) return;
     const bekreftelse =
       nyStatus === "locked"
-        ? "Låse denne datoen? Andre datoer på samme tur vil bli fristilt."
-        : "Avlyse denne datoen? Påmeldinger blir fristilt.";
+        ? t("turerLeder.confirmLock")
+        : t("turerLeder.confirmCancel");
     if (!window.confirm(bekreftelse)) return;
 
     setStatusBusyId(datoId);
@@ -207,25 +212,25 @@ export default function MineTurerLeder() {
       );
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? "Kunne ikke oppdatere status.");
+        throw new Error(data.error ?? t("turerLeder.form.errorStatus"));
       }
       await hentTurer();
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : "Ukjent feil.");
+      window.alert(err instanceof Error ? err.message : t("shared.unknownError"));
     } finally {
       setStatusBusyId(null);
     }
   }
 
   const totalDatoer = useMemo(
-    () => turer.reduce((sum, t) => sum + t.tur_dato.length, 0),
+    () => turer.reduce((sum, tur) => sum + tur.tur_dato.length, 0),
     [turer],
   );
 
   if (!token) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-12 text-slate-700">
-        Du må være logget inn for å se denne siden.
+        {t("turerLeder.mustLogIn")}
       </main>
     );
   }
@@ -233,7 +238,7 @@ export default function MineTurerLeder() {
   if (loading) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-12 text-slate-700">
-        Laster turer...
+        {t("turerLeder.loading")}
       </main>
     );
   }
@@ -243,11 +248,12 @@ export default function MineTurerLeder() {
       <header className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl font-semibold text-slate-900">
-            Mine turer som leder
+            {t("turerLeder.heading")}
           </h1>
           <p className="mt-1 text-sm text-slate-600">
-            {turer.length} {turer.length === 1 ? "tur" : "turer"} · {totalDatoer}{" "}
-            datoer totalt
+            {turer.length === 1
+              ? t("turerLeder.countSingular", { count: turer.length, total: totalDatoer })
+              : t("turerLeder.countPlural", { count: turer.length, total: totalDatoer })}
           </p>
         </div>
         <Link
@@ -255,7 +261,7 @@ export default function MineTurerLeder() {
           className="inline-flex items-center gap-2 rounded-xl bg-[#0f3d2e] px-4 py-2 text-sm font-semibold text-white hover:bg-[#12351d]"
         >
           <Plus className="h-4 w-4" />
-          Opprett ny tur
+          {t("turerLeder.createNewTour")}
         </Link>
       </header>
 
@@ -268,11 +274,11 @@ export default function MineTurerLeder() {
       {turer.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
           <p className="text-slate-600">
-            Du leder ingen turer ennå.{" "}
+            {t("turerLeder.emptyStart")}
             <Link to="/opprett-tur" className="font-semibold text-[#0f3d2e] underline">
-              Opprett din første tur
+              {t("turerLeder.emptyLink")}
             </Link>
-            .
+            {t("turerLeder.emptyEnd")}
           </p>
         </div>
       ) : (
@@ -293,10 +299,10 @@ export default function MineTurerLeder() {
                     </Link>
                   </h2>
                   <p className="text-sm text-slate-500">
-                    {tur.omrade ?? "Uten område"}
-                    {tur.antall_netter ? ` · ${tur.antall_netter} netter` : ""}
+                    {tur.omrade ?? t("turerLeder.noArea")}
+                    {tur.antall_netter ? t("turerLeder.nightsSuffix", { count: tur.antall_netter }) : ""}
                     {" · "}
-                    Opprettet {formatDato(tur.created_at)}
+                    {t("turerLeder.createdPrefix")}{formatDato(tur.created_at)}
                   </p>
                 </div>
                 <button
@@ -307,7 +313,7 @@ export default function MineTurerLeder() {
                   className="inline-flex items-center gap-1.5 rounded-lg border border-[#0f3d2e] bg-white px-3 py-1.5 text-sm font-semibold text-[#0f3d2e] hover:bg-[#eef5f1]"
                 >
                   <CalendarDays className="h-4 w-4" />
-                  {aapenSkjemaTurId === tur.id ? "Lukk" : "Legg til dato"}
+                  {aapenSkjemaTurId === tur.id ? t("turerLeder.closeForm") : t("turerLeder.addDate")}
                 </button>
               </div>
 
@@ -318,7 +324,7 @@ export default function MineTurerLeder() {
                 >
                   <div className="sm:col-span-2">
                     <label className="mb-1 block text-xs font-semibold text-slate-700">
-                      Tittel (valgfri)
+                      {t("turerLeder.form.titleOptional")}
                     </label>
                     <input
                       type="text"
@@ -326,13 +332,13 @@ export default function MineTurerLeder() {
                       onChange={(e) =>
                         setSkjema({ ...skjema, tittel: e.target.value })
                       }
-                      placeholder="f.eks. Påskeuka"
+                      placeholder={t("turerLeder.form.titlePlaceholder")}
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#0f3d2e]"
                     />
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-semibold text-slate-700">
-                      Start *
+                      {t("turerLeder.form.startRequired")}
                     </label>
                     <input
                       type="datetime-local"
@@ -346,7 +352,7 @@ export default function MineTurerLeder() {
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-semibold text-slate-700">
-                      Slutt *
+                      {t("turerLeder.form.endRequired")}
                     </label>
                     <input
                       type="datetime-local"
@@ -360,7 +366,7 @@ export default function MineTurerLeder() {
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-semibold text-slate-700">
-                      Tidlig påmeldings-frist (valgfri)
+                      {t("turerLeder.form.earlyDeadline")}
                     </label>
                     <input
                       type="datetime-local"
@@ -373,7 +379,7 @@ export default function MineTurerLeder() {
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-semibold text-slate-700">
-                      Rabatt tidlig (%) (valgfri)
+                      {t("turerLeder.form.earlyDiscount")}
                     </label>
                     <input
                       type="number"
@@ -399,7 +405,7 @@ export default function MineTurerLeder() {
                       onClick={lukkSkjema}
                       className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                     >
-                      Avbryt
+                      {t("shared.cancel")}
                     </button>
                     <button
                       type="submit"
@@ -407,20 +413,33 @@ export default function MineTurerLeder() {
                       className="inline-flex items-center gap-1.5 rounded-lg bg-[#0f3d2e] px-4 py-2 text-sm font-semibold text-white hover:bg-[#12351d] disabled:opacity-60"
                     >
                       <Plus className="h-4 w-4" />
-                      {skjemaBusy ? "Lagrer..." : "Legg til"}
+                      {skjemaBusy ? t("turerLeder.form.saving") : t("turerLeder.form.save")}
                     </button>
                   </div>
                 </form>
               )}
 
-              {tur.tur_dato.length === 0 ? (
-                <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                  Ingen datoer lagt til ennå. Legg til minst én dato så
-                  brukere kan melde seg på.
-                </p>
-              ) : (
-                <ul className="flex flex-col gap-3">
-                  {tur.tur_dato.map((dato) => {
+              {(() => {
+                const aktive = tur.tur_dato.filter((d) => erDatoAktiv(d.end_at, d.status));
+                const historiske = tur.tur_dato.filter((d) => !erDatoAktiv(d.end_at, d.status));
+
+                if (tur.tur_dato.length === 0) {
+                  return (
+                    <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                      {t("turerLeder.noDates")}
+                    </p>
+                  );
+                }
+
+                return (
+                  <>
+                    {aktive.length === 0 ? (
+                      <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                        {t("turerLeder.noActiveDates")}
+                      </p>
+                    ) : (
+                      <ul className="flex flex-col gap-3">
+                        {aktive.map((dato) => {
                     const antallPending = dato.tur_pamelding.filter(
                       (p) => p.status === "pending",
                     ).length;
@@ -443,7 +462,7 @@ export default function MineTurerLeder() {
                             <span
                               className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${DATO_STATUS_STYLE[dato.status]}`}
                             >
-                              {DATO_STATUS_LABEL[dato.status]}
+                              {datoStatusLabel(dato.status)}
                             </span>
                             {dato.tittel && (
                               <span className="text-sm font-semibold text-slate-800">
@@ -457,15 +476,14 @@ export default function MineTurerLeder() {
                           <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-600">
                             <span className="inline-flex items-center gap-1">
                               <Users className="h-3.5 w-3.5" />
-                              {antallBinding} bindende · {antallPending} interesse
-                              {antallLocked > 0 ? ` · ${antallLocked} låst` : ""}
+                              {t("turerLeder.participants", { binding: antallBinding, pending: antallPending })}
+                              {antallLocked > 0 ? t("turerLeder.participantsLocked", { locked: antallLocked }) : ""}
                             </span>
                             {dato.tidlig_pamelding_frist && (
                               <span>
-                                Tidlig frist:{" "}
-                                {formatDato(dato.tidlig_pamelding_frist)}
+                                {t("turerLeder.earlyDeadlineLabel", { date: formatDato(dato.tidlig_pamelding_frist) })}
                                 {dato.rabatt_prosent
-                                  ? ` (${dato.rabatt_prosent}% rabatt)`
+                                  ? t("turerLeder.earlyDiscountSuffix", { percent: dato.rabatt_prosent })
                                   : ""}
                               </span>
                             )}
@@ -481,7 +499,7 @@ export default function MineTurerLeder() {
                               className="inline-flex items-center gap-1.5 rounded-lg bg-[#0f3d2e] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#12351d] disabled:opacity-60"
                             >
                               <Lock className="h-3.5 w-3.5" />
-                              Lås
+                              {t("turerLeder.lock")}
                             </button>
                             <button
                               type="button"
@@ -490,21 +508,66 @@ export default function MineTurerLeder() {
                               className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
                             >
                               <XCircle className="h-3.5 w-3.5" />
-                              Avlys
+                              {t("turerLeder.cancel")}
                             </button>
                           </div>
                         )}
                         {dato.status === "locked" && (
                           <span className="inline-flex items-center gap-1 text-xs font-semibold text-blue-900">
                             <CheckCircle2 className="h-3.5 w-3.5" />
-                            Låst — andre datoer fristilt
+                            {t("turerLeder.lockedFreedNotice")}
                           </span>
                         )}
                       </li>
                     );
                   })}
-                </ul>
-              )}
+                        </ul>
+                    )}
+
+                    {historiske.length > 0 && (
+                      <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-3">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setHistorikkApenFor((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(tur.id)) next.delete(tur.id);
+                              else next.add(tur.id);
+                              return next;
+                            })
+                          }
+                          className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900"
+                        >
+                          {historikkApenFor.has(tur.id)
+                            ? t("turerLeder.hideHistory", { count: historiske.length })
+                            : t("turerLeder.showHistory", { count: historiske.length })}
+                        </button>
+
+                        {historikkApenFor.has(tur.id) && (
+                          <ul className="mt-3 flex flex-col gap-2">
+                            {historiske.map((dato) => (
+                              <li
+                                key={dato.id}
+                                className="flex flex-col gap-1 rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-700"
+                              >
+                                <div className="font-medium text-slate-800">
+                                  {dato.tittel ?? t("turerLeder.dateLabel")}
+                                </div>
+                                <div className="text-xs text-slate-600">
+                                  {formatDato(dato.start_at)} – {formatDato(dato.end_at)}
+                                </div>
+                                <div className="text-xs uppercase tracking-wider text-slate-500">
+                                  {dato.status}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </section>
           ))}
         </div>

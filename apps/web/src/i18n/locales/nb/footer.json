@@ -1,0 +1,69 @@
+{
+  "logoAlt": "Utopia",
+  "logoLinkAria": "Gå til forsiden",
+  "intro": "Utopia gjør det enklere å utforske turer, kart og hytter på ett sted, med inspirasjon og nyttig informasjon for turplanlegging.",
+  "studentProject": "Studentprosjekt ved USN.",
+  "sections": {
+    "content": "Innhold",
+    "info": "Informasjon",
+    "account": "Konto",
+    "contact": "Kontakt"
+  },
+  "links": {
+    "home": "Forside",
+    "tours": "Turer",
+    "explorer": "Utforsker",
+    "myTours": "Mine turer",
+    "myPage": "Min side",
+    "map": "Kart",
+    "tourSuggestions": "Turforslag",
+    "cabins": "Hytter",
+    "weather": "Vær og forhold",
+    "groupTours": "Fellesturer",
+    "activities": "Turaktiviteter",
+    "login": "Logg inn",
+    "register": "Registrer",
+    "about": "Om Utopia",
+    "contactPage": "Kontakt"
+  },
+  "contact": {
+    "phone": "+47 00 000 000 (man–fre 09–17)",
+    "email": "post@utopia.com",
+    "address": "Utopiaveien 1, 0123 Utopia"
+  },
+  "follow": "Følg oss",
+  "copyright": "© 2026 Utopia",
+  "privacy": "Personvern",
+  "terms": "Vilkår",
+  "partners": "Takk til våre samarbeidspartnere",
+  "legal": {
+    "updatedLabel": "Sist oppdatert:",
+    "close": "Lukk",
+    "understood": "Jeg forstår",
+    "updatedAt": "31.3.2026"
+  },
+  "privacyModal": {
+    "title": "Personvernerklæring",
+    "intro": "Utopia er utviklet som et <1>studentprosjekt</1> ved Universitetet i Sørøst-Norge (USN). Informasjonen som registreres i løsningen brukes bare for å demonstrere hvordan applikasjonen fungerer i undervisningssammenheng.",
+    "s1Title": "1. Hvilke opplysninger kan bli lagret?",
+    "s1Body": "Løsningen kan lagre informasjon som du selv oppretter eller fyller inn, for eksempel brukerprofil, turer, aktiviteter og annet innhold som er relevant for bruk av applikasjonen.",
+    "s2Title": "2. Hva brukes opplysningene til?",
+    "s2Body": "Opplysningene brukes bare for å vise og teste funksjoner i systemet. De deles ikke som del av kommersiell drift, og de brukes ikke til markedsføring eller videreformidling.",
+    "s3Title": "3. Hvor lenge blir data lagret?",
+    "s3Body": "Data som er lagt inn i løsningen er ment for prosjektperioden og kan bli fjernet når skoleprosjektet avsluttes eller når det ikke lenger er behov for å beholde dem.",
+    "s4Title": "4. Kontakt og sletting",
+    "s4Body": "Dersom du ønsker at innhold eller brukerdata skal fjernes, kan du ta kontakt med studentgruppen som står bak prosjektet."
+  },
+  "termsModal": {
+    "title": "Vilkår for bruk",
+    "intro": "Ved bruk av Utopia aksepterer du at løsningen er et <1>studentprosjekt</1> utviklet som del av undervisning ved USN. Tjenesten er laget for læring, demonstrasjon og testing.",
+    "s1Title": "1. Bruk av løsningen",
+    "s1Body": "Applikasjonen skal brukes på en forsvarlig måte. Innhold og funksjoner er laget for å vise hvordan en turplattform kan bygges opp, og ikke som en ferdig kommersiell tjeneste.",
+    "s2Title": "2. Begrenset ansvar",
+    "s2Body": "Studentgruppen gir ingen garanti for at løsningen alltid er tilgjengelig eller feilfri. Brukere bør derfor unngå å lagre sensitiv eller kritisk informasjon i systemet.",
+    "s3Title": "3. God brukskikk",
+    "s3Body": "Det er ikke tillatt å prøve å skade løsningen, omgå sikkerhet, laste opp upassende innhold eller bruke tjenesten på en måte som kan påvirke andre brukere negativt.",
+    "s4Title": "4. Endringer",
+    "s4Body": "Innhold, funksjoner og tekst kan bli justert underveis i prosjektet som del av videre utvikling og testing."
+  }
+}

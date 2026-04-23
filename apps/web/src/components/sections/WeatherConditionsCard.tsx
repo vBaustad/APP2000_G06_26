@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   ArrowRight,
   CloudSun,
@@ -60,28 +61,6 @@ const featuredLocations: FeaturedWeatherLocation[] = [
   },
 ];
 
-function formatUpdatedLabel(updatedAt?: string | null) {
-  if (!updatedAt) return "Oppdatert nylig";
-
-  const date = new Date(updatedAt);
-  if (Number.isNaN(date.getTime())) return "Oppdatert nylig";
-
-  const now = new Date();
-  const sameDay =
-    date.getDate() === now.getDate() &&
-    date.getMonth() === now.getMonth() &&
-    date.getFullYear() === now.getFullYear();
-
-  if (sameDay) {
-    return `I dag kl. ${date.toLocaleTimeString("nb-NO", {
-      hour: "2-digit",
-      minute: "2-digit",
-    })}`;
-  }
-
-  return date.toLocaleDateString("nb-NO");
-}
-
 function formatTemperature(value?: number | null) {
   if (typeof value !== "number" || Number.isNaN(value)) return "–";
   return `${Math.round(value)}°`;
@@ -99,6 +78,9 @@ function formatPrecipitation(value?: number | null) {
 }
 
 export default function WeatherConditionsCard() {
+  const { t, i18n } = useTranslation("forside");
+  const locale = i18n.resolvedLanguage === "en" ? "en-US" : "nb-NO";
+
   const [items, setItems] = useState<LocationWeatherState[]>(
     featuredLocations.map((location) => ({
       location,
@@ -145,21 +127,44 @@ export default function WeatherConditionsCard() {
     };
   }, []);
 
+  function formatUpdatedLabel(updatedAt?: string | null) {
+    if (!updatedAt) return t("weather.updatedRecent");
+
+    const date = new Date(updatedAt);
+    if (Number.isNaN(date.getTime())) return t("weather.updatedRecent");
+
+    const now = new Date();
+    const sameDay =
+      date.getDate() === now.getDate() &&
+      date.getMonth() === now.getMonth() &&
+      date.getFullYear() === now.getFullYear();
+
+    if (sameDay) {
+      return t("weather.updatedToday", {
+        time: date.toLocaleTimeString(locale, {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      });
+    }
+
+    return date.toLocaleDateString(locale);
+  }
+
   return (
     <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="max-w-3xl">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#0f3d2e]">
-            Vær og forhold
+            {t("weather.eyebrow")}
           </p>
 
           <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">
-            Sjekk forholdene før du drar
+            {t("weather.headingBeforeTrip")}
           </h2>
 
           <p className="mt-3 text-lg leading-8 text-slate-600">
-            Se oppdaterte værforhold for aktuelle turmål og få en rask vurdering
-            før du planlegger neste tur.
+            {t("weather.introBeforeTrip")}
           </p>
         </div>
 
@@ -167,7 +172,7 @@ export default function WeatherConditionsCard() {
           to="/kart"
           className="inline-flex items-center gap-2 font-semibold text-[#0f3d2e] hover:underline"
         >
-          Se vær og forhold
+          {t("weather.seeWeather")}
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
@@ -190,13 +195,13 @@ export default function WeatherConditionsCard() {
               </div>
 
               <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600">
-                {loading ? "Henter..." : formatUpdatedLabel(weather?.updatedAt)}
+                {loading ? t("weather.loadingShort") : formatUpdatedLabel(weather?.updatedAt)}
               </span>
             </div>
 
             {loading ? (
               <div className="rounded-2xl bg-white p-4 text-sm text-slate-600">
-                Henter værdata fra Yr…
+                {t("weather.loadingYr")}
               </div>
             ) : weather ? (
               <>
@@ -215,7 +220,7 @@ export default function WeatherConditionsCard() {
                   <div className="rounded-2xl bg-white p-4">
                     <div className="mb-2 flex items-center gap-2 text-sm text-slate-500">
                       <Wind className="h-4 w-4 text-[#0f3d2e]" />
-                      Vind
+                      {t("weather.windLabel")}
                     </div>
                     <p className="text-lg font-semibold text-slate-900">
                       {formatWind(weather.wind)}
@@ -225,7 +230,7 @@ export default function WeatherConditionsCard() {
                   <div className="rounded-2xl bg-white p-4">
                     <div className="mb-2 flex items-center gap-2 text-sm text-slate-500">
                       <Droplets className="h-4 w-4 text-[#0f3d2e]" />
-                      Nedbør
+                      {t("weather.precipitationLabel")}
                     </div>
                     <p className="text-lg font-semibold text-slate-900">
                       {formatPrecipitation(weather.precipitation)}
@@ -239,7 +244,9 @@ export default function WeatherConditionsCard() {
                       <TriangleAlert className="h-4 w-4 text-amber-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-900">Anbefaling</p>
+                      <p className="font-semibold text-slate-900">
+                        {t("weather.recommendationLabel")}
+                      </p>
                       <p className="mt-1 text-sm leading-6 text-slate-700">
                         {weather.statusText}
                       </p>
@@ -249,7 +256,7 @@ export default function WeatherConditionsCard() {
               </>
             ) : (
               <div className="rounded-2xl bg-white p-4 text-sm text-slate-600">
-                Værdata er ikke tilgjengelige akkurat nå.
+                {t("weather.unavailable")}
               </div>
             )}
 
@@ -258,7 +265,7 @@ export default function WeatherConditionsCard() {
                 to={`/turer?q=${encodeURIComponent(location.searchQuery)}`}
                 className="inline-flex items-center gap-2 font-semibold text-[#0f3d2e] hover:underline"
               >
-                Se relevante turer
+                {t("weather.seeRelatedTours")}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>

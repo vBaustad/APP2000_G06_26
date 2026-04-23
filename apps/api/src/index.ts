@@ -2,6 +2,10 @@
  * Fil: Index.ts
  * Utvikler(e): Vebjørn Baustad & Parasto Jamshidi
  * Beskrivelse: Starter backend-serveren og definerer hovedrutene.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import "dotenv/config";

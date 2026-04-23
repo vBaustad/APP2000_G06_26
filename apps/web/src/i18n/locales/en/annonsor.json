@@ -1,0 +1,135 @@
+{
+  "shared": {
+    "access": {
+      "loginRequired": "You must be signed in to use the advertiser portal.",
+      "annonsorOnly_pre": "This page is only available to users with the ",
+      "annonsorOnlyRole": "advertiser",
+      "annonsorOnly_post": " role."
+    }
+  },
+  "opprett": {
+    "hero": {
+      "eyebrow": "My ads",
+      "title": "Create new ad",
+      "subtitle": "Connect with hundreds of outdoor enthusiasts!"
+    },
+    "sections": {
+      "info": {
+        "title": "Ad information",
+        "description": "Enter a title, description and upload an image for the ad."
+      },
+      "customize": {
+        "title": "Customise your ad",
+        "description": "Pick the right category, relevant keywords and campaign period."
+      },
+      "payment": {
+        "title": "Billing model"
+      }
+    },
+    "fields": {
+      "title": "Title",
+      "titlePlaceholder": "Ad title",
+      "description": "Description",
+      "descriptionPlaceholder": "Ad copy",
+      "uploadImage": "Upload image",
+      "imagePreviewAlt": "Preview of the ad image",
+      "linkLabel": "Link to website",
+      "linkPlaceholder": "https://your-website.com",
+      "keywordsLabel": "Keywords / categories",
+      "keywordsHint": "Pick keywords and categories to associate with the ad.",
+      "startDate": "Start date",
+      "endDate": "End date"
+    },
+    "keywords": {
+      "turutstyr": "Hiking gear",
+      "matOgDrikke": "Food and drink",
+      "overnattingssteder": "Lodging",
+      "klaerOgAccesorier": "Clothing and accessories",
+      "friluftsliv": "Outdoor life"
+    },
+    "plans": {
+      "selected": "Selected",
+      "pricePerClick": "Price/click {{price}} NOK",
+      "dailyBudget": "Daily {{amount}} NOK",
+      "basic": {
+        "title": "Basic",
+        "description": "An affordable starter package with lower cost per click and small budgets."
+      },
+      "standard": {
+        "title": "Standard",
+        "description": "A good balance between price and visibility. Fits most advertisers."
+      },
+      "premium": {
+        "title": "Premium",
+        "description": "Strong visibility with higher bids and a larger daily budget."
+      }
+    },
+    "actions": {
+      "reset": "Clear form",
+      "publish": "Publish"
+    },
+    "messages": {
+      "success": "The ad is registered. You can now return to the advertiser portal.",
+      "errorTitleRequired": "You must enter a title.",
+      "errorWaitForUpload": "Please wait for the image to finish uploading before submitting the ad.",
+      "errorSave": "Could not save the ad.",
+      "errorServer": "Could not reach the server. Check that the API is running.",
+      "errorImageType": "Please choose an image file (jpg, png or similar)."
+    }
+  },
+  "portal": {
+    "title": "Advertiser portal",
+    "intro": "Here you can manage your ads.",
+    "newAd": "New ad",
+    "filters": {
+      "all": "All ads",
+      "active": "Active ads",
+      "paused": "Inactive ads",
+      "ended": "Ad history",
+      "hint": "Filter your ads by status to find campaigns faster."
+    },
+    "search": {
+      "label": "Search ads",
+      "placeholder": "Title, category or keyword",
+      "reset": "Reset"
+    },
+    "analytics": {
+      "title": "Ad analytics",
+      "countLabel": "Number of ads",
+      "viewsLabel": "Total impressions",
+      "clicksLabel": "Total clicks",
+      "showing": "Showing {{count}} ads for the current filter."
+    },
+    "empty": {
+      "noAds": "No ads were found.",
+      "noMatch": "No ads match your search or filter. Try a different search or reset the filter."
+    },
+    "card": {
+      "uncategorized": "Uncategorised",
+      "unknownStatus": "Unknown",
+      "noDescription": "No description",
+      "type": "Type: {{value}}",
+      "pricePerView": "Price/impression: {{value}}",
+      "pricePerClick": "Price/click: {{value}}",
+      "dailyBudget": "Daily budget: {{value}} NOK",
+      "spentToday": "Spent today: {{value}} NOK",
+      "views": "Impressions: {{value}}",
+      "clicks": "Clicks: {{value}}",
+      "period": "Period: {{start}} – {{end}}",
+      "noDate": "-",
+      "noValue": "–",
+      "budgetUsed": "Budget used: {{value}} NOK"
+    },
+    "actions": {
+      "registerView": "Register impression",
+      "openAd": "Open ad",
+      "edit": "Edit",
+      "delete": "Delete",
+      "confirmDelete": "Are you sure you want to delete this ad?"
+    },
+    "errors": {
+      "loadFailed": "Could not load ads",
+      "generic": "Something went wrong"
+    }
+  }
+}

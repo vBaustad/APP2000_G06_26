@@ -1,6 +1,6 @@
 /**
  * Fil: annonsor.tsx
- * Utvikler(e): Vebjørn Baustad, Synne Nilsen Oppberget. Copilot (Windws) og ChatGPT (Open AI)  er brukt som guide og lærer i utviklingen av denne siden. 
+ * Utvikler(e): Vebjørn Baustad, Synne Nilsen Oppberget. Copilot (Windws) og ChatGPT (Open AI)  er brukt som guide og lærer i utviklingen av denne siden.
  * ChatGPT har gitt steg for steg instruksjoner og kode samt forklart viktig konspeter og hvordan koden fungerer.
  * Copilot er brukkt for å genrere deler av kode innhold og forklare konsepter og kode på spesifikke steder.
  * Copilot og ChatGPT er også brukt i feilsøking. All kode er gått igjennom manuelt og endret på ved behov.
@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -35,6 +36,7 @@ const API_BASE = `${import.meta.env.VITE_API_URL}/api/annonser`;
 
 export default function Annonsor() {
   // All hooks MUST be at the top of the component
+  const { t } = useTranslation("annonsor");
   const { user, token } = useAuth();
   const navigate = useNavigate();
 
@@ -90,13 +92,13 @@ export default function Annonsor() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
-        const payload = await res.json().catch(() => null);
-        throw new Error(payload?.error || "Kunne ikke hente annonser");
+        const payload = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(payload?.error || t("portal.errors.loadFailed"));
       }
       const data = (await res.json()) as Ad[];
       setAds(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Noe gikk galt");
+      setError(err instanceof Error ? err.message : t("portal.errors.generic"));
     } finally {
       setLoading(false);
     }
@@ -166,7 +168,7 @@ const handleEdit = (ad: Ad) => {
   if (!token) {
     return (
       <div className="mx-auto max-w-4xl px-6 py-12">
-        <p className="text-center text-lg">Du må være innlogget for å bruke annonsørportalen.</p>
+        <p className="text-center text-lg">{t("shared.access.loginRequired")}</p>
       </div>
     );
   }
@@ -175,61 +177,65 @@ const handleEdit = (ad: Ad) => {
     return (
       <div className="mx-auto max-w-4xl px-6 py-12">
         <p className="text-center text-lg">
-          Denne siden er kun for brukere med rollen <strong>annonsør</strong>.
+          {t("shared.access.annonsorOnly_pre")}
+          <strong>{t("shared.access.annonsorOnlyRole")}</strong>
+          {t("shared.access.annonsorOnly_post")}
         </p>
       </div>
     );
   }
+
+  const filterOptions: Array<{ value: "all" | "active" | "paused" | "ended"; labelKey: string }> = [
+    { value: "all", labelKey: "portal.filters.all" },
+    { value: "active", labelKey: "portal.filters.active" },
+    { value: "paused", labelKey: "portal.filters.paused" },
+    { value: "ended", labelKey: "portal.filters.ended" },
+  ];
 
   // Main render
   return (
     <div className="mx-auto max-w-6xl px-6 py-10 space-y-8">
       <div className="rounded-2xl bg-white p-6 shadow">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-          <h1 className="text-3xl font-bold">Annonsørportal</h1>
+          <h1 className="text-3xl font-bold">{t("portal.title")}</h1>
           <button
             type="button"
             onClick={handleNewAd}
             className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
           >
-            Ny annonse
+            {t("portal.newAd")}
           </button>
         </div>
         <p className="mb-6 text-gray-600">
-          Her kan du administrere dine annonser.
+          {t("portal.intro")}
         </p>
 
         <div className="mb-6 grid gap-3 lg:grid-cols-[1fr_260px] lg:items-end">
           <div className="space-y-3">
             <div className="grid gap-2 sm:grid-cols-4">
-              {[
-                { value: "all", label: "Alle annonser" },
-                { value: "active", label: "Aktive annonser" },
-                { value: "paused", label: "Inaktive annonser" },
-                { value: "ended", label: "Annonse historikk" },
-              ].map((option) => (
+              {filterOptions.map((option) => (
                 <button
                   key={option.value}
                   type="button"
-                  onClick={() => setStatusFilter(option.value as typeof statusFilter)}
+                  onClick={() => setStatusFilter(option.value)}
                   className={`rounded-full border px-3 py-2 text-sm font-medium transition ${
                     statusFilter === option.value
                       ? "border-emerald-600 bg-emerald-600 text-white"
                       : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
                   }`}
                 >
-                  {option.label}
+                  {t(option.labelKey)}
                 </button>
               ))}
             </div>
-            <p className="text-sm text-slate-500">Filtrer annonsene dine etter status for å finne kampanjer raskere.</p>
+            <p className="text-sm text-slate-500">{t("portal.filters.hint")}</p>
           </div>
           <div className="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
-            <label className="mb-2 block text-sm font-medium text-slate-700">Søk i annonser</label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">{t("portal.search.label")}</label>
             <div className="flex items-center gap-2">
               <input
                 type="search"
-                placeholder="Tittel, kategori eller søkeord"
+                placeholder={t("portal.search.placeholder")}
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 className="w-full rounded-2xl border border-slate-300 px-4 py-2 text-sm outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
@@ -239,7 +245,7 @@ const handleEdit = (ad: Ad) => {
                 onClick={() => setSearchQuery("")}
                 className="rounded-full border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-700 hover:bg-slate-200"
               >
-                Nullstill
+                {t("portal.search.reset")}
               </button>
             </div>
           </div>
@@ -262,32 +268,32 @@ const handleEdit = (ad: Ad) => {
             ))}
           </div>
         ) : ads.length === 0 ? (
-          <p>Ingen annonser er funnet.</p>
+          <p>{t("portal.empty.noAds")}</p>
         ) : (
           <>
             <div className="mb-6 rounded-3xl border border-slate-200 bg-slate-50 p-6 text-slate-900 shadow-sm">
-              <h2 className="text-xl font-semibold mb-3">Annonseanalyse</h2>
+              <h2 className="text-xl font-semibold mb-3">{t("portal.analytics.title")}</h2>
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="rounded-3xl bg-white p-4 shadow-sm">
-                  <p className="text-sm text-slate-500">Antall annonser</p>
+                  <p className="text-sm text-slate-500">{t("portal.analytics.countLabel")}</p>
                   <p className="mt-2 text-3xl font-semibold text-slate-900">{ads.length}</p>
                 </div>
                 <div className="rounded-3xl bg-white p-4 shadow-sm">
-                  <p className="text-sm text-slate-500">Totale visninger</p>
+                  <p className="text-sm text-slate-500">{t("portal.analytics.viewsLabel")}</p>
                   <p className="mt-2 text-3xl font-semibold text-slate-900">{totalViews}</p>
                 </div>
                 <div className="rounded-3xl bg-white p-4 shadow-sm">
-                  <p className="text-sm text-slate-500">Totale klikk</p>
+                  <p className="text-sm text-slate-500">{t("portal.analytics.clicksLabel")}</p>
                   <p className="mt-2 text-3xl font-semibold text-slate-900">{totalClicks}</p>
                 </div>
               </div>
-              <p className="mt-4 text-sm text-slate-500">Viser {filteredAds.length} annonser etter gjeldende filter.</p>
+              <p className="mt-4 text-sm text-slate-500">{t("portal.analytics.showing", { count: filteredAds.length })}</p>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
               {filteredAds.length === 0 ? (
                 <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm text-slate-600">
-                  Ingen annonser matcher søk eller filter. Prøv et annet søk eller nullstill filteret.
+                  {t("portal.empty.noMatch")}
                 </div>
               ) : (
                 filteredAds.map((ad) => (
@@ -296,12 +302,12 @@ const handleEdit = (ad: Ad) => {
                       <div>
                         <h2 className="text-xl font-semibold text-slate-900">{ad.tittel}</h2>
                         <p className="text-sm text-slate-500">
-                          {ad.kategori || "Uten kategori"}
+                          {ad.kategori || t("portal.card.uncategorized")}
                           {ad.keywords ? ` • ${ad.keywords}` : ""}
                         </p>
                       </div>
                       <span className={`rounded-full px-3 py-1 text-sm font-medium ${getStatusBadgeClasses(ad.status)}`}>
-                        {ad.status || "Ukjent"}
+                        {ad.status || t("portal.card.unknownStatus")}
                       </span>
                     </div>
 
@@ -313,17 +319,20 @@ const handleEdit = (ad: Ad) => {
                       />
                     ) : null}
 
-                    <p className="mb-4 text-slate-700">{ad.beskrivelse ?? "Ingen beskrivelse"}</p>
+                    <p className="mb-4 text-slate-700">{ad.beskrivelse ?? t("portal.card.noDescription")}</p>
 
                     <div className="grid gap-2 text-sm text-slate-600 md:grid-cols-2">
-                      <span className="rounded-2xl bg-slate-50 px-3 py-2">Type: {ad.annonsetype || "–"}</span>
-                      <span className="rounded-2xl bg-slate-50 px-3 py-2">Pris/visning: {ad.pris_per_visning}</span>
-                      <span className="rounded-2xl bg-slate-50 px-3 py-2">Pris/klikk: {ad.pris_per_klikk}</span>
-                      <span className="rounded-2xl bg-slate-50 px-3 py-2">Dagsbudsjett: {ad.daily_budget} kr</span>
-                      <span className="rounded-2xl bg-slate-50 px-3 py-2">Brukt i dag: {ad.budget_spent} kr</span>
-                      <span className="rounded-2xl bg-slate-50 px-3 py-2">Visninger: {ad.visninger}</span>
-                      <span className="rounded-2xl bg-slate-50 px-3 py-2">Klikk: {ad.klikk}</span>
-                      <span className="rounded-2xl bg-slate-50 px-3 py-2 md:col-span-2">Periode: {ad.start_at ? new Date(ad.start_at).toLocaleDateString("no-NO") : "-"} – {ad.end_at ? new Date(ad.end_at).toLocaleDateString("no-NO") : "-"}</span>
+                      <span className="rounded-2xl bg-slate-50 px-3 py-2">{t("portal.card.type", { value: ad.annonsetype || t("portal.card.noValue") })}</span>
+                      <span className="rounded-2xl bg-slate-50 px-3 py-2">{t("portal.card.pricePerView", { value: ad.pris_per_visning })}</span>
+                      <span className="rounded-2xl bg-slate-50 px-3 py-2">{t("portal.card.pricePerClick", { value: ad.pris_per_klikk })}</span>
+                      <span className="rounded-2xl bg-slate-50 px-3 py-2">{t("portal.card.dailyBudget", { value: ad.daily_budget })}</span>
+                      <span className="rounded-2xl bg-slate-50 px-3 py-2">{t("portal.card.spentToday", { value: ad.budget_spent })}</span>
+                      <span className="rounded-2xl bg-slate-50 px-3 py-2">{t("portal.card.views", { value: ad.visninger })}</span>
+                      <span className="rounded-2xl bg-slate-50 px-3 py-2">{t("portal.card.clicks", { value: ad.klikk })}</span>
+                      <span className="rounded-2xl bg-slate-50 px-3 py-2 md:col-span-2">{t("portal.card.period", {
+                        start: ad.start_at ? new Date(ad.start_at).toLocaleDateString("no-NO") : t("portal.card.noDate"),
+                        end: ad.end_at ? new Date(ad.end_at).toLocaleDateString("no-NO") : t("portal.card.noDate"),
+                      })}</span>
                     </div>
 
                     <div className="mt-5 flex flex-wrap gap-3">
@@ -332,7 +341,7 @@ const handleEdit = (ad: Ad) => {
                         onClick={() => registerAdEvent(ad.id, "view")}
                         className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
                       >
-                        Registrer visning
+                        {t("portal.actions.registerView")}
                       </button>
                       {ad.lenke_url ? (
                         <button
@@ -340,31 +349,31 @@ const handleEdit = (ad: Ad) => {
                           onClick={() => handleLinkClick(ad)}
                           className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
                         >
-                          Åpne annonse
+                          {t("portal.actions.openAd")}
                         </button>
-                        
+
                       ) : null}
                       <button
   type="button"
   onClick={() => handleEdit(ad)}
   className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900"
 >
-  Rediger
+  {t("portal.actions.edit")}
 </button>
 <button
   type="button"
   onClick={() => {
-    if (confirm("Er du sikker på at du vil slette annonsen?")) {
+    if (confirm(t("portal.actions.confirmDelete"))) {
       handleDelete(ad.id);
     }
   }}
   className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900"
 >
-  Slett
+  {t("portal.actions.delete")}
 </button>
 
                       <span className="ml-auto rounded-full bg-slate-100 px-3 py-2 text-sm text-slate-700">
-                        Budsjett brukt: {ad.budget_spent} kr
+                        {t("portal.card.budgetUsed", { value: ad.budget_spent })}
                       </span>
                     </div>
                   </article>
@@ -377,4 +386,3 @@ const handleEdit = (ad: Ad) => {
     </div>
   );
 }
-

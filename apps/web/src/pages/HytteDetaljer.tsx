@@ -3,10 +3,15 @@
  * Utvikler(e): Vebjørn Baustad
  * Beskrivelse: Offentlig detaljside for en hytte. Henter data fra GET /api/hytter/:id
  * og viser bilde, nøkkelinfo, fasiliteter, beskrivelse, regler og posisjon på kart.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
+import { Trans, useTranslation } from "react-i18next";
 import {
   MapPin,
   BedDouble,
@@ -18,7 +23,6 @@ import {
   Heart,
 } from "lucide-react";
 import TurMap from "../components/TurMap";
-import { FASILITET_KODER } from "../data/fasiliteter";
 
 type Betjent = "betjent" | "selvbetjent" | "ubetjent";
 
@@ -61,6 +65,7 @@ const BETJENT_BADGE: Record<Betjent, string> = {
 function resolveImageUrl(url: string | null): string | null {
   if (!url) return null;
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("/images/")) return url;
   if (url.startsWith("/")) return `${import.meta.env.VITE_API_URL}${url}`;
   return url;
 }
@@ -75,18 +80,6 @@ function toDate(iso: string): Date {
   const d = new Date(iso);
   d.setHours(0, 0, 0, 0);
   return d;
-}
-
-function formatDateNo(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString("nb-NO", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return iso;
-  }
 }
 
 function todayIso(): string {
@@ -107,6 +100,7 @@ function periodsOverlap(
 }
 
 export default function HytteDetaljer() {
+  const { t, i18n } = useTranslation("hytter");
   const { id } = useParams();
 
   const [hytte, setHytte] = useState<Hytte | null>(null);
@@ -131,25 +125,39 @@ export default function HytteDetaljer() {
   const [favorittId, setFavorittId] = useState<number | null>(null);
   const [favorittBusy, setFavorittBusy] = useState(false);
 
+  const dateLocale = i18n.resolvedLanguage === "en" ? "en-US" : "nb-NO";
+
+  function formatDate(iso: string): string {
+    try {
+      return new Date(iso).toLocaleDateString(dateLocale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return iso;
+    }
+  }
+
   useEffect(() => {
     let active = true;
 
     if (!id) {
-      setError("Mangler hytte-id i URL");
+      setError(t("detail.notFoundNoId"));
       setLoading(false);
       return;
     }
 
     fetch(`${import.meta.env.VITE_API_URL}/api/hytter/${id}`)
       .then((res) => {
-        if (!res.ok) throw new Error("Fant ikke hytte");
+        if (!res.ok) throw new Error(t("detail.notFoundTitle"));
         return res.json() as Promise<Hytte>;
       })
       .then((data) => {
         if (active) setHytte(data);
       })
       .catch((err: unknown) => {
-        if (active) setError(err instanceof Error ? err.message : "Ukjent feil");
+        if (active) setError(err instanceof Error ? err.message : t("detail.notFoundTitle"));
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -158,7 +166,7 @@ export default function HytteDetaljer() {
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, t]);
 
   useEffect(() => {
     if (!token || !id) {
@@ -234,11 +242,7 @@ export default function HytteDetaljer() {
     };
   }, [id]);
 
-  const fasilitetLabel = useMemo(() => {
-    const map = new Map<string, string>();
-    FASILITET_KODER.forEach((f) => map.set(f.kode, f.label));
-    return map;
-  }, []);
+  const fasilitetLabel = (kode: string) => t(`fasiliteter.${kode}`, kode);
 
   const fremtidigeBookinger = useMemo(() => {
     const idag = new Date();
@@ -288,18 +292,15 @@ export default function HytteDetaljer() {
     if (!id || !token) return;
 
     if (!startDato || !sluttDato) {
-      setBookingMelding({ type: "feil", tekst: "Velg både start- og sluttdato." });
+      setBookingMelding({ type: "feil", tekst: t("detail.errorStartEnd") });
       return;
     }
     if (toDate(startDato) >= toDate(sluttDato)) {
-      setBookingMelding({ type: "feil", tekst: "Sluttdato må være etter startdato." });
+      setBookingMelding({ type: "feil", tekst: t("detail.errorEndBeforeStart") });
       return;
     }
     if (valgtOverlapper) {
-      setBookingMelding({
-        type: "feil",
-        tekst: "Perioden overlapper med en eksisterende booking.",
-      });
+      setBookingMelding({ type: "feil", tekst: t("detail.errorOverlap") });
       return;
     }
 
@@ -330,7 +331,7 @@ export default function HytteDetaljer() {
       if (!res.ok) {
         setBookingMelding({
           type: "feil",
-          tekst: data?.error ?? "Kunne ikke opprette booking.",
+          tekst: data?.error ?? t("detail.errorCreate"),
         });
         return;
       }
@@ -346,15 +347,12 @@ export default function HytteDetaljer() {
         ]);
       }
 
-      setBookingMelding({
-        type: "ok",
-        tekst: "Forespørsel sendt — venter på bekreftelse fra hytteeier.",
-      });
+      setBookingMelding({ type: "ok", tekst: t("detail.okSent") });
       setStartDato("");
       setSluttDato("");
       setGjester("");
     } catch {
-      setBookingMelding({ type: "feil", tekst: "Nettverksfeil. Prøv igjen." });
+      setBookingMelding({ type: "feil", tekst: t("detail.errorNetwork") });
     } finally {
       setSubmitting(false);
     }
@@ -365,7 +363,7 @@ export default function HytteDetaljer() {
       <main className="min-h-[70vh] bg-gray-50">
         <section className="mx-auto max-w-7xl px-6 py-10">
           <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow">
-            <p className="text-gray-600">Laster hyttedetaljer...</p>
+            <p className="text-gray-600">{t("detail.loading")}</p>
           </div>
         </section>
       </main>
@@ -380,21 +378,19 @@ export default function HytteDetaljer() {
             to="/hytter"
             className="text-sm font-semibold text-emerald-700 hover:underline"
           >
-            ← Tilbake til hytter
+            {t("detail.back")}
           </Link>
 
           <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow">
-            <h1 className="text-2xl font-semibold">Fant ikke hytte</h1>
+            <h1 className="text-2xl font-semibold">{t("detail.notFoundTitle")}</h1>
             <p className="mt-2 text-gray-600">
-              Vi fant ingen hytte{" "}
               {id ? (
                 <>
-                  med id: <span className="font-mono">{id}</span>
+                  {t("detail.notFoundWithId")} <span className="font-mono">{id}</span>
                 </>
               ) : (
-                <> (mangler id i URL)</>
+                t("detail.notFoundNoId")
               )}
-              .
             </p>
           </div>
         </section>
@@ -427,7 +423,7 @@ export default function HytteDetaljer() {
               to="/hytter"
               className="mb-5 inline-flex w-fit text-sm font-semibold text-white/90 hover:underline"
             >
-              ← Tilbake til hytter
+              {t("detail.back")}
             </Link>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -435,7 +431,7 @@ export default function HytteDetaljer() {
                 <span
                   className={`rounded-full px-3 py-1 text-sm font-semibold shadow-sm ${BETJENT_BADGE[hytte.betjent]}`}
                 >
-                  {hytte.betjent[0].toUpperCase() + hytte.betjent.slice(1)}
+                  {t(`betjent.${hytte.betjent}`)}
                 </span>
               )}
 
@@ -465,7 +461,7 @@ export default function HytteDetaljer() {
                   <Heart
                     className={`h-4 w-4 ${favorittId ? "fill-white" : ""}`}
                   />
-                  {favorittId ? "Favoritt" : "Legg til favoritt"}
+                  {favorittId ? t("detail.favorite") : t("detail.addFavorite")}
                 </button>
               )}
             </div>
@@ -486,7 +482,7 @@ export default function HytteDetaljer() {
             <div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <BedDouble className="h-4 w-4 text-emerald-700" />
-                <span>Senger</span>
+                <span>{t("detail.beds")}</span>
               </div>
               <div className="mt-1 text-2xl font-semibold text-gray-900">
                 {hytte.kapasitet_senger}
@@ -496,7 +492,7 @@ export default function HytteDetaljer() {
             <div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Users className="h-4 w-4 text-emerald-700" />
-                <span>Maks gjester</span>
+                <span>{t("detail.maxGuests")}</span>
               </div>
               <div className="mt-1 text-2xl font-semibold text-gray-900">
                 {hytte.maks_gjester ?? "—"}
@@ -506,7 +502,7 @@ export default function HytteDetaljer() {
             <div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Mountain className="h-4 w-4 text-emerald-700" />
-                <span>Høyde</span>
+                <span>{t("detail.altitude")}</span>
               </div>
               <div className="mt-1 text-2xl font-semibold text-gray-900">
                 {hytte.hoyde_m !== null ? `${hytte.hoyde_m} m` : "—"}
@@ -516,7 +512,7 @@ export default function HytteDetaljer() {
             <div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Wallet className="h-4 w-4 text-emerald-700" />
-                <span>Pris / natt</span>
+                <span>{t("detail.pricePerNight")}</span>
               </div>
               <div className="mt-1 text-2xl font-semibold text-gray-900">
                 {hytte.pris_per_natt ? `${hytte.pris_per_natt} kr` : "—"}
@@ -528,18 +524,18 @@ export default function HytteDetaljer() {
         <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow">
-              <h2 className="text-xl font-semibold">Om hytta</h2>
+              <h2 className="text-xl font-semibold">{t("detail.about")}</h2>
 
               <p className="mt-4 whitespace-pre-line leading-relaxed text-gray-700">
                 {hytte.beskrivelse?.trim()
                   ? hytte.beskrivelse
-                  : "Ingen beskrivelse er lagt inn for denne hytta enda."}
+                  : t("detail.noDescription")}
               </p>
 
               {fasiliteter.length > 0 && (
                 <>
                   <h3 className="mt-8 text-sm font-semibold text-gray-900">
-                    Fasiliteter
+                    {t("detail.amenities")}
                   </h3>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {fasiliteter.map((f) => (
@@ -547,7 +543,7 @@ export default function HytteDetaljer() {
                         key={f.kode}
                         className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-900 ring-1 ring-emerald-100"
                       >
-                        {fasilitetLabel.get(f.kode) ?? f.kode}
+                        {fasilitetLabel(f.kode)}
                       </span>
                     ))}
                   </div>
@@ -557,7 +553,7 @@ export default function HytteDetaljer() {
               {hytte.regler?.trim() && (
                 <>
                   <h3 className="mt-8 text-sm font-semibold text-gray-900">
-                    Regler og informasjon
+                    {t("detail.rules")}
                   </h3>
                   <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-gray-700">
                     {hytte.regler}
@@ -569,7 +565,7 @@ export default function HytteDetaljer() {
 
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900">Plassering</h3>
+              <h3 className="text-sm font-semibold text-gray-900">{t("detail.location")}</h3>
               {mapCenter && (
                 <button
                   type="button"
@@ -582,7 +578,7 @@ export default function HytteDetaljer() {
                     );
                   }}
                 >
-                  Stort kart
+                  {t("detail.bigMap")}
                 </button>
               )}
             </div>
@@ -591,7 +587,7 @@ export default function HytteDetaljer() {
               <TurMap center={mapCenter} title={hytte.navn} />
             ) : (
               <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-600">
-                Posisjon er ikke registrert for denne hytta.
+                {t("detail.noPosition")}
               </div>
             )}
           </div>
@@ -601,18 +597,18 @@ export default function HytteDetaljer() {
           <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow lg:col-span-2">
             <div className="flex items-center gap-2">
               <CalendarDays className="h-5 w-5 text-emerald-700" />
-              <h2 className="text-xl font-semibold">Book hytta</h2>
+              <h2 className="text-xl font-semibold">{t("detail.book")}</h2>
             </div>
 
             {!erInnlogget ? (
               <div className="mt-4 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-gray-600">
-                Du må være innlogget for å sende bookingforespørsel.
+                {t("detail.mustLoginToBook")}
                 <div className="mt-3">
                   <Link
                     to="/logg-inn"
                     className="inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
                   >
-                    Logg inn
+                    {t("detail.login")}
                   </Link>
                 </div>
               </div>
@@ -621,7 +617,7 @@ export default function HytteDetaljer() {
                 <div className="grid gap-4 md:grid-cols-3">
                   <div>
                     <label className="mb-1 block text-sm font-medium text-slate-700">
-                      Startdato
+                      {t("detail.startDate")}
                     </label>
                     <input
                       type="date"
@@ -638,7 +634,7 @@ export default function HytteDetaljer() {
 
                   <div>
                     <label className="mb-1 block text-sm font-medium text-slate-700">
-                      Sluttdato
+                      {t("detail.endDate")}
                     </label>
                     <input
                       type="date"
@@ -655,7 +651,7 @@ export default function HytteDetaljer() {
 
                   <div>
                     <label className="mb-1 block text-sm font-medium text-slate-700">
-                      Antall gjester
+                      {t("detail.guests")}
                     </label>
                     <input
                       type="number"
@@ -665,8 +661,8 @@ export default function HytteDetaljer() {
                       onChange={(e) => setGjester(e.target.value)}
                       placeholder={
                         hytte.maks_gjester
-                          ? `Maks ${hytte.maks_gjester}`
-                          : "Valgfritt"
+                          ? t("detail.maxGuestsPlaceholder", { max: hytte.maks_gjester })
+                          : t("detail.optional")
                       }
                       className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
                     />
@@ -675,14 +671,18 @@ export default function HytteDetaljer() {
 
                 {antallNetter > 0 && !valgtOverlapper && (
                   <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-                    {antallNetter} {antallNetter === 1 ? "natt" : "netter"} ·{" "}
-                    <span className="font-semibold">{totalPris} kr</span> totalt
+                    <Trans
+                      i18nKey={antallNetter === 1 ? "detail.nightOne" : "detail.nightMany"}
+                      ns="hytter"
+                      values={{ count: antallNetter, price: totalPris }}
+                      components={[<span className="font-semibold" key="0" />]}
+                    />
                   </div>
                 )}
 
                 {valgtOverlapper && (
                   <div className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                    Hytta er opptatt i hele eller deler av valgt periode. Velg andre datoer.
+                    {t("detail.overlapWarning")}
                   </div>
                 )}
 
@@ -699,15 +699,13 @@ export default function HytteDetaljer() {
                 )}
 
                 <div className="flex items-center justify-between gap-3 border-t border-gray-100 pt-4">
-                  <p className="text-xs text-gray-500">
-                    Forespørsler sendes til hytteeier for bekreftelse.
-                  </p>
+                  <p className="text-xs text-gray-500">{t("detail.bookingNote")}</p>
                   <button
                     type="submit"
                     disabled={submitting || valgtOverlapper}
                     className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
                   >
-                    {submitting ? "Sender..." : "Send bookingforespørsel"}
+                    {submitting ? t("detail.sending") : t("detail.send")}
                   </button>
                 </div>
               </form>
@@ -715,14 +713,12 @@ export default function HytteDetaljer() {
           </div>
 
           <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow">
-            <h3 className="text-sm font-semibold text-gray-900">Opptatte datoer</h3>
+            <h3 className="text-sm font-semibold text-gray-900">{t("detail.bookedDates")}</h3>
 
             {bookingerLoading ? (
-              <p className="mt-3 text-sm text-gray-500">Laster...</p>
+              <p className="mt-3 text-sm text-gray-500">{t("detail.loadingShort")}</p>
             ) : fremtidigeBookinger.length === 0 ? (
-              <p className="mt-3 text-sm text-gray-500">
-                Ingen registrerte bookinger fremover. Alle datoer er åpne.
-              </p>
+              <p className="mt-3 text-sm text-gray-500">{t("detail.noFutureBookings")}</p>
             ) : (
               <ul className="mt-3 space-y-2">
                 {fremtidigeBookinger.map((b, i) => (
@@ -731,7 +727,7 @@ export default function HytteDetaljer() {
                     className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 text-sm"
                   >
                     <span className="text-gray-800">
-                      {formatDateNo(b.start_dato)} – {formatDateNo(b.slutt_dato)}
+                      {formatDate(b.start_dato)} – {formatDate(b.slutt_dato)}
                     </span>
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -740,7 +736,9 @@ export default function HytteDetaljer() {
                           : "bg-amber-100 text-amber-900"
                       }`}
                     >
-                      {b.status === "confirmed" ? "Bekreftet" : "Foreløpig"}
+                      {b.status === "confirmed"
+                        ? t("detail.statusConfirmed")
+                        : t("detail.statusPending")}
                     </span>
                   </li>
                 ))}

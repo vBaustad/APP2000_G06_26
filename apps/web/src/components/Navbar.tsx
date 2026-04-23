@@ -8,21 +8,34 @@
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 
 type NavbarVariant = "transparent" | "solid";
 type NavbarProps = { variant?: NavbarVariant };
 
 export default function Navbar({ variant = "solid" }: NavbarProps) {
+  const { t, i18n } = useTranslation("navbar");
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   const isTransparent = variant === "transparent";
   const showDarkStyle = isTransparent && !scrolled;
   const isLoggedIn = !!user;
+  const isHytteeier = user?.roller?.includes("hytteeier") ?? false;
+  const isAnnonsor = user?.roller?.includes("annonsor") ?? false;
+  const isAdmin = user?.roller?.includes("admin") ?? false;
+  const isTurleder = user?.roller?.includes("turleder") ?? false;
+
+  const currentLang = i18n.resolvedLanguage ?? i18n.language;
+  const isNorwegian = currentLang?.startsWith("nb") ?? true;
+  const nextLang = isNorwegian ? "en" : "nb";
+  const langLabel = isNorwegian ? t("languageEn") : t("languageNo");
+  const langTitle = isNorwegian ? t("switchToEnglish") : t("switchToNorwegian");
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -66,6 +79,10 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
   const registerButtonClass =
     "inline-flex items-center rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500";
 
+  const languageButtonClass = showDarkStyle
+    ? "inline-flex items-center rounded-full border border-white/25 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/10"
+    : "inline-flex items-center rounded-full border border-gray-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-gray-700 transition hover:border-[#17331C] hover:text-[#17331C]";
+
   const mobileLinkClass = ({ isActive }: { isActive: boolean }) => {
     const base = "block rounded-lg px-3 py-2.5 text-sm font-medium transition";
 
@@ -90,16 +107,14 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
 
   return (
     <>
-      <div className={topBarClass}>
-        Dette er et skoleprosjekt ved USN og ikke en ekte nettside.
-      </div>
+      <div className={topBarClass}>{t("banner")}</div>
 
       <header className={headerClass}>
         <nav className="mx-auto flex h-[84px] max-w-7xl items-center justify-between px-5 md:px-8">
-          <NavLink to="/" aria-label="Gå til forsiden" className="flex items-center">
+          <NavLink to="/" aria-label={t("home")} className="flex items-center">
             <img
               src="/logos/utopia-logo.png"
-              alt="Utopia logo"
+              alt={t("logoAlt")}
               className={showDarkStyle ? "h-[56px] w-auto object-contain brightness-0 invert md:h-[68px]" : "h-[56px] w-auto object-contain md:h-[68px]"}
             />
           </NavLink>
@@ -108,50 +123,124 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
             <ul className="flex items-center gap-10">
               <li>
                 <NavLink to="/" className={linkClass}>
-                  Forside
+                  {t("home")}
                 </NavLink>
               </li>
               <li>
                 <NavLink to="/kart" className={linkClass}>
-                  Kart
+                  {t("map")}
                 </NavLink>
               </li>
               <li>
                 <NavLink to="/turer" className={linkClass}>
-                  Turer
+                  {t("tours")}
                 </NavLink>
               </li>
               <li>
                 <NavLink to="/hytter" className={linkClass}>
-                  Hytter
+                  {t("cabins")}
                 </NavLink>
               </li>
             </ul>
 
+            <button
+              type="button"
+              onClick={() => i18n.changeLanguage(nextLang)}
+              className={languageButtonClass}
+              title={langTitle}
+              aria-label={langTitle}
+            >
+              {langLabel}
+            </button>
+
             {!isLoggedIn ? (
               <div className="flex items-center gap-3">
                 <NavLink to="/logg-inn" className={loginButtonClass}>
-                  Logg inn
+                  {t("login")}
                 </NavLink>
                 <NavLink to="/registrer" className={registerButtonClass}>
-                  Registrer
+                  {t("register")}
                 </NavLink>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
-                <NavLink to="/min-side" className={loginButtonClass}>
-                  Min side
-                </NavLink>
+              <div className="relative">
                 <button
                   type="button"
-                  onClick={() => {
-                    logout();
-                    navigate("/logget-ut");
-                  }}
+                  onClick={() => setProfileOpen((prev) => !prev)}
                   className={registerButtonClass}
                 >
-                  Logg ut
+                  {t("profile")}
+                  <span className="ml-1 text-xs">▾</span>
                 </button>
+
+                {profileOpen && (
+                  <div
+                    className="absolute right-0 z-[10000] mt-3 w-52 rounded-xl border border-gray-200 bg-white p-2 text-sm text-gray-900 shadow-xl"
+                    onMouseLeave={() => setProfileOpen(false)}
+                  >
+                    <NavLink
+                      to="/min-side"
+                      onClick={() => setProfileOpen(false)}
+                      className="block rounded-lg px-3 py-2 hover:bg-gray-100"
+                    >
+                      {t("mySide")}
+                    </NavLink>
+                    <NavLink
+                      to="/meldinger"
+                      onClick={() => setProfileOpen(false)}
+                      className="block rounded-lg px-3 py-2 hover:bg-gray-100"
+                    >
+                      {t("messages")}
+                    </NavLink>
+                    {isTurleder && (
+                      <NavLink
+                        to="/mine-turer-leder"
+                        onClick={() => setProfileOpen(false)}
+                        className="block rounded-lg px-3 py-2 hover:bg-gray-100"
+                      >
+                        {t("myTourLeader")}
+                      </NavLink>
+                    )}
+                    {isHytteeier && (
+                      <NavLink
+                        to="/mine-hytter"
+                        onClick={() => setProfileOpen(false)}
+                        className="block rounded-lg px-3 py-2 hover:bg-gray-100"
+                      >
+                        {t("myCabins")}
+                      </NavLink>
+                    )}
+                    {isAnnonsor && (
+                      <NavLink
+                        to="/annonsor"
+                        onClick={() => setProfileOpen(false)}
+                        className="block rounded-lg px-3 py-2 hover:bg-gray-100"
+                      >
+                        {t("advertiser")}
+                      </NavLink>
+                    )}
+                    {isAdmin && (
+                      <NavLink
+                        to="/admin"
+                        onClick={() => setProfileOpen(false)}
+                        className="block rounded-lg px-3 py-2 hover:bg-gray-100"
+                      >
+                        {t("admin")}
+                      </NavLink>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileOpen(false);
+                        logout();
+                        navigate("/logget-ut");
+                      }}
+                      className="mt-1 block w-full rounded-lg px-3 py-2 text-left text-red-600 hover:bg-red-50"
+                    >
+                      {t("logout")}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -164,7 +253,7 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
                 ? "text-white hover:bg-white/10"
                 : "text-gray-800 hover:bg-gray-100"
             }`}
-            aria-label={mobileOpen ? "Lukk meny" : "Åpne meny"}
+            aria-label={mobileOpen ? t("closeMenu") : t("openMenu")}
           >
             {mobileOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -175,32 +264,63 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
             <div className="mx-auto max-w-7xl px-5 py-4 md:px-6">
               <div className="space-y-2">
                 <NavLink to="/" className={mobileLinkClass}>
-                  Forside
+                  {t("home")}
                 </NavLink>
                 <NavLink to="/kart" className={mobileLinkClass}>
-                  Kart
+                  {t("map")}
                 </NavLink>
                 <NavLink to="/turer" className={mobileLinkClass}>
-                  Turer
+                  {t("tours")}
                 </NavLink>
                 <NavLink to="/hytter" className={mobileLinkClass}>
-                  Hytter
+                  {t("cabins")}
                 </NavLink>
+
+                <button
+                  type="button"
+                  onClick={() => i18n.changeLanguage(nextLang)}
+                  className="block w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700 hover:bg-gray-100"
+                >
+                  {langLabel}
+                </button>
 
                 {!isLoggedIn ? (
                   <>
                     <NavLink to="/logg-inn" className={mobileLinkClass}>
-                      Logg inn
+                      {t("login")}
                     </NavLink>
                     <NavLink to="/registrer" className={mobileLinkClass}>
-                      Registrer
+                      {t("register")}
                     </NavLink>
                   </>
                 ) : (
                   <>
                     <NavLink to="/min-side" className={mobileLinkClass}>
-                      Min side
+                      {t("mySide")}
                     </NavLink>
+                    <NavLink to="/meldinger" className={mobileLinkClass}>
+                      {t("messages")}
+                    </NavLink>
+                    {isTurleder && (
+                      <NavLink to="/mine-turer-leder" className={mobileLinkClass}>
+                        {t("myTourLeader")}
+                      </NavLink>
+                    )}
+                    {isHytteeier && (
+                      <NavLink to="/mine-hytter" className={mobileLinkClass}>
+                        {t("myCabins")}
+                      </NavLink>
+                    )}
+                    {isAnnonsor && (
+                      <NavLink to="/annonsor" className={mobileLinkClass}>
+                        {t("advertiser")}
+                      </NavLink>
+                    )}
+                    {isAdmin && (
+                      <NavLink to="/admin" className={mobileLinkClass}>
+                        {t("admin")}
+                      </NavLink>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
@@ -213,7 +333,7 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
                           : "text-red-600 hover:bg-red-50"
                       }`}
                     >
-                      Logg ut
+                      {t("logout")}
                     </button>
                   </>
                 )}

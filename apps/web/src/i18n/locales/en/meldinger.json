@@ -1,0 +1,64 @@
+{
+  "title": "Messages",
+  "signedOut": {
+    "description": "Sign in to view group chats from tours and start direct messages with other users.",
+    "loginButton": "Sign in"
+  },
+  "header": {
+    "description": "Here you will find direct chats and group chats you are part of.",
+    "newChat": "New chat"
+  },
+  "errors": {
+    "fetchInbox": "Could not load messages.",
+    "fetchChat": "Could not load the chat.",
+    "searchUsers": "Could not search for users.",
+    "emptyMessage": "Write a message before sending.",
+    "sendMessage": "Could not send the message.",
+    "uploadImage": "Could not upload the image.",
+    "approveImage": "Could not approve the image.",
+    "createChat": "Could not create chat."
+  },
+  "inbox": {
+    "title": "Inbox",
+    "countOne": "{{n}} chat",
+    "countOther": "{{n}} chats",
+    "loading": "Loading messages...",
+    "empty": "You have no chats yet. Start a new conversation or wait for a group tour to be locked.",
+    "noMessagesYet": "No messages yet"
+  },
+  "chat": {
+    "loading": "Loading conversation...",
+    "loadFailed": "Could not load the conversation.",
+    "noneSelected": "No chat selected",
+    "selectHint": "Select a conversation in the inbox, or start a new chat.",
+    "participants": "{{n}} participants",
+    "empty": "No messages yet. Send the first message to start the conversation.",
+    "image": {
+      "hidden": "The image is hidden until you approve it",
+      "approvedCount": "{{n}} have already approved",
+      "approveButton": "Approve and show image",
+      "approvingButton": "Approving..."
+    },
+    "sentImage": "Sent an image",
+    "imageAlt": "Uploaded in chat",
+    "input": {
+      "placeholder": "Write a message...",
+      "imageUpload": "Image",
+      "imageUploading": "Uploading...",
+      "send": "Send",
+      "sending": "Sending...",
+      "counter": "{{length}}/1000"
+    }
+  },
+  "newChat": {
+    "title": "Start new chat",
+    "description": "Search for a user and create a direct message.",
+    "searchPlaceholder": "Search by name or email...",
+    "minChars": "Type at least two characters to search for users.",
+    "searching": "Searching...",
+    "noResults": "No users matched your search.",
+    "startChat": "Start chat",
+    "creating": "Creating...",
+    "closeAria": "Close"
+  }
+}

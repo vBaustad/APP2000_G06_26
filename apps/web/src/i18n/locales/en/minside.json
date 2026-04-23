@@ -1,0 +1,315 @@
+{
+  "shared": {
+    "loading": "Loading your profile...",
+    "mustLogIn": "You must be logged in to view your tours and favorites.",
+    "logIn": "Log in",
+    "logOut": "Log out",
+    "cancel": "Cancel",
+    "unknownError": "Unknown error.",
+    "somethingWentWrong": "Something went wrong",
+    "back": "Back",
+    "close": "Close"
+  },
+  "minside": {
+    "eyebrow": "My profile",
+    "memberBadge": "Tour member",
+    "intro": "Here you get an overview of your tours, group tours, favorites, bookings and account information.",
+    "editProfile": "Edit profile",
+    "createTour": "Create tour",
+    "myToursAsLeader": "My tours as leader",
+    "becomeAdvertiser": "Become advertiser",
+    "advertiserApplicationSent": "Advertiser application sent",
+    "tabs": {
+      "oversikt": "Overview",
+      "mineTurer": "My registrations",
+      "opprettedeTurer": "Tours I have created",
+      "favoritter": "Favorites",
+      "bookinger": "Bookings",
+      "konto": "Account"
+    },
+    "createdTours": {
+      "title": "Tours I have created",
+      "create": "Create new tour",
+      "groupTour": "Group tour",
+      "regularTour": "Regular tour",
+      "active": "Active",
+      "finished": "Finished",
+      "view": "View tour",
+      "edit": "Edit",
+      "empty": "You haven't created any tours yet."
+    },
+    "info": {
+      "title": "Info",
+      "name": "Name",
+      "email": "Email",
+      "memberSince": "Member since",
+      "unknown": "Unknown",
+      "role": "Role",
+      "roleUser": "User",
+      "roles": {
+        "admin": "Administrator",
+        "bruker": "User",
+        "turleder": "Tour leader",
+        "hytteeier": "Cabin owner",
+        "annonsor": "Advertiser"
+      }
+    },
+    "activity": {
+      "title": "Activity",
+      "completedTours": "Completed tours",
+      "registeredTours": "Registered tours",
+      "favorites": "Favorites"
+    },
+    "myTours": {
+      "title": "My tours",
+      "empty": "You are not registered for any tours.",
+      "details": "Details"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "activeRegistrations": "You have {{count}} active tour registration(s).",
+      "activeBookingsSingular": "You have 1 active cabin booking.",
+      "activeBookingsPlural": "You have {{count}} active cabin bookings.",
+      "noActiveBookings": "No active cabin bookings right now."
+    },
+    "favorites": {
+      "title": "Favorites",
+      "empty": "No favorites yet.",
+      "unknown": "Unknown favorite",
+      "typeTour": "Tour",
+      "typeCabin": "Cabin"
+    },
+    "comments": {
+      "title": "My comments",
+      "totalCount": "{{count}} total",
+      "onTour": "On tour:",
+      "deletedTour": "(deleted tour)",
+      "empty": "You have not written any comments yet."
+    },
+    "bookings": {
+      "title": "Bookings",
+      "totalCount": "{{count}} total",
+      "unknownCabin": "Unknown cabin",
+      "guestSingular": "guest",
+      "guestPlural": "guests",
+      "total": "Total: {{price}} NOK",
+      "empty": "No cabin bookings yet.",
+      "findCabins": "Find cabins",
+      "details": "Details"
+    },
+    "account": {
+      "title": "Account"
+    },
+    "pamelding": {
+      "pending": "Interest registered",
+      "binding": "Binding registration",
+      "locked": "Date locked",
+      "freed": "Date freed"
+    },
+    "bookingStatus": {
+      "pending": "Awaiting confirmation",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled"
+    },
+    "soknad": {
+      "eyebrow": "Application",
+      "title": "Become advertiser",
+      "description": "An administrator will review your application and grant the advertiser role upon approval.",
+      "nameLabel": "Name / company*",
+      "phoneLabel": "Phone",
+      "submit": "Send application",
+      "submitting": "Sending...",
+      "defaultError": "Could not send application"
+    },
+    "errors": {
+      "fetchProfile": "Could not fetch profile"
+    }
+  },
+  "turerLeder": {
+    "mustLogIn": "You must be logged in to view this page.",
+    "loading": "Loading tours...",
+    "heading": "My tours as leader",
+    "countSingular": "{{count}} tour · {{total}} dates in total",
+    "countPlural": "{{count}} tours · {{total}} dates in total",
+    "createNewTour": "Create new tour",
+    "emptyStart": "You are not leading any tours yet. ",
+    "emptyLink": "Create your first tour",
+    "emptyEnd": ".",
+    "noArea": "No area",
+    "nightsSuffix": " · {{count}} nights",
+    "createdPrefix": "Created ",
+    "addDate": "Add date",
+    "closeForm": "Close",
+    "form": {
+      "titleOptional": "Title (optional)",
+      "titlePlaceholder": "e.g. Easter week",
+      "startRequired": "Start *",
+      "endRequired": "End *",
+      "earlyDeadline": "Early registration deadline (optional)",
+      "earlyDiscount": "Early discount (%) (optional)",
+      "save": "Add",
+      "saving": "Saving...",
+      "errorDatesRequired": "Start date and end date are required.",
+      "errorSave": "Could not add date.",
+      "errorFetch": "Could not fetch tours.",
+      "errorStatus": "Could not update status."
+    },
+    "noDates": "No dates added yet. Add at least one date so users can register.",
+    "noActiveDates": "No active dates. Previous dates are shown below if any.",
+    "showHistory": "Show previous dates ({{count}})",
+    "hideHistory": "Hide previous dates ({{count}})",
+    "dateLabel": "Date",
+    "datoStatus": {
+      "planned": "Proposed",
+      "locked": "Locked",
+      "cancelled": "Cancelled",
+      "freed": "Freed"
+    },
+    "participants": "{{binding}} binding · {{pending}} interested",
+    "participantsLocked": " · {{locked}} locked",
+    "earlyDeadlineLabel": "Early deadline: {{date}}",
+    "earlyDiscountSuffix": " ({{percent}}% discount)",
+    "confirmLock": "Lock this date? Other dates on the same tour will be freed.",
+    "confirmCancel": "Cancel this date? Registrations will be freed.",
+    "lock": "Lock",
+    "cancel": "Cancel",
+    "lockedFreedNotice": "Locked — other dates freed"
+  },
+  "mineHytter": {
+    "loginTitle": "My cabins",
+    "loginMessage": "You must be logged in to manage cabins.",
+    "notOwnerMessageStart": "This page is only for users with the ",
+    "notOwnerRole": "cabin owner",
+    "notOwnerMessageEnd": " role.",
+    "eyebrow": "Cabin rental",
+    "heading": "My cabins",
+    "intro": "Register, update and manage your cabins. Set the location on the map, add a description, price and image.",
+    "cabinCountSingular": "{{count}} cabin",
+    "cabinCountPlural": "{{count}} cabins",
+    "newCabin": "New cabin",
+    "bookings": {
+      "title": "Booking requests",
+      "subtitle": "Approve or reject requests from guests.",
+      "pendingBadge": "{{count}} pending",
+      "filterActive": "Active",
+      "filterAll": "All ({{count}})",
+      "emptyActive": "No active bookings right now.",
+      "emptyAll": "No bookings registered yet.",
+      "unknownGuest": "Unknown guest",
+      "nightSingular": "night",
+      "nightPlural": "nights",
+      "guestSingular": "guest",
+      "guestPlural": "guests",
+      "busy": "Working...",
+      "approve": "Approve",
+      "cancel": "Cancel",
+      "reject": "Reject",
+      "approved": "Booking approved",
+      "rejected": "Booking rejected",
+      "errorUpdate": "Could not update booking",
+      "errorNetwork": "Network error. Please try again."
+    },
+    "bookingStatus": {
+      "pending": "Pending",
+      "confirmed": "Approved",
+      "cancelled": "Rejected"
+    },
+    "list": {
+      "title": "My registered cabins",
+      "empty": "No cabins registered yet.",
+      "emptyHint": "Get started by registering your first cabin.",
+      "bedSuffix": "beds",
+      "maxGuests": "Max {{count}}",
+      "altitude": "{{height}} m.a.s.l.",
+      "pricePerNight": "{{price}} NOK/night",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "betjent": {
+      "betjent": "Staffed",
+      "selvbetjent": "Self-service",
+      "ubetjent": "Unstaffed"
+    },
+    "confirmDelete": "Are you sure you want to delete this cabin?",
+    "messages": {
+      "deleted": "The cabin was deleted",
+      "created": "The cabin was created",
+      "updated": "The cabin was updated",
+      "errorFetch": "Could not fetch cabins",
+      "errorSave": "Could not save the cabin",
+      "errorDelete": "Could not delete the cabin",
+      "errorUpload": "The image was not uploaded"
+    },
+    "modal": {
+      "eyebrow": "Cabin",
+      "editTitle": "Edit cabin",
+      "createTitle": "Register new cabin",
+      "sections": {
+        "basic": "Basic",
+        "capacityPrice": "Capacity and price",
+        "location": "Location",
+        "locationHint": "Click on the map to set the location",
+        "amenities": "Amenities",
+        "mediaDetails": "Media and details"
+      },
+      "fields": {
+        "name": "Name*",
+        "type": "Type",
+        "typePlaceholder": "Choose type…",
+        "area": "Area",
+        "areaPlaceholder": "e.g. Hardangervidda",
+        "address": "Address",
+        "beds": "Beds",
+        "maxGuests": "Max guests",
+        "pricePerNight": "Price per night (NOK)",
+        "lat": "Latitude (lat)",
+        "lng": "Longitude (lng)",
+        "altitude": "Altitude (m.a.s.l.)",
+        "image": "Image",
+        "previewAlt": "Preview",
+        "changeImage": "Change image",
+        "chooseImage": "Choose image",
+        "undoChoice": "Undo selection",
+        "imageHint": "JPG, PNG, WebP. Max 5 MB.",
+        "description": "Description",
+        "rules": "Rules"
+      },
+      "save": "Update cabin",
+      "create": "Create cabin",
+      "saving": "Saving...",
+      "mapAttribution": "&copy; OpenStreetMap contributors"
+    }
+  },
+  "rediger": {
+    "loading": "Loading profile information...",
+    "eyebrow": "Account",
+    "heading": "Edit profile",
+    "intro": "Update your name, email and information about yourself. Keep your profile simple, clear and relevant for using the platform.",
+    "sidebar": {
+      "title": "Profile",
+      "back": "Back to my page",
+      "current": "Edit profile",
+      "tipsTitle": "Tips",
+      "tipsBody": "Use your full name and a short text about your interests. It makes your profile more credible and useful for group tours and social trip planning."
+    },
+    "form": {
+      "title": "Your profile",
+      "subtitle": "The information below is used in your account and on your profile page.",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Email",
+      "emailHint": "If you change your email address you may need to verify it again.",
+      "birthDate": "Date of birth",
+      "birthDateHint": "Optional field. Can be used for profile customization and statistics.",
+      "birthDatePlaceholder": "DD.MM.YYYY",
+      "aboutMe": "About me",
+      "aboutMeHint": "Write a short text about you and your outdoor interests.",
+      "save": "Save changes",
+      "saving": "Saving...",
+      "saved": "Changes were saved.",
+      "errorFetch": "Could not fetch profile",
+      "errorSave": "Could not save profile",
+      "errorGeneric": "Something went wrong. Please try again."
+    }
+  }
+}

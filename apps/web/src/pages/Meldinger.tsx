@@ -11,6 +11,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Check, ImagePlus, MessageCircle, PenSquare, Search, Send, Users, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 
 type InboxChat = {
@@ -61,32 +62,10 @@ type SearchUser = {
   epost: string;
 };
 
-function formatTidspunkt(iso: string) {
-  try {
-    return new Date(iso).toLocaleString("nb-NO", {
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
-}
-
-function formatKortTid(iso: string) {
-  try {
-    return new Date(iso).toLocaleDateString("nb-NO", {
-      day: "2-digit",
-      month: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
-}
-
 export default function Meldinger() {
   const { token, user } = useAuth();
+  const { t, i18n } = useTranslation("meldinger");
+  const locale = i18n.resolvedLanguage === "en" ? "en-US" : "nb-NO";
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [inbox, setInbox] = useState<InboxChat[]>([]);
@@ -106,6 +85,30 @@ export default function Meldinger() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [createBusyId, setCreateBusyId] = useState<number | null>(null);
+
+  function formatTidspunkt(iso: string) {
+    try {
+      return new Date(iso).toLocaleString(locale, {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return iso;
+    }
+  }
+
+  function formatKortTid(iso: string) {
+    try {
+      return new Date(iso).toLocaleDateString(locale, {
+        day: "2-digit",
+        month: "2-digit",
+      });
+    } catch {
+      return iso;
+    }
+  }
 
   const requestedChatId = useMemo(() => {
     const raw = searchParams.get("chat");
@@ -140,7 +143,7 @@ export default function Meldinger() {
         if (!active) return;
 
         if (!res.ok) {
-          setPageError((data as { error?: string } | null)?.error || "Kunne ikke hente meldinger.");
+          setPageError((data as { error?: string } | null)?.error || t("errors.fetchInbox"));
           return;
         }
 
@@ -150,7 +153,7 @@ export default function Meldinger() {
       } catch (error) {
         console.error("Feil ved henting av meldinger:", error);
         if (active) {
-          setPageError("Kunne ikke hente meldinger.");
+          setPageError(t("errors.fetchInbox"));
         }
       } finally {
         if (active && !silent) {
@@ -169,7 +172,7 @@ export default function Meldinger() {
       active = false;
       window.clearInterval(interval);
     };
-  }, [token]);
+  }, [token, t]);
 
   useEffect(() => {
     if (inbox.length === 0) {
@@ -219,7 +222,7 @@ export default function Meldinger() {
         if (!active) return;
 
         if (!res.ok) {
-          setPageError(data?.error || "Kunne ikke hente chatten.");
+          setPageError(data?.error || t("errors.fetchChat"));
           setActiveChat(null);
           return;
         }
@@ -229,7 +232,7 @@ export default function Meldinger() {
       } catch (error) {
         console.error("Feil ved henting av chat:", error);
         if (active) {
-          setPageError("Kunne ikke hente chatten.");
+          setPageError(t("errors.fetchChat"));
           setActiveChat(null);
         }
       } finally {
@@ -249,7 +252,7 @@ export default function Meldinger() {
       active = false;
       window.clearInterval(interval);
     };
-  }, [selectedChatId, token]);
+  }, [selectedChatId, token, t]);
 
   useEffect(() => {
     if (!newChatOpen || !token) return;
@@ -280,7 +283,7 @@ export default function Meldinger() {
         if (!active) return;
 
         if (!res.ok) {
-          setSearchError((data as { error?: string } | null)?.error || "Kunne ikke søke etter brukere.");
+          setSearchError((data as { error?: string } | null)?.error || t("errors.searchUsers"));
           setSearchResults([]);
           return;
         }
@@ -290,7 +293,7 @@ export default function Meldinger() {
       } catch (error) {
         console.error("Feil ved brukersøk:", error);
         if (active) {
-          setSearchError("Kunne ikke søke etter brukere.");
+          setSearchError(t("errors.searchUsers"));
           setSearchResults([]);
         }
       } finally {
@@ -304,7 +307,7 @@ export default function Meldinger() {
       active = false;
       window.clearTimeout(timer);
     };
-  }, [newChatOpen, searchText, token]);
+  }, [newChatOpen, searchText, token, t]);
 
   function selectChat(chatId: number) {
     setSelectedChatId(chatId);
@@ -316,7 +319,7 @@ export default function Meldinger() {
 
     const tekst = messageText.trim();
     if (!tekst) {
-      setPageError("Skriv en melding før du sender.");
+      setPageError(t("errors.emptyMessage"));
       return;
     }
 
@@ -347,7 +350,7 @@ export default function Meldinger() {
         | null;
 
       if (!res.ok) {
-        setPageError(data?.error || "Kunne ikke sende meldingen.");
+        setPageError(data?.error || t("errors.sendMessage"));
         return;
       }
 
@@ -382,7 +385,7 @@ export default function Meldinger() {
       setMessageText("");
     } catch (error) {
       console.error("Feil ved sending av melding:", error);
-      setPageError("Kunne ikke sende meldingen.");
+      setPageError(t("errors.sendMessage"));
     } finally {
       setSendBusy(false);
     }
@@ -417,7 +420,7 @@ export default function Meldinger() {
         | null;
 
       if (!res.ok || !data) {
-        setPageError(data?.error || "Kunne ikke laste opp bildet.");
+        setPageError(data?.error || t("errors.uploadImage"));
         return;
       }
 
@@ -436,7 +439,7 @@ export default function Meldinger() {
               ? {
                   ...chat,
                   latestMessage: {
-                    body: data.body || "Sendte et bilde",
+                    body: data.body || t("chat.sentImage"),
                     created_at: data.created_at,
                     senderNavn: data.sender.navn,
                   },
@@ -452,7 +455,7 @@ export default function Meldinger() {
       setMessageText("");
     } catch (error) {
       console.error("Feil ved bildeopplasting:", error);
-      setPageError("Kunne ikke laste opp bildet.");
+      setPageError(t("errors.uploadImage"));
     } finally {
       setImageBusy(false);
     }
@@ -486,7 +489,7 @@ export default function Meldinger() {
         | null;
 
       if (!res.ok || !data) {
-        setPageError(data?.error || "Kunne ikke godkjenne bildet.");
+        setPageError(data?.error || t("errors.approveImage"));
         return;
       }
 
@@ -496,7 +499,7 @@ export default function Meldinger() {
               ...current,
               meldinger: current.meldinger.map((melding) => ({
                 ...melding,
-                bilder: melding.bilder.map((bilde) =>
+                bilder: (melding.bilder ?? []).map((bilde) =>
                   bilde.id === imageId
                     ? {
                         ...bilde,
@@ -513,7 +516,7 @@ export default function Meldinger() {
       );
     } catch (error) {
       console.error("Feil ved godkjenning av bilde:", error);
-      setPageError("Kunne ikke godkjenne bildet.");
+      setPageError(t("errors.approveImage"));
     } finally {
       setApprovingImageId(null);
     }
@@ -539,7 +542,7 @@ export default function Meldinger() {
         | null;
 
       if (!res.ok || !data?.chatId) {
-        setSearchError(data?.error || "Kunne ikke opprette chat.");
+        setSearchError(data?.error || t("errors.createChat"));
         return;
       }
 
@@ -559,7 +562,7 @@ export default function Meldinger() {
       }
     } catch (error) {
       console.error("Feil ved oppretting av chat:", error);
-      setSearchError("Kunne ikke opprette chat.");
+      setSearchError(t("errors.createChat"));
     } finally {
       setCreateBusyId(null);
     }
@@ -569,15 +572,15 @@ export default function Meldinger() {
     return (
       <main className="min-h-[70vh] bg-slate-50 px-4 py-10">
         <section className="mx-auto max-w-4xl rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-semibold text-slate-900">Meldinger</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">{t("title")}</h1>
           <p className="mt-2 text-slate-600">
-            Logg inn for å se gruppechatter fra turer og starte direktemeldinger med andre brukere.
+            {t("signedOut.description")}
           </p>
           <Link
             to="/logg-inn"
             className="mt-6 inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
           >
-            Logg inn
+            {t("signedOut.loginButton")}
           </Link>
         </section>
       </main>
@@ -591,10 +594,10 @@ export default function Meldinger() {
           <div>
             <div className="flex items-center gap-2">
               <MessageCircle className="h-5 w-5 text-emerald-700" />
-              <h1 className="text-2xl font-semibold text-slate-900">Meldinger</h1>
+              <h1 className="text-2xl font-semibold text-slate-900">{t("title")}</h1>
             </div>
             <p className="mt-2 text-sm text-slate-600">
-              Her finner du direktechatter og gruppechatter du er med i.
+              {t("header.description")}
             </p>
           </div>
 
@@ -604,7 +607,7 @@ export default function Meldinger() {
             className="inline-flex items-center gap-2 self-start rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
           >
             <PenSquare className="h-4 w-4" />
-            Ny chat
+            {t("header.newChat")}
           </button>
         </div>
 
@@ -617,18 +620,20 @@ export default function Meldinger() {
         <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
           <aside className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-100 px-5 py-4">
-              <div className="text-sm font-semibold text-slate-900">Innboks</div>
+              <div className="text-sm font-semibold text-slate-900">{t("inbox.title")}</div>
               <div className="mt-1 text-xs text-slate-500">
-                {inbox.length} {inbox.length === 1 ? "chat" : "chatter"}
+                {inbox.length === 1
+                  ? t("inbox.countOne", { n: inbox.length })
+                  : t("inbox.countOther", { n: inbox.length })}
               </div>
             </div>
 
             <div className="max-h-[68vh] overflow-y-auto">
               {inboxLoading ? (
-                <div className="p-5 text-sm text-slate-500">Laster meldinger...</div>
+                <div className="p-5 text-sm text-slate-500">{t("inbox.loading")}</div>
               ) : inbox.length === 0 ? (
                 <div className="p-5 text-sm text-slate-500">
-                  Du har ingen chatter ennå. Start en ny samtale eller vent til en gruppetur blir låst.
+                  {t("inbox.empty")}
                 </div>
               ) : (
                 inbox.map((chat) => {
@@ -659,7 +664,7 @@ export default function Meldinger() {
                       <div className="mt-3 truncate text-sm text-slate-600">
                         {chat.latestMessage
                           ? `${chat.latestMessage.senderNavn}: ${chat.latestMessage.body}`
-                          : "Ingen meldinger ennå"}
+                          : t("inbox.noMessagesYet")}
                       </div>
                     </button>
                   );
@@ -674,15 +679,15 @@ export default function Meldinger() {
                 <div>
                   <Users className="mx-auto h-10 w-10 text-slate-300" />
                   <div className="mt-3 text-lg font-semibold text-slate-900">
-                    Ingen chat valgt
+                    {t("chat.noneSelected")}
                   </div>
                   <p className="mt-2 text-sm text-slate-500">
-                    Velg en samtale i innboksen, eller start en ny chat.
+                    {t("chat.selectHint")}
                   </p>
                 </div>
               </div>
             ) : chatLoading && !activeChat ? (
-              <div className="p-6 text-sm text-slate-500">Laster samtale...</div>
+              <div className="p-6 text-sm text-slate-500">{t("chat.loading")}</div>
             ) : activeChat ? (
               <div className="flex min-h-[68vh] flex-col">
                 <div className="border-b border-slate-100 px-6 py-5">
@@ -696,7 +701,7 @@ export default function Meldinger() {
                       </div>
                     </div>
                     <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                      {activeChat.medlemmer.length} deltakere
+                      {t("chat.participants", { n: activeChat.medlemmer.length })}
                     </div>
                   </div>
 
@@ -715,7 +720,7 @@ export default function Meldinger() {
                 <div className="flex-1 space-y-4 overflow-y-auto bg-slate-50 px-4 py-5 sm:px-6">
                   {activeChat.meldinger.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
-                      Ingen meldinger ennå. Send den første meldingen for å starte samtalen.
+                      {t("chat.empty")}
                     </div>
                   ) : (
                     activeChat.meldinger.map((melding) => {
@@ -749,7 +754,7 @@ export default function Meldinger() {
                                     <img
                                       key={bilde.id}
                                       src={bilde.imageUrl}
-                                      alt="Opplastet i chat"
+                                      alt={t("chat.imageAlt")}
                                       className="max-h-[320px] rounded-2xl object-cover"
                                     />
                                   ) : (
@@ -762,14 +767,14 @@ export default function Meldinger() {
                                       }`}
                                     >
                                       <div className="font-semibold">
-                                        Bildet er skjult til du godkjenner det
+                                        {t("chat.image.hidden")}
                                       </div>
                                       <div
                                         className={`mt-1 text-xs ${
                                           erMin ? "text-white/80" : "text-slate-500"
                                         }`}
                                       >
-                                        {bilde.approvedCount} har allerede godkjent
+                                        {t("chat.image.approvedCount", { n: bilde.approvedCount })}
                                       </div>
                                       <button
                                         type="button"
@@ -783,8 +788,8 @@ export default function Meldinger() {
                                       >
                                         <Check className="h-3.5 w-3.5" />
                                         {approvingImageId === bilde.id
-                                          ? "Godkjenner..."
-                                          : "Godkjenn og vis bilde"}
+                                          ? t("chat.image.approvingButton")
+                                          : t("chat.image.approveButton")}
                                       </button>
                                     </div>
                                   ),
@@ -810,14 +815,14 @@ export default function Meldinger() {
                     <textarea
                       value={messageText}
                       onChange={(e) => setMessageText(e.target.value)}
-                      placeholder="Skriv en melding..."
+                      placeholder={t("chat.input.placeholder")}
                       maxLength={1000}
                       className="min-h-[110px] flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                     <div className="flex gap-2">
                       <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                         <ImagePlus className="h-4 w-4" />
-                        {imageBusy ? "Laster opp..." : "Bilde"}
+                        {imageBusy ? t("chat.input.imageUploading") : t("chat.input.imageUpload")}
                         <input
                           type="file"
                           accept="image/*"
@@ -839,17 +844,17 @@ export default function Meldinger() {
                         className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         <Send className="h-4 w-4" />
-                        {sendBusy ? "Sender..." : "Send"}
+                        {sendBusy ? t("chat.input.sending") : t("chat.input.send")}
                       </button>
                     </div>
                   </div>
                   <div className="mt-2 text-right text-xs text-slate-400">
-                    {messageText.length}/1000
+                    {t("chat.input.counter", { length: messageText.length })}
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="p-6 text-sm text-slate-500">Kunne ikke laste samtalen.</div>
+              <div className="p-6 text-sm text-slate-500">{t("chat.loadFailed")}</div>
             )}
           </section>
         </div>
@@ -873,9 +878,9 @@ export default function Meldinger() {
           >
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-semibold text-slate-900">Start ny chat</h2>
+                <h2 className="text-xl font-semibold text-slate-900">{t("newChat.title")}</h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Søk etter en bruker og opprett en direktemelding.
+                  {t("newChat.description")}
                 </p>
               </div>
               <button
@@ -887,6 +892,7 @@ export default function Meldinger() {
                   setSearchError(null);
                 }}
                 className="rounded-full p-2 text-slate-500 hover:bg-slate-100"
+                aria-label={t("newChat.closeAria")}
               >
                 <X className="h-5 w-5" />
               </button>
@@ -898,7 +904,7 @@ export default function Meldinger() {
                 <input
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
-                  placeholder="Søk på navn eller e-post..."
+                  placeholder={t("newChat.searchPlaceholder")}
                   className="w-full border-none bg-transparent text-sm outline-none"
                 />
               </div>
@@ -913,15 +919,15 @@ export default function Meldinger() {
             <div className="mt-5 max-h-[360px] space-y-3 overflow-y-auto">
               {searchText.trim().length < 2 ? (
                 <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-500">
-                  Skriv minst to tegn for å søke etter brukere.
+                  {t("newChat.minChars")}
                 </div>
               ) : searchLoading ? (
                 <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5 text-sm text-slate-500">
-                  Søker...
+                  {t("newChat.searching")}
                 </div>
               ) : searchResults.length === 0 ? (
                 <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5 text-sm text-slate-500">
-                  Ingen brukere matchet søket ditt.
+                  {t("newChat.noResults")}
                 </div>
               ) : (
                 searchResults.map((resultat) => (
@@ -939,7 +945,7 @@ export default function Meldinger() {
                       disabled={createBusyId === resultat.id}
                       className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {createBusyId === resultat.id ? "Oppretter..." : "Start chat"}
+                      {createBusyId === resultat.id ? t("newChat.creating") : t("newChat.startChat")}
                     </button>
                   </div>
                 ))

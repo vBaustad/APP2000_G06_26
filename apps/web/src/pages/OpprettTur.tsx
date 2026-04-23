@@ -5,10 +5,19 @@
  * Side for oppretting av turer i Utopia. Admin velger tittel, beskrivelse,
  * turtype, eksisterende turstier (i rekkefølge) og eventuelle hytter
  * underveis. Datoer for fellestur håndteres i et eget steg senere.
+ *
+ * Videreutviklet av: Vebjørn Baustad
+ * Endringer: GPX-opplasting i tegnemodal (klient-side parser fyller
+ * inn punkter og navn fra fil) og i18n-konvertering av synlige strenger.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { MapContainer, Marker, Polyline, TileLayer, useMapEvents } from "react-leaflet";
 import type { LatLngExpression } from "leaflet";
 import L from "leaflet";
@@ -21,9 +30,11 @@ import {
   Route,
   Search,
   Undo2,
+  Upload,
   X,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { parseGpxText, downsample as downsampleGpx } from "../utils/gpxParser";
 
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: new URL("leaflet/dist/images/marker-icon-2x.png", import.meta.url).toString(),
@@ -89,14 +100,20 @@ function ClickHandler({
 }
 
 const TYPER = [
-  { verdi: "fottur", label: "Fottur" },
-  { verdi: "sykkel", label: "Sykkel" },
-  { verdi: "ski", label: "Ski" },
+  { verdi: "fottur", tKey: "typeFoot" },
+  { verdi: "sykkel", tKey: "typeBike" },
+  { verdi: "ski", tKey: "typeSki" },
 ] as const;
 
-const VANSKELIGHETSGRADER = ["Lett", "Middels", "Krevende", "Ekspert"] as const;
+const VANSKELIGHETSGRADER = [
+  { verdi: "Lett", tKey: "diffEasy" },
+  { verdi: "Middels", tKey: "diffMedium" },
+  { verdi: "Krevende", tKey: "diffHard" },
+  { verdi: "Ekspert", tKey: "diffExpert" },
+] as const;
 
 export default function OpprettTur() {
+  const { t } = useTranslation("opprettTur");
   const { token } = useAuth();
   const navigate = useNavigate();
 
@@ -143,8 +160,8 @@ export default function OpprettTur() {
   const valgteTurstiData = useMemo(
     () =>
       valgteTurstier
-        .map((id) => turstier.find((t) => t.id === id))
-        .filter((t): t is Tursti => Boolean(t)),
+        .map((id) => turstier.find((t2) => t2.id === id))
+        .filter((t2): t2 is Tursti => Boolean(t2)),
     [valgteTurstier, turstier],
   );
 
@@ -159,15 +176,15 @@ export default function OpprettTur() {
   const filtrerteTurstier = useMemo(() => {
     const q = turstiSok.trim().toLowerCase();
     if (!q) return turstier;
-    return turstier.filter((t) =>
-      `${t.navn} ${t.omrade ?? ""}`.toLowerCase().includes(q),
+    return turstier.filter((t2) =>
+      `${t2.navn} ${t2.omrade ?? ""}`.toLowerCase().includes(q),
     );
   }, [turstier, turstiSok]);
 
   const valgtePunkter = useMemo(() => {
     const punkter: { lat: number; lng: number }[] = [];
-    for (const t of valgteTurstiData) {
-      for (const p of t.tursti_punkt ?? []) {
+    for (const ts of valgteTurstiData) {
+      for (const p of ts.tursti_punkt ?? []) {
         const lat = Number(p.lat);
         const lng = Number(p.lng);
         if (Number.isFinite(lat) && Number.isFinite(lng)) {
@@ -238,6 +255,7 @@ export default function OpprettTur() {
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = forrige;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tegneModalOpen, tegneBusy]);
 
   function apneTegneModal() {
@@ -256,17 +274,34 @@ export default function OpprettTur() {
     setTegneFeil(null);
   }
 
+  async function handleGpxFile(file: File) {
+    setTegneFeil(null);
+    try {
+      const xml = await file.text();
+      const { name, points } = parseGpxText(xml);
+      if (points.length < 2) {
+        setTegneFeil(t("draw.errorGpxNoPoints"));
+        return;
+      }
+      const trimmed = downsampleGpx(points, 100);
+      setTegnePunkter(trimmed.map((p) => [p.lat, p.lng]));
+      if (!tegneNavn && name) setTegneNavn(name);
+    } catch {
+      setTegneFeil(t("draw.errorGpxParse"));
+    }
+  }
+
   async function handleLagreTursti() {
     if (!token) {
-      setTegneFeil("Du må være innlogget.");
+      setTegneFeil(t("draw.errorAuth"));
       return;
     }
     if (!tegneNavn.trim()) {
-      setTegneFeil("Navn er påkrevd.");
+      setTegneFeil(t("draw.errorName"));
       return;
     }
     if (tegnePunkter.length < 2) {
-      setTegneFeil("Klikk i kartet for å legge til minst to punkter.");
+      setTegneFeil(t("draw.errorPoints"));
       return;
     }
 
@@ -291,14 +326,14 @@ export default function OpprettTur() {
         | (Tursti & { error?: string })
         | null;
       if (!res.ok || !data || typeof data.id !== "number") {
-        setTegneFeil(data?.error || "Kunne ikke lagre turstien.");
+        setTegneFeil(data?.error || t("draw.errorSave"));
         return;
       }
       setTurstier((prev) => [...prev, data]);
       setValgteTurstier((prev) => [...prev, data.id]);
       setTegneModalOpen(false);
     } catch {
-      setTegneFeil("Nettverksfeil. Prøv igjen.");
+      setTegneFeil(t("draw.errorNetwork"));
     } finally {
       setTegneBusy(false);
     }
@@ -307,15 +342,15 @@ export default function OpprettTur() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!token) {
-      setError("Du må være innlogget for å opprette tur.");
+      setError(t("page.errorAuth"));
       return;
     }
     if (!tittel.trim()) {
-      setError("Tittel er påkrevd.");
+      setError(t("page.errorTitle"));
       return;
     }
     if (valgteTurstier.length === 0) {
-      setError("Velg minst én tursti.");
+      setError(t("page.errorTrail"));
       return;
     }
 
@@ -346,7 +381,7 @@ export default function OpprettTur() {
         | null;
 
       if (!res.ok) {
-        setError(data?.error || "Kunne ikke opprette turen.");
+        setError(data?.error || t("page.errorCreate"));
         return;
       }
 
@@ -356,7 +391,7 @@ export default function OpprettTur() {
         navigate("/turer");
       }
     } catch {
-      setError("Nettverksfeil. Prøv igjen.");
+      setError(t("page.errorNetwork"));
     } finally {
       setSubmitting(false);
     }
@@ -367,10 +402,10 @@ export default function OpprettTur() {
       <main className="bg-slate-100">
         <section className="mx-auto max-w-3xl px-4 py-12">
           <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
-            <h1 className="text-2xl font-semibold text-slate-900">Opprett tur</h1>
-            <p className="mt-4 text-slate-600">
-              Du må være innlogget for å opprette en tur.
-            </p>
+            <h1 className="text-2xl font-semibold text-slate-900">
+              {t("page.mustLoginTitle")}
+            </h1>
+            <p className="mt-4 text-slate-600">{t("page.mustLogin")}</p>
           </div>
         </section>
       </main>
@@ -382,13 +417,10 @@ export default function OpprettTur() {
       <section className="bg-[#17331C] text-white">
         <div className="mx-auto max-w-5xl px-4 py-14 md:py-16">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300">
-            Turregistrering
+            {t("page.eyebrow")}
           </p>
-          <h1 className="text-4xl font-semibold md:text-5xl">Opprett tur</h1>
-          <p className="mt-4 max-w-3xl text-lg leading-8 text-white/85">
-            Registrer en ny tur med turstier og eventuelle hytter underveis.
-            Datoer for fellestur legges til senere.
-          </p>
+          <h1 className="text-4xl font-semibold md:text-5xl">{t("page.title")}</h1>
+          <p className="mt-4 max-w-3xl text-lg leading-8 text-white/85">{t("page.lede")}</p>
         </div>
       </section>
 
@@ -398,31 +430,31 @@ export default function OpprettTur() {
           className="space-y-8 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8"
         >
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-slate-900">Grunnleggende</h2>
+            <h2 className="text-xl font-semibold text-slate-900">{t("page.basicHeading")}</h2>
 
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">
-                Turtittel *
+                {t("page.titleLabel")}
               </label>
               <input
                 type="text"
                 required
                 value={tittel}
                 onChange={(e) => setTittel(e.target.value)}
-                placeholder="For eksempel Hardangervidda på tvers"
+                placeholder={t("page.titlePlaceholder")}
                 className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#0f3d2e]"
               />
             </div>
 
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">
-                Beskrivelse
+                {t("page.descriptionLabel")}
               </label>
               <textarea
                 rows={4}
                 value={beskrivelse}
                 onChange={(e) => setBeskrivelse(e.target.value)}
-                placeholder="Beskriv turen kort"
+                placeholder={t("page.descriptionPlaceholder")}
                 className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#0f3d2e]"
               />
             </div>
@@ -430,17 +462,17 @@ export default function OpprettTur() {
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">
-                  Type
+                  {t("page.typeLabel")}
                 </label>
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value)}
                   className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#0f3d2e]"
                 >
-                  <option value="">Velg type…</option>
-                  {TYPER.map((t) => (
-                    <option key={t.verdi} value={t.verdi}>
-                      {t.label}
+                  <option value="">{t("page.typeChoose")}</option>
+                  {TYPER.map((ty) => (
+                    <option key={ty.verdi} value={ty.verdi}>
+                      {t(`page.${ty.tKey}`)}
                     </option>
                   ))}
                 </select>
@@ -448,17 +480,17 @@ export default function OpprettTur() {
 
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">
-                  Vanskelighetsgrad
+                  {t("page.difficultyLabel")}
                 </label>
                 <select
                   value={vanskelighetsgrad}
                   onChange={(e) => setVanskelighetsgrad(e.target.value)}
                   className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#0f3d2e]"
                 >
-                  <option value="">Velg vanskelighetsgrad…</option>
+                  <option value="">{t("page.difficultyChoose")}</option>
                   {VANSKELIGHETSGRADER.map((v) => (
-                    <option key={v} value={v}>
-                      {v}
+                    <option key={v.verdi} value={v.verdi}>
+                      {t(`page.${v.tKey}`)}
                     </option>
                   ))}
                 </select>
@@ -466,27 +498,27 @@ export default function OpprettTur() {
 
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">
-                  Område
+                  {t("page.areaLabel")}
                 </label>
                 <input
                   type="text"
                   value={omrade}
                   onChange={(e) => setOmrade(e.target.value)}
-                  placeholder="f.eks. Hardangervidda"
+                  placeholder={t("page.areaPlaceholder")}
                   className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#0f3d2e]"
                 />
               </div>
 
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">
-                  Antall netter
+                  {t("page.nightsLabel")}
                 </label>
                 <input
                   type="number"
                   min={0}
                   value={antallNetter}
                   onChange={(e) => setAntallNetter(e.target.value)}
-                  placeholder="0 for dagstur"
+                  placeholder={t("page.nightsPlaceholder")}
                   className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#0f3d2e]"
                 />
               </div>
@@ -497,38 +529,58 @@ export default function OpprettTur() {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <Route className="h-5 w-5 text-[#0f3d2e]" />
-                <h2 className="text-xl font-semibold text-slate-900">Turstier *</h2>
+                <h2 className="text-xl font-semibold text-slate-900">
+                  {t("page.trailsHeading")}
+                </h2>
               </div>
 
-              <button
-                type="button"
-                onClick={apneTegneModal}
-                className="inline-flex items-center gap-2 rounded-xl border border-[#0f3d2e] bg-white px-3 py-2 text-sm font-semibold text-[#0f3d2e] hover:bg-[#eef5f1]"
-              >
-                <PencilLine className="h-4 w-4" />
-                Tegn ny tursti
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#0f3d2e] bg-white px-3 py-2 text-sm font-semibold text-[#0f3d2e] hover:bg-[#eef5f1]">
+                  <Upload className="h-4 w-4" />
+                  {t("draw.uploadGpx")}
+                  <input
+                    type="file"
+                    accept=".gpx,application/gpx+xml,text/xml"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) {
+                        apneTegneModal();
+                        void handleGpxFile(f);
+                      }
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={apneTegneModal}
+                  className="inline-flex items-center gap-2 rounded-xl border border-[#0f3d2e] bg-white px-3 py-2 text-sm font-semibold text-[#0f3d2e] hover:bg-[#eef5f1]"
+                >
+                  <PencilLine className="h-4 w-4" />
+                  {t("page.drawTrail")}
+                </button>
+              </div>
             </div>
-            <p className="text-sm text-slate-600">
-              Søk og klikk for å velge. Rekkefølgen følger klikk-rekkefølgen.
-            </p>
+            <p className="text-sm text-slate-600">{t("page.trailsHelp")}</p>
 
             {valgteTurstiData.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {valgteTurstiData.map((t, i) => (
+                {valgteTurstiData.map((ts, i) => (
                   <span
-                    key={t.id}
+                    key={ts.id}
                     className="inline-flex items-center gap-2 rounded-full bg-[#eef5f1] px-3 py-1 text-sm text-[#0f3d2e] ring-1 ring-[#dcebe4]"
                   >
                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#0f3d2e] text-xs font-semibold text-white">
                       {i + 1}
                     </span>
-                    {t.navn}
+                    {ts.navn}
                     <button
                       type="button"
-                      onClick={() => toggleTursti(t.id)}
+                      onClick={() => toggleTursti(ts.id)}
                       className="ml-1 text-[#0f3d2e] hover:text-slate-900"
-                      aria-label={`Fjern ${t.navn}`}
+                      aria-label={t("page.removeLabel", { name: ts.navn })}
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -539,7 +591,7 @@ export default function OpprettTur() {
 
             {turstier.length === 0 ? (
               <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
-                Ingen turstier er registrert i databasen ennå.
+                {t("page.trailsNone")}
               </p>
             ) : (
               <>
@@ -549,7 +601,7 @@ export default function OpprettTur() {
                     type="search"
                     value={turstiSok}
                     onChange={(e) => setTurstiSok(e.target.value)}
-                    placeholder="Søk etter tursti eller område"
+                    placeholder={t("page.trailsSearch")}
                     className="w-full rounded-xl border border-slate-300 px-4 py-2.5 pl-9 text-sm outline-none focus:border-[#0f3d2e]"
                   />
                 </div>
@@ -557,13 +609,13 @@ export default function OpprettTur() {
                 <ul className="max-h-72 divide-y divide-slate-100 overflow-y-auto rounded-xl border border-slate-200 bg-white">
                   {filtrerteTurstier.length === 0 ? (
                     <li className="p-3 text-center text-sm text-slate-500">
-                      Ingen treff.
+                      {t("page.noHits")}
                     </li>
                   ) : (
-                    filtrerteTurstier.map((t) => {
-                      const valgt = valgteTurstier.includes(t.id);
+                    filtrerteTurstier.map((ts) => {
+                      const valgt = valgteTurstier.includes(ts.id);
                       return (
-                        <li key={t.id}>
+                        <li key={ts.id}>
                           <label
                             className={`flex cursor-pointer items-center gap-3 px-3 py-2 text-sm transition ${
                               valgt ? "bg-[#eef5f1]" : "hover:bg-slate-50"
@@ -572,19 +624,19 @@ export default function OpprettTur() {
                             <input
                               type="checkbox"
                               checked={valgt}
-                              onChange={() => toggleTursti(t.id)}
+                              onChange={() => toggleTursti(ts.id)}
                               className="h-4 w-4"
                             />
                             <span className="flex-1 font-medium text-slate-900">
-                              {t.navn}
+                              {ts.navn}
                             </span>
                             <span className="text-xs text-slate-500">
                               {[
-                                t.omrade,
-                                t.lengde_km !== null
-                                  ? `${Number(t.lengde_km)} km`
+                                ts.omrade,
+                                ts.lengde_km !== null
+                                  ? `${Number(ts.lengde_km)} km`
                                   : null,
-                                t.vanskelighetsgrad,
+                                ts.vanskelighetsgrad,
                               ]
                                 .filter(Boolean)
                                 .join(" · ")}
@@ -604,7 +656,7 @@ export default function OpprettTur() {
               <div className="flex items-center gap-2">
                 <House className="h-5 w-5 text-[#0f3d2e]" />
                 <h2 className="text-xl font-semibold text-slate-900">
-                  Hytter underveis
+                  {t("page.cabinsHeading")}
                 </h2>
               </div>
 
@@ -616,13 +668,12 @@ export default function OpprettTur() {
                     onChange={(e) => setVisAlleHytter(e.target.checked)}
                     className="h-4 w-4"
                   />
-                  Vis alle hytter (ikke bare i nærheten)
+                  {t("page.showAllCabins")}
                 </label>
               )}
             </div>
             <p className="text-sm text-slate-600">
-              Valgfritt. Viser hytter innen {HYTTE_RADIUS_KM} km fra valgte
-              turstier. Rekkefølgen følger klikk-rekkefølgen.
+              {t("page.cabinsHelp", { radius: HYTTE_RADIUS_KM })}
             </p>
 
             {valgteHytteData.length > 0 && (
@@ -640,7 +691,7 @@ export default function OpprettTur() {
                       type="button"
                       onClick={() => toggleHytte(h.id)}
                       className="ml-1 text-[#0f3d2e] hover:text-slate-900"
-                      aria-label={`Fjern ${h.navn}`}
+                      aria-label={t("page.removeLabel", { name: h.navn })}
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -651,11 +702,11 @@ export default function OpprettTur() {
 
             {hytter.length === 0 ? (
               <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
-                Ingen hytter er registrert i databasen ennå.
+                {t("page.cabinsNone")}
               </p>
             ) : valgtePunkter.length === 0 && !visAlleHytter ? (
               <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
-                Velg en tursti først, eller huk av "Vis alle hytter".
+                {t("page.cabinsNeedTrail")}
               </p>
             ) : (
               <>
@@ -665,7 +716,7 @@ export default function OpprettTur() {
                     type="search"
                     value={hytteSok}
                     onChange={(e) => setHytteSok(e.target.value)}
-                    placeholder="Søk etter hytte eller område"
+                    placeholder={t("page.cabinsSearch")}
                     className="w-full rounded-xl border border-slate-300 px-4 py-2.5 pl-9 text-sm outline-none focus:border-[#0f3d2e]"
                   />
                 </div>
@@ -673,7 +724,7 @@ export default function OpprettTur() {
                 <ul className="max-h-72 divide-y divide-slate-100 overflow-y-auto rounded-xl border border-slate-200 bg-white">
                   {filtrerteHytter.length === 0 ? (
                     <li className="p-3 text-center text-sm text-slate-500">
-                      Ingen treff.
+                      {t("page.noHits")}
                     </li>
                   ) : (
                     filtrerteHytter.map((h) => {
@@ -722,7 +773,7 @@ export default function OpprettTur() {
               className="inline-flex items-center gap-2 rounded-full bg-[#0f3d2e] px-6 py-3 font-medium text-white transition hover:bg-[#12351d] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <CheckCircle2 className="h-4 w-4" />
-              {submitting ? "Oppretter..." : "Opprett tur"}
+              {submitting ? t("page.submitting") : t("page.submit")}
             </button>
           </div>
         </form>
@@ -742,14 +793,12 @@ export default function OpprettTur() {
             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
               <div className="flex items-center gap-2">
                 <PencilLine className="h-5 w-5 text-[#0f3d2e]" />
-                <h3 className="text-lg font-semibold text-slate-900">
-                  Tegn ny tursti
-                </h3>
+                <h3 className="text-lg font-semibold text-slate-900">{t("draw.title")}</h3>
               </div>
               <button
                 type="button"
                 onClick={lukkTegneModal}
-                aria-label="Lukk"
+                aria-label={t("draw.close")}
                 className="rounded-full p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
               >
                 <X className="h-5 w-5" />
@@ -765,7 +814,7 @@ export default function OpprettTur() {
                   className="h-full min-h-[320px] w-full"
                 >
                   <TileLayer
-                    attribution="&copy; OpenStreetMap-bidragsytere"
+                    attribution={t("draw.mapAttribution")}
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
                   <ClickHandler
@@ -785,30 +834,30 @@ export default function OpprettTur() {
               <div className="flex flex-col gap-3 overflow-y-auto">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-700">
-                    Navn *
+                    {t("draw.nameLabel")}
                   </label>
                   <input
                     type="text"
                     value={tegneNavn}
                     onChange={(e) => setTegneNavn(e.target.value)}
-                    placeholder="f.eks. Finsehytta → Krækkja"
+                    placeholder={t("draw.namePlaceholder")}
                     className="w-full rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-[#0f3d2e]"
                   />
                 </div>
 
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-700">
-                    Vanskelighetsgrad
+                    {t("draw.difficultyLabel")}
                   </label>
                   <select
                     value={tegneVanskelighet}
                     onChange={(e) => setTegneVanskelighet(e.target.value)}
                     className="w-full rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-[#0f3d2e]"
                   >
-                    <option value="">Ikke satt</option>
+                    <option value="">{t("draw.difficultyUnset")}</option>
                     {VANSKELIGHETSGRADER.map((v) => (
-                      <option key={v} value={v}>
-                        {v}
+                      <option key={v.verdi} value={v.verdi}>
+                        {t(`page.${v.tKey}`)}
                       </option>
                     ))}
                   </select>
@@ -816,20 +865,20 @@ export default function OpprettTur() {
 
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-700">
-                    Område
+                    {t("draw.areaLabel")}
                   </label>
                   <input
                     type="text"
                     value={tegneOmrade}
                     onChange={(e) => setTegneOmrade(e.target.value)}
-                    placeholder="f.eks. Hardangervidda"
+                    placeholder={t("draw.areaPlaceholder")}
                     className="w-full rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-[#0f3d2e]"
                   />
                 </div>
 
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-700">
-                    Beskrivelse
+                    {t("draw.descriptionLabel")}
                   </label>
                   <textarea
                     rows={3}
@@ -843,7 +892,9 @@ export default function OpprettTur() {
                   <div className="flex items-center justify-between">
                     <span>
                       <span className="font-semibold">{tegnePunkter.length}</span>{" "}
-                      {tegnePunkter.length === 1 ? "punkt" : "punkter"}
+                      {tegnePunkter.length === 1
+                        ? t("draw.pointsOne")
+                        : t("draw.pointsMany")}
                     </span>
                     {tegnePunkter.length >= 2 && (
                       <span className="font-semibold">
@@ -851,10 +902,23 @@ export default function OpprettTur() {
                       </span>
                     )}
                   </div>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Klikk i kartet for å legge til punkter langs stien.
-                  </p>
+                  <p className="mt-1 text-xs text-slate-500">{t("draw.helpText")}</p>
                 </div>
+
+                <label className="inline-flex cursor-pointer items-center gap-2 self-start rounded-lg border border-[#0f3d2e] bg-white px-3 py-1.5 text-xs font-semibold text-[#0f3d2e] hover:bg-[#eef5f1]">
+                  <Upload className="h-3.5 w-3.5" />
+                  {t("draw.uploadGpx")}
+                  <input
+                    type="file"
+                    accept=".gpx,application/gpx+xml,text/xml"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void handleGpxFile(f);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
 
                 <div className="flex gap-2">
                   <button
@@ -864,7 +928,7 @@ export default function OpprettTur() {
                     className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Undo2 className="h-3.5 w-3.5" />
-                    Angre siste
+                    {t("draw.undo")}
                   </button>
                   <button
                     type="button"
@@ -873,7 +937,7 @@ export default function OpprettTur() {
                     className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <X className="h-3.5 w-3.5" />
-                    Tøm alle
+                    {t("draw.clearAll")}
                   </button>
                 </div>
 
@@ -892,7 +956,7 @@ export default function OpprettTur() {
                 disabled={tegneBusy}
                 className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
               >
-                Avbryt
+                {t("draw.cancel")}
               </button>
               <button
                 type="button"
@@ -901,7 +965,7 @@ export default function OpprettTur() {
                 className="inline-flex items-center gap-2 rounded-xl bg-[#0f3d2e] px-5 py-2 text-sm font-semibold text-white hover:bg-[#12351d] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Plus className="h-4 w-4" />
-                {tegneBusy ? "Lagrer..." : "Lagre tursti"}
+                {tegneBusy ? t("draw.saving") : t("draw.save")}
               </button>
             </div>
           </div>

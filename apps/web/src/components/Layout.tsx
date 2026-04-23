@@ -3,6 +3,10 @@
  * Utvikler(e): Vebjørn Baustad
  * Beskrivelse: Rammedokument som definerer felles sidestruktur
  * og navigasjon for hele applikasjonen.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 /**

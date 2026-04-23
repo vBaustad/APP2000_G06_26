@@ -2,6 +2,10 @@
  * Fil: MineHytter.tsx
  * Utvikler(e): Vebjørn Baustad
  * Beskrivelse: CRUD for oppretting, redigering og sletting av hytter for brukere med rolle hytteeier
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 import { FASILITET_KODER } from "../data/fasiliteter";
 import { useEffect, useMemo, useState } from "react";
@@ -28,6 +32,7 @@ import {
   X,
   XCircle,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 
 const defaultIcon = L.icon({
@@ -40,12 +45,6 @@ const defaultIcon = L.icon({
 L.Marker.prototype.options.icon = defaultIcon;
 
 type BetjentValue = "betjent" | "selvbetjent" | "ubetjent";
-
-const BETJENT_LABELS: Record<BetjentValue, string> = {
-  betjent: "Betjent",
-  selvbetjent: "Selvbetjent",
-  ubetjent: "Ubetjent",
-};
 
 type BookingStatus = "pending" | "confirmed" | "cancelled";
 
@@ -66,29 +65,11 @@ type OwnerBooking = {
   };
 };
 
-const BOOKING_STATUS_LABEL: Record<BookingStatus, string> = {
-  pending: "Ventende",
-  confirmed: "Godkjent",
-  cancelled: "Avslått",
-};
-
 const BOOKING_STATUS_STYLE: Record<BookingStatus, string> = {
   pending: "bg-amber-50 text-amber-900 ring-1 ring-amber-200",
   confirmed: "bg-emerald-50 text-emerald-900 ring-1 ring-emerald-200",
   cancelled: "bg-slate-100 text-slate-600 ring-1 ring-slate-200",
 };
-
-function formatBookingDato(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString("nb-NO", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return iso;
-  }
-}
 
 function antallNetter(start: string, slutt: string): number {
   const s = new Date(start);
@@ -155,6 +136,7 @@ const API_BASE = `${import.meta.env.VITE_API_URL}/api/hytter`;
 function resolveImageUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("/images/")) return url;
   if (url.startsWith("/")) return `${import.meta.env.VITE_API_URL}${url}`;
   return url;
 }
@@ -188,10 +170,12 @@ function LocationPicker({
   lat,
   lng,
   onPick,
+  attribution,
 }: {
   lat: string;
   lng: string;
   onPick: (lat: number, lng: number) => void;
+  attribution: string;
 }) {
   const position: LatLngExpression | null =
     lat && lng && !Number.isNaN(Number(lat)) && !Number.isNaN(Number(lng))
@@ -206,7 +190,7 @@ function LocationPicker({
       className="h-64 w-full overflow-hidden rounded-2xl border border-slate-200"
     >
       <TileLayer
-        attribution="&copy; OpenStreetMap-bidragsytere"
+        attribution={attribution}
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <ClickHandler onPick={onPick} />
@@ -217,6 +201,8 @@ function LocationPicker({
 }
 
 export default function MineHytter() {
+  const { t, i18n } = useTranslation("minside");
+  const locale = i18n.resolvedLanguage === "en" ? "en-US" : "nb-NO";
   const { user, token } = useAuth();
   const isHytteeier = useMemo(() => user?.roller?.includes("hytteeier") ?? false, [user]);
 
@@ -235,6 +221,22 @@ export default function MineHytter() {
   const [bookingBusyId, setBookingBusyId] = useState<number | null>(null);
   const [bookingFilter, setBookingFilter] = useState<"aktive" | "alle">("aktive");
 
+  const betjentLabel = (value: BetjentValue): string => t(`mineHytter.betjent.${value}`);
+  const bookingStatusLabel = (status: BookingStatus): string =>
+    t(`mineHytter.bookingStatus.${status}`);
+
+  function formatBookingDato(iso: string): string {
+    try {
+      return new Date(iso).toLocaleDateString(locale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return iso;
+    }
+  }
+
   useEffect(() => {
     if (selectedFile) {
       const url = URL.createObjectURL(selectedFile);
@@ -249,6 +251,7 @@ export default function MineHytter() {
       loadCabins();
       loadBookinger();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, isHytteeier]);
 
   useEffect(() => {
@@ -272,12 +275,12 @@ export default function MineHytter() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
-        throw new Error("Kunne ikke hente hytter");
+        throw new Error(t("mineHytter.messages.errorFetch"));
       }
       const data = (await res.json()) as Cabin[];
       setCabins(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Noe gikk galt");
+      setError(err instanceof Error ? err.message : t("shared.somethingWentWrong"));
     }
   }
 
@@ -314,7 +317,7 @@ export default function MineHytter() {
       });
       if (!res.ok) {
         const msg = await res.json().catch(() => null);
-        setError(msg?.error || "Kunne ikke oppdatere booking");
+        setError(msg?.error || t("mineHytter.bookings.errorUpdate"));
         return;
       }
       const oppdatert = (await res.json()) as OwnerBooking;
@@ -322,10 +325,12 @@ export default function MineHytter() {
         prev.map((b) => (b.id === id ? oppdatert : b)),
       );
       setSuccess(
-        status === "confirmed" ? "Booking godkjent" : "Booking avslått",
+        status === "confirmed"
+          ? t("mineHytter.bookings.approved")
+          : t("mineHytter.bookings.rejected"),
       );
     } catch {
-      setError("Nettverksfeil. Prøv igjen.");
+      setError(t("mineHytter.bookings.errorNetwork"));
     } finally {
       setBookingBusyId(null);
     }
@@ -398,7 +403,7 @@ export default function MineHytter() {
 
       if (!res.ok) {
         const msg = await res.json().catch(() => null);
-        throw new Error(msg?.error || "Kunne ikke lagre hytta");
+        throw new Error(msg?.error || t("mineHytter.messages.errorSave"));
       }
 
       const saved = (await res.json()) as Cabin;
@@ -415,7 +420,7 @@ export default function MineHytter() {
         });
         if (!uploadRes.ok) {
           const msg = await uploadRes.json().catch(() => null);
-          throw new Error(msg?.error || "Bilde ble ikke lastet opp");
+          throw new Error(msg?.error || t("mineHytter.messages.errorUpload"));
         }
       }
 
@@ -430,10 +435,10 @@ export default function MineHytter() {
         });
       }
       await loadCabins();
-      setSuccess(wasEditing ? "Hytta ble oppdatert" : "Hytta ble opprettet");
+      setSuccess(wasEditing ? t("mineHytter.messages.updated") : t("mineHytter.messages.created"));
       closeModal();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Noe gikk galt");
+      setError(err instanceof Error ? err.message : t("shared.somethingWentWrong"));
     } finally {
       setLoading(false);
     }
@@ -464,7 +469,7 @@ export default function MineHytter() {
 
   async function handleDelete(id: number) {
     if (!token) return;
-    const confirmed = window.confirm("Er du sikker på at du vil slette hytta?");
+    const confirmed = window.confirm(t("mineHytter.confirmDelete"));
     if (!confirmed) return;
 
     setError(null);
@@ -477,12 +482,12 @@ export default function MineHytter() {
       });
       if (!res.ok) {
         const msg = await res.json().catch(() => null);
-        throw new Error(msg?.error || "Kunne ikke slette hytta");
+        throw new Error(msg?.error || t("mineHytter.messages.errorDelete"));
       }
-      setSuccess("Hytta ble slettet");
+      setSuccess(t("mineHytter.messages.deleted"));
       await loadCabins();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Noe gikk galt");
+      setError(err instanceof Error ? err.message : t("shared.somethingWentWrong"));
     }
   }
 
@@ -490,15 +495,15 @@ export default function MineHytter() {
     return (
       <div className="min-h-screen bg-slate-50 px-4 py-10">
         <div className="mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <h1 className="text-3xl font-bold text-slate-900">Mine hytter</h1>
+          <h1 className="text-3xl font-bold text-slate-900">{t("mineHytter.loginTitle")}</h1>
           <p className="mt-4 text-slate-600">
-            Du må være logget inn for å administrere hytter.
+            {t("mineHytter.loginMessage")}
           </p>
           <NavLink
             to="/logg-inn"
             className="mt-6 inline-flex rounded-xl bg-[#0f8f5b] px-6 py-3 font-medium text-white hover:bg-[#0d7a4e]"
           >
-            Logg inn
+            {t("shared.logIn")}
           </NavLink>
         </div>
       </div>
@@ -509,9 +514,11 @@ export default function MineHytter() {
     return (
       <div className="min-h-screen bg-slate-50 px-4 py-10">
         <div className="mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <h1 className="text-3xl font-bold text-slate-900">Mine hytter</h1>
+          <h1 className="text-3xl font-bold text-slate-900">{t("mineHytter.loginTitle")}</h1>
           <p className="mt-4 text-slate-600">
-            Denne siden er kun for brukere med rollen <strong>hytteeier</strong>.
+            {t("mineHytter.notOwnerMessageStart")}
+            <strong>{t("mineHytter.notOwnerRole")}</strong>
+            {t("mineHytter.notOwnerMessageEnd")}
           </p>
         </div>
       </div>
@@ -524,17 +531,18 @@ export default function MineHytter() {
         <div className="mx-auto max-w-6xl px-6 py-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className={sectionEyebrowClass}>Hytteutleie</p>
-              <h1 className="mt-2 text-3xl font-semibold text-slate-900">Mine hytter</h1>
+              <p className={sectionEyebrowClass}>{t("mineHytter.eyebrow")}</p>
+              <h1 className="mt-2 text-3xl font-semibold text-slate-900">{t("mineHytter.heading")}</h1>
               <p className="mt-2 max-w-2xl text-slate-600">
-                Registrer, oppdater og administrer hyttene dine. Sett posisjon på kartet, legg
-                inn beskrivelse, pris og bilde.
+                {t("mineHytter.intro")}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <span className="inline-flex items-center gap-2 rounded-full bg-[#eef5f1] px-3 py-1 text-sm font-medium text-[#0f3d2e] ring-1 ring-[#dcebe4]">
                 <House className="h-4 w-4" />
-                {cabins.length} {cabins.length === 1 ? "hytte" : "hytter"}
+                {cabins.length === 1
+                  ? t("mineHytter.cabinCountSingular", { count: cabins.length })
+                  : t("mineHytter.cabinCountPlural", { count: cabins.length })}
               </span>
               <button
                 type="button"
@@ -542,7 +550,7 @@ export default function MineHytter() {
                 className="inline-flex items-center gap-2 rounded-xl bg-[#0f8f5b] px-4 py-3 font-medium text-white transition hover:bg-[#0d7a4e]"
               >
                 <Plus className="h-4 w-4" />
-                Ny hytte
+                {t("mineHytter.newCabin")}
               </button>
             </div>
           </div>
@@ -565,10 +573,10 @@ export default function MineHytter() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
             <div>
               <h2 className="text-2xl font-semibold text-slate-900">
-                Bookingforespørsler
+                {t("mineHytter.bookings.title")}
               </h2>
               <p className="mt-1 text-sm text-slate-500">
-                Godkjenn eller avslå forespørsler fra gjester.
+                {t("mineHytter.bookings.subtitle")}
               </p>
             </div>
 
@@ -580,7 +588,7 @@ export default function MineHytter() {
               return (
                 <span className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-900 ring-1 ring-amber-200">
                   <CalendarDays className="h-4 w-4" />
-                  {antallVentende} ventende
+                  {t("mineHytter.bookings.pendingBadge", { count: antallVentende })}
                 </span>
               );
             })()}
@@ -596,7 +604,7 @@ export default function MineHytter() {
                   : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
               }`}
             >
-              Aktive
+              {t("mineHytter.bookings.filterActive")}
             </button>
             <button
               type="button"
@@ -607,7 +615,7 @@ export default function MineHytter() {
                   : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
               }`}
             >
-              Alle ({bookinger.length})
+              {t("mineHytter.bookings.filterAll", { count: bookinger.length })}
             </button>
           </div>
 
@@ -638,8 +646,8 @@ export default function MineHytter() {
                     <CalendarDays className="mx-auto h-8 w-8 text-slate-400" />
                     <p className="mt-3 text-slate-600">
                       {bookingFilter === "aktive"
-                        ? "Ingen aktive bookinger akkurat nå."
-                        : "Ingen bookinger registrert ennå."}
+                        ? t("mineHytter.bookings.emptyActive")
+                        : t("mineHytter.bookings.emptyAll")}
                     </p>
                   </div>
                 );
@@ -650,7 +658,7 @@ export default function MineHytter() {
                   {synlige.map((b) => {
                     const gjestNavn =
                       `${b.bruker.fornavn ?? ""} ${b.bruker.etternavn ?? ""}`.trim() ||
-                      "Ukjent gjest";
+                      t("mineHytter.bookings.unknownGuest");
                     const netter = antallNetter(b.start_dato, b.slutt_dato);
                     const busy = bookingBusyId === b.id;
                     return (
@@ -681,7 +689,7 @@ export default function MineHytter() {
                           <span
                             className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${BOOKING_STATUS_STYLE[b.status]}`}
                           >
-                            {BOOKING_STATUS_LABEL[b.status]}
+                            {bookingStatusLabel(b.status)}
                           </span>
                         </div>
 
@@ -693,7 +701,10 @@ export default function MineHytter() {
                               {formatBookingDato(b.slutt_dato)}
                               {netter > 0 && (
                                 <span className="ml-1 text-xs text-slate-500">
-                                  ({netter} {netter === 1 ? "natt" : "netter"})
+                                  ({netter}{" "}
+                                  {netter === 1
+                                    ? t("mineHytter.bookings.nightSingular")
+                                    : t("mineHytter.bookings.nightPlural")})
                                 </span>
                               )}
                             </span>
@@ -702,13 +713,15 @@ export default function MineHytter() {
                             <Users className="h-4 w-4 text-[#0f8f5b]" />
                             <span>
                               {b.antall_gjester ?? "—"}{" "}
-                              {b.antall_gjester === 1 ? "gjest" : "gjester"}
+                              {b.antall_gjester === 1
+                                ? t("mineHytter.bookings.guestSingular")
+                                : t("mineHytter.bookings.guestPlural")}
                             </span>
                           </div>
                           {b.total_pris !== null && (
                             <div className="flex items-center gap-1.5 font-medium text-[#0f3d2e]">
                               <Banknote className="h-4 w-4" />
-                              {Number(b.total_pris).toLocaleString("no-NO")} kr
+                              {Number(b.total_pris).toLocaleString(locale)} kr
                             </div>
                           )}
                         </div>
@@ -725,7 +738,7 @@ export default function MineHytter() {
                                 className="inline-flex items-center gap-1.5 rounded-lg bg-[#0f8f5b] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#0d7a4e] disabled:cursor-not-allowed disabled:opacity-60"
                               >
                                 <CheckCircle2 className="h-4 w-4" />
-                                {busy ? "Jobber..." : "Godkjenn"}
+                                {busy ? t("mineHytter.bookings.busy") : t("mineHytter.bookings.approve")}
                               </button>
                             )}
                             <button
@@ -738,10 +751,10 @@ export default function MineHytter() {
                             >
                               <XCircle className="h-4 w-4" />
                               {busy
-                                ? "Jobber..."
+                                ? t("mineHytter.bookings.busy")
                                 : b.status === "confirmed"
-                                  ? "Kanseller"
-                                  : "Avslå"}
+                                  ? t("mineHytter.bookings.cancel")
+                                  : t("mineHytter.bookings.reject")}
                             </button>
                           </div>
                         )}
@@ -756,16 +769,16 @@ export default function MineHytter() {
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-            <h2 className="text-2xl font-semibold text-slate-900">Mine registrerte hytter</h2>
+            <h2 className="text-2xl font-semibold text-slate-900">{t("mineHytter.list.title")}</h2>
           </div>
 
           <div className="mt-5">
             {cabins.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
                 <House className="mx-auto h-10 w-10 text-slate-400" />
-                <p className="mt-3 text-slate-600">Ingen hytter registrert ennå.</p>
+                <p className="mt-3 text-slate-600">{t("mineHytter.list.empty")}</p>
                 <p className="mt-1 text-sm text-slate-500">
-                  Kom i gang ved å registrere din første hytte.
+                  {t("mineHytter.list.emptyHint")}
                 </p>
                 <button
                   type="button"
@@ -773,7 +786,7 @@ export default function MineHytter() {
                   className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#0f8f5b] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#0d7a4e]"
                 >
                   <Plus className="h-4 w-4" />
-                  Ny hytte
+                  {t("mineHytter.newCabin")}
                 </button>
               </div>
             ) : (
@@ -803,7 +816,7 @@ export default function MineHytter() {
                         </div>
                         {cabin.betjent && (
                           <span className="rounded-full bg-[#eef5f1] px-3 py-1 text-xs font-medium text-[#0f3d2e] ring-1 ring-[#dcebe4]">
-                            {BETJENT_LABELS[cabin.betjent]}
+                            {betjentLabel(cabin.betjent)}
                           </span>
                         )}
                       </div>
@@ -822,24 +835,26 @@ export default function MineHytter() {
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
                         <span className="inline-flex items-center gap-1.5">
                           <Bed className="h-4 w-4 text-[#0f8f5b]" />
-                          {cabin.kapasitet_senger} senger
+                          {cabin.kapasitet_senger} {t("mineHytter.list.bedSuffix")}
                         </span>
                         {cabin.maks_gjester && (
                           <span className="inline-flex items-center gap-1.5">
                             <Users className="h-4 w-4 text-[#0f8f5b]" />
-                            Maks {cabin.maks_gjester}
+                            {t("mineHytter.list.maxGuests", { count: cabin.maks_gjester })}
                           </span>
                         )}
                         {cabin.hoyde_m !== null && cabin.hoyde_m !== undefined && (
                           <span className="inline-flex items-center gap-1.5">
                             <Mountain className="h-4 w-4 text-[#0f8f5b]" />
-                            {cabin.hoyde_m} moh.
+                            {t("mineHytter.list.altitude", { height: cabin.hoyde_m })}
                           </span>
                         )}
                         {cabin.pris_per_natt !== null && (
                           <span className="inline-flex items-center gap-1.5 font-medium text-[#0f3d2e]">
                             <Banknote className="h-4 w-4" />
-                            {Number(cabin.pris_per_natt).toLocaleString("no-NO")} kr/natt
+                            {t("mineHytter.list.pricePerNight", {
+                              price: Number(cabin.pris_per_natt).toLocaleString(locale),
+                            })}
                           </span>
                         )}
                       </div>
@@ -851,7 +866,7 @@ export default function MineHytter() {
                           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                         >
                           <Pencil className="h-4 w-4" />
-                          Rediger
+                          {t("mineHytter.list.edit")}
                         </button>
                         <button
                           type="button"
@@ -859,7 +874,7 @@ export default function MineHytter() {
                           className="inline-flex items-center gap-1.5 rounded-lg border border-red-100 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 transition hover:bg-red-100"
                         >
                           <Trash2 className="h-4 w-4" />
-                          Slett
+                          {t("mineHytter.list.delete")}
                         </button>
                       </div>
                     </div>
@@ -881,15 +896,15 @@ export default function MineHytter() {
           <div className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
             <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6 py-4">
               <div>
-                <p className={sectionEyebrowClass}>Hytte</p>
+                <p className={sectionEyebrowClass}>{t("mineHytter.modal.eyebrow")}</p>
                 <h2 className="mt-1 text-xl font-semibold text-slate-900">
-                  {editingId ? "Rediger hytte" : "Registrer ny hytte"}
+                  {editingId ? t("mineHytter.modal.editTitle") : t("mineHytter.modal.createTitle")}
                 </h2>
               </div>
               <button
                 type="button"
                 onClick={closeModal}
-                aria-label="Lukk"
+                aria-label={t("shared.close")}
                 className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
               >
                 <X className="h-5 w-5" />
@@ -905,10 +920,10 @@ export default function MineHytter() {
 
               <form id="cabin-form" onSubmit={handleSubmit} className="space-y-8">
                 <div className="space-y-4">
-                  <h3 className={sectionEyebrowClass}>Grunnleggende</h3>
+                  <h3 className={sectionEyebrowClass}>{t("mineHytter.modal.sections.basic")}</h3>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                      <label className={labelClass}>Navn*</label>
+                      <label className={labelClass}>{t("mineHytter.modal.fields.name")}</label>
                       <input
                         type="text"
                         name="navn"
@@ -919,32 +934,32 @@ export default function MineHytter() {
                       />
                     </div>
                     <div>
-                      <label className={labelClass}>Type</label>
+                      <label className={labelClass}>{t("mineHytter.modal.fields.type")}</label>
                       <select
                         name="betjent"
                         value={form.betjent}
                         onChange={handleChange}
                         className={inputClass}
                       >
-                        <option value="">Velg type…</option>
-                        <option value="betjent">Betjent</option>
-                        <option value="selvbetjent">Selvbetjent</option>
-                        <option value="ubetjent">Ubetjent</option>
+                        <option value="">{t("mineHytter.modal.fields.typePlaceholder")}</option>
+                        <option value="betjent">{t("mineHytter.betjent.betjent")}</option>
+                        <option value="selvbetjent">{t("mineHytter.betjent.selvbetjent")}</option>
+                        <option value="ubetjent">{t("mineHytter.betjent.ubetjent")}</option>
                       </select>
                     </div>
                     <div>
-                      <label className={labelClass}>Område</label>
+                      <label className={labelClass}>{t("mineHytter.modal.fields.area")}</label>
                       <input
                         type="text"
                         name="omrade"
                         value={form.omrade}
                         onChange={handleChange}
-                        placeholder="f.eks. Hardangervidda"
+                        placeholder={t("mineHytter.modal.fields.areaPlaceholder")}
                         className={inputClass}
                       />
                     </div>
                     <div>
-                      <label className={labelClass}>Adresse</label>
+                      <label className={labelClass}>{t("mineHytter.modal.fields.address")}</label>
                       <input
                         type="text"
                         name="adresse"
@@ -957,10 +972,10 @@ export default function MineHytter() {
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className={sectionEyebrowClass}>Kapasitet og pris</h3>
+                  <h3 className={sectionEyebrowClass}>{t("mineHytter.modal.sections.capacityPrice")}</h3>
                   <div className="grid gap-4 md:grid-cols-3">
                     <div>
-                      <label className={labelClass}>Senger</label>
+                      <label className={labelClass}>{t("mineHytter.modal.fields.beds")}</label>
                       <input
                         type="number"
                         min={1}
@@ -971,7 +986,7 @@ export default function MineHytter() {
                       />
                     </div>
                     <div>
-                      <label className={labelClass}>Maks gjester</label>
+                      <label className={labelClass}>{t("mineHytter.modal.fields.maxGuests")}</label>
                       <input
                         type="number"
                         min={1}
@@ -982,7 +997,7 @@ export default function MineHytter() {
                       />
                     </div>
                     <div>
-                      <label className={labelClass}>Pris per natt (NOK)</label>
+                      <label className={labelClass}>{t("mineHytter.modal.fields.pricePerNight")}</label>
                       <input
                         type="number"
                         min={0}
@@ -998,13 +1013,18 @@ export default function MineHytter() {
 
                 <div className="space-y-4">
                   <div className="flex items-baseline justify-between">
-                    <h3 className={sectionEyebrowClass}>Plassering</h3>
-                    <p className="text-xs text-slate-500">Klikk i kartet for å sette posisjon</p>
+                    <h3 className={sectionEyebrowClass}>{t("mineHytter.modal.sections.location")}</h3>
+                    <p className="text-xs text-slate-500">{t("mineHytter.modal.sections.locationHint")}</p>
                   </div>
-                  <LocationPicker lat={form.lat} lng={form.lng} onPick={handleMapPick} />
+                  <LocationPicker
+                    lat={form.lat}
+                    lng={form.lng}
+                    onPick={handleMapPick}
+                    attribution={t("mineHytter.modal.mapAttribution")}
+                  />
                   <div className="grid gap-4 md:grid-cols-3">
                     <div>
-                      <label className={labelClass}>Breddegrad (lat)</label>
+                      <label className={labelClass}>{t("mineHytter.modal.fields.lat")}</label>
                       <input
                         type="number"
                         step="0.000001"
@@ -1016,7 +1036,7 @@ export default function MineHytter() {
                       />
                     </div>
                     <div>
-                      <label className={labelClass}>Lengdegrad (lng)</label>
+                      <label className={labelClass}>{t("mineHytter.modal.fields.lng")}</label>
                       <input
                         type="number"
                         step="0.000001"
@@ -1028,7 +1048,7 @@ export default function MineHytter() {
                       />
                     </div>
                     <div>
-                      <label className={labelClass}>Høyde (moh.)</label>
+                      <label className={labelClass}>{t("mineHytter.modal.fields.altitude")}</label>
                       <input
                         type="number"
                         min={0}
@@ -1041,7 +1061,7 @@ export default function MineHytter() {
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <h3 className={sectionEyebrowClass}>Fasiliteter</h3>
+                  <h3 className={sectionEyebrowClass}>{t("mineHytter.modal.sections.amenities")}</h3>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {FASILITET_KODER.map((f) => (
                       <label key={f.kode} className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2">
@@ -1060,15 +1080,15 @@ export default function MineHytter() {
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <h3 className={sectionEyebrowClass}>Media og detaljer</h3>
+                  <h3 className={sectionEyebrowClass}>{t("mineHytter.modal.sections.mediaDetails")}</h3>
                   <div>
-                    <label className={labelClass}>Bilde</label>
+                    <label className={labelClass}>{t("mineHytter.modal.fields.image")}</label>
                     <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-start">
                       <div className="flex h-40 w-full shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 sm:w-56">
                         {previewUrl ? (
                           <img
                             src={previewUrl}
-                            alt="Forhåndsvisning"
+                            alt={t("mineHytter.modal.fields.previewAlt")}
                             className="h-full w-full object-cover"
                           />
                         ) : (
@@ -1078,7 +1098,9 @@ export default function MineHytter() {
                       <div className="flex-1 space-y-2">
                         <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
                           <ImageIcon className="h-4 w-4" />
-                          {previewUrl ? "Bytt bilde" : "Velg bilde"}
+                          {previewUrl
+                            ? t("mineHytter.modal.fields.changeImage")
+                            : t("mineHytter.modal.fields.chooseImage")}
                           <input
                             type="file"
                             accept="image/*"
@@ -1092,17 +1114,17 @@ export default function MineHytter() {
                             onClick={() => setSelectedFile(null)}
                             className="ml-2 text-xs font-medium text-slate-500 underline hover:text-slate-800"
                           >
-                            Angre valg
+                            {t("mineHytter.modal.fields.undoChoice")}
                           </button>
                         )}
                         <p className="text-xs text-slate-500">
-                          JPG, PNG, WebP. Maks 5 MB.
+                          {t("mineHytter.modal.fields.imageHint")}
                         </p>
                       </div>
                     </div>
                   </div>
                   <div>
-                    <label className={labelClass}>Beskrivelse</label>
+                    <label className={labelClass}>{t("mineHytter.modal.fields.description")}</label>
                     <textarea
                       name="beskrivelse"
                       value={form.beskrivelse}
@@ -1112,7 +1134,7 @@ export default function MineHytter() {
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>Regler</label>
+                    <label className={labelClass}>{t("mineHytter.modal.fields.rules")}</label>
                     <textarea
                       name="regler"
                       value={form.regler}
@@ -1131,7 +1153,7 @@ export default function MineHytter() {
                 onClick={closeModal}
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50"
               >
-                Avbryt
+                {t("shared.cancel")}
               </button>
               <button
                 type="submit"
@@ -1140,7 +1162,11 @@ export default function MineHytter() {
                 className="inline-flex items-center gap-2 rounded-xl bg-[#0f8f5b] px-5 py-2.5 font-medium text-white transition hover:bg-[#0d7a4e] disabled:opacity-60"
               >
                 {editingId ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                {loading ? "Lagrer..." : editingId ? "Oppdater hytte" : "Opprett hytte"}
+                {loading
+                  ? t("mineHytter.modal.saving")
+                  : editingId
+                    ? t("mineHytter.modal.save")
+                    : t("mineHytter.modal.create")}
               </button>
             </div>
           </div>

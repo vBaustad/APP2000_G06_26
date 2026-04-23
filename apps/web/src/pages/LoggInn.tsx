@@ -2,10 +2,15 @@
  * Fil: LoggInn.tsx
  * Utvikler(e): Vebjørn Baustad
  * Beskrivelse: Innloggingsside med e-post og passord. Logger inn via API og lagrer brukerinfo.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 
 type LoginResponse = {
@@ -18,6 +23,7 @@ type LoginResponse = {
 };
 
 export default function LoggInn() {
+  const { t } = useTranslation("auth");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +46,7 @@ export default function LoggInn() {
 
       if (!res.ok) {
         const msg = await res.json().catch(() => null);
-        setError(msg?.error ?? "Feil e-post eller passord");
+        setError(msg?.error ?? t("login.errorCredentials"));
         return;
       }
 
@@ -49,7 +55,7 @@ export default function LoggInn() {
       login(data.user, data.token);
       navigate("/min-side");
     } catch {
-      setError("Kunne ikke kontakte serveren. Sjekk at API kjører.");
+      setError(t("login.errorServer"));
     } finally {
       setLoading(false);
     }
@@ -64,10 +70,8 @@ export default function LoggInn() {
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-md rounded-xl bg-white p-6 shadow">
         <header className="mb-6 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">Logg inn</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Logg inn for å melde deg på turer og lagre favoritter
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("login.title")}</h1>
+          <p className="mt-2 text-sm text-gray-600">{t("login.subtitle")}</p>
         </header>
 
         {error && (
@@ -78,41 +82,41 @@ export default function LoggInn() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">E-post</label>
+            <label className="text-sm font-medium text-gray-700">{t("login.emailLabel")}</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={inputClass}
-              placeholder="bruker1@usn.no"
+              placeholder={t("login.emailPlaceholder")}
               autoComplete="email"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Passord</label>
+            <label className="text-sm font-medium text-gray-700">{t("login.passwordLabel")}</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={inputClass}
-              placeholder="hemmelig"
+              placeholder={t("login.passwordPlaceholder")}
               autoComplete="current-password"
               required
             />
           </div>
 
           <button type="submit" className={buttonClass} disabled={loading}>
-            {loading ? "Logger inn..." : "Logg inn"}
+            {loading ? t("login.submitting") : t("login.submit")}
           </button>
         </form>
 
         <footer>
           <p className="mt-4 text-center text-sm text-gray-600">
-            Har du ikke konto?{" "}
+            {t("login.noAccount")}{" "}
             <NavLink to="/registrer" className="text-emerald-700 hover:underline">
-              Registrer deg
+              {t("login.registerLink")}
             </NavLink>
           </p>
         </footer>

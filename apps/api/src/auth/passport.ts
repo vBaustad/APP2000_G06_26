@@ -2,7 +2,11 @@
    * Fil: passport.ts
    * Utvikler(e): Vebjørn Baustad
    * Beskrivelse: Passport-strategi med JWT for autentisering.
-   */
+   *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
+ */
 
   import passport from "passport";
   import { Strategy as JwtStrategy, ExtractJwt, StrategyOptions } from "passport-jwt";

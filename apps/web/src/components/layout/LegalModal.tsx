@@ -8,6 +8,7 @@
  */
 
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 type LegalModalProps = {
   title: string;
@@ -24,13 +25,15 @@ export default function LegalModal({
   onClose,
   children,
 }: LegalModalProps) {
+  const { t } = useTranslation("footer");
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
       <div className="w-full max-w-xl rounded-[2rem] border border-white/10 bg-[#17331C] p-7 text-white shadow-2xl">
         <h2 className="mb-2 text-3xl font-semibold">{title}</h2>
 
         <p className="mb-6 text-sm font-medium text-white/70">
-          Sist oppdatert: {updatedAt}
+          {t("legal.updatedLabel")} {updatedAt}
         </p>
 
         <div className="space-y-6 text-base leading-8 text-white/85">

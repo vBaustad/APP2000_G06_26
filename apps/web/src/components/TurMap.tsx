@@ -3,6 +3,10 @@
  * Fil: TurMap.tsx
  * Utvikler(e): Ramona Cretulescu, Vebjørn Baustad
  * Beskrivelse: Leaflet kart-komponent (React Leaflet) som alltid rendrer riktig i cards/layout.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import "leaflet/dist/leaflet.css";
@@ -51,12 +55,43 @@ const endMarkerIcon = L.divIcon({
   popupAnchor: [0, -14],
 });
 
+const cabinMarkerIcon = L.divIcon({
+  className: "custom-cabin-mini-marker",
+  html: `
+    <div style="
+      width: 26px;
+      height: 26px;
+      border-radius: 9999px;
+      background: #059669;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      border: 2px solid white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    ">H</div>
+  `,
+  iconSize: [26, 26],
+  iconAnchor: [13, 13],
+  popupAnchor: [0, -13],
+});
+
 type LatLng = [number, number];
+
+type CabinMarker = {
+  id: number;
+  navn: string;
+  lat: number;
+  lng: number;
+};
 
 type Props = {
   center: LatLng;
   title?: string;
   routePoints?: LatLng[];
+  cabins?: CabinMarker[];
 };
 
 function MapBoundsUpdater({
@@ -83,7 +118,21 @@ function MapBoundsUpdater({
   return null;
 }
 
-export default function TurMap({ center, title, routePoints = [] }: Props) {
+// Forskyver en posisjon når den ligger "oppå" et referansepunkt, slik at
+// markørene ikke rendres rett oppå hverandre på kartet.
+function offsetIfCollides(
+  pos: LatLng,
+  reference: LatLng,
+  deltaLng = 0.0015,
+): LatLng {
+  const TOL = 0.0005;
+  if (Math.abs(pos[0] - reference[0]) < TOL && Math.abs(pos[1] - reference[1]) < TOL) {
+    return [pos[0], pos[1] + deltaLng];
+  }
+  return pos;
+}
+
+export default function TurMap({ center, title, routePoints = [], cabins = [] }: Props) {
   const hasRoute = routePoints.length >= 2;
   const endPoint = hasRoute ? routePoints[routePoints.length - 1] : null;
 
@@ -114,6 +163,17 @@ export default function TurMap({ center, title, routePoints = [] }: Props) {
             <Popup>{title ? `${title} · Sluttpunkt` : "Sluttpunkt"}</Popup>
           </Marker>
         ) : null}
+        {cabins.map((cabin) => {
+          const base: LatLng = [cabin.lat, cabin.lng];
+          const pos = endPoint
+            ? offsetIfCollides(offsetIfCollides(base, center), endPoint)
+            : offsetIfCollides(base, center);
+          return (
+            <Marker key={cabin.id} position={pos} icon={cabinMarkerIcon}>
+              <Popup>{cabin.navn}</Popup>
+            </Marker>
+          );
+        })}
       </MapContainer>
 
       {title ? (

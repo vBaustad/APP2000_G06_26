@@ -1,0 +1,38 @@
+{
+  "title": "Admin",
+  "eyebrow": "Adminpanel",
+  "heading": "Administrasjon",
+  "description": "Godkjenn annonsør-søknader og tildel roller til brukere.",
+  "noAccess": {
+    "description": "Du må være innlogget som admin for å se denne siden.",
+    "loginButton": "Logg inn"
+  },
+  "errors": {
+    "approve": "Kunne ikke godkjenne",
+    "reject": "Kunne ikke avslå",
+    "grantRole": "Kunne ikke tildele rolle",
+    "revokeRole": "Kunne ikke fjerne rolle",
+    "generic": "Noe gikk galt"
+  },
+  "advertisers": {
+    "heading": "Ventende annonsør-søknader ({{n}})",
+    "empty": "Ingen ventende søknader.",
+    "sentOn": "Sendt {{date}}",
+    "approve": "Godkjenn",
+    "reject": "Avslå"
+  },
+  "ads": {
+    "heading": "Ventende annonser ({{n}})",
+    "description": "Annonser fra godkjente annonsører som venter på redaktør-godkjenning før publisering.",
+    "empty": "Ingen annonser venter på godkjenning.",
+    "approve": "Godkjenn",
+    "reject": "Avslå"
+  },
+  "roles": {
+    "heading": "Tildel roller",
+    "description": "Søk etter bruker på e-post eller navn, og tildel/fjern roller.",
+    "searchPlaceholder": "Søk etter bruker...",
+    "noUsers": "Ingen brukere funnet.",
+    "removeAria": "Fjern {{role}}"
+  }
+}

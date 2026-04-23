@@ -6,6 +6,10 @@
  * høyre hovedinnhold for mine turer, favoritter, kommentarer, bookinger
  * og konto. Henter bruker, favoritter, turpåmeldinger og hyttebookinger
  * fra /api/bruker/me.
+ *
+ * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy
+ * under utvikling. All kode er lest, forstått og testet. Se rapportens
+ * kapittel "Kommentarer til bruk/tilpassing av kode".
  */
 
 import { useEffect, useState } from "react";
@@ -22,6 +26,7 @@ import {
   Megaphone,
   X,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 
 type AnnonsorSoknadStatus = {
@@ -34,9 +39,27 @@ type AnnonsorSoknadStatus = {
 type TabKey =
   | "oversikt"
   | "mineTurer"
+  | "opprettedeTurer"
   | "favoritter"
   | "bookinger"
   | "konto";
+
+type OpprettetTurDato = {
+  id: number;
+  end_at?: string | null;
+  status?: string | null;
+};
+
+type OpprettetTur = {
+  id: number;
+  tittel: string;
+  status: string;
+  type: string | null;
+  vanskelighetsgrad: string | null;
+  omrade: string | null;
+  updated_at: string;
+  tur_dato?: OpprettetTurDato[];
+};
 
 type MinKommentar = {
   id: number;
@@ -46,13 +69,6 @@ type MinKommentar = {
 };
 
 type PameldingStatus = "pending" | "binding" | "freed" | "locked";
-
-const PAMELDING_LABEL: Record<PameldingStatus, string> = {
-  pending: "Interesse meldt",
-  binding: "Bindende påmelding",
-  locked: "Dato låst",
-  freed: "Dato fristilt",
-};
 
 const PAMELDING_STYLE: Record<PameldingStatus, string> = {
   pending: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
@@ -78,43 +94,78 @@ type HytteBooking = {
   } | null;
 };
 
-const BOOKING_STATUS_LABEL: Record<BookingStatus, string> = {
-  pending: "Venter på bekreftelse",
-  confirmed: "Bekreftet",
-  cancelled: "Kansellert",
-};
-
 const BOOKING_STATUS_STYLE: Record<BookingStatus, string> = {
   pending: "bg-amber-100 text-amber-900 ring-1 ring-amber-200",
   confirmed: "bg-[#eef5f1] text-[#0f3d2e] ring-1 ring-[#dcebe4]",
   cancelled: "bg-slate-100 text-slate-600 ring-1 ring-slate-200",
 };
 
-function formatBookingDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString("no-NO", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return iso;
-  }
-}
+type TurPameldingItem = {
+  id: number;
+  status: string;
+  tur_dato: {
+    tur_id: number;
+    start_at: string;
+    end_at: string;
+    tittel: string | null;
+    tur: { tittel: string };
+  };
+};
+
+type FavorittItem = {
+  id: number;
+  tur?: { id: number; tittel: string } | null;
+  hytte?: { id: number; navn: string } | null;
+};
+
+type BrukerProfil = {
+  fornavn: string | null;
+  etternavn: string | null;
+  epost: string;
+  created_at?: string;
+  tur_pamelding?: TurPameldingItem[];
+  favoritt?: FavorittItem[];
+  hytte_booking?: HytteBooking[];
+  tur_kommentar?: MinKommentar[];
+};
 
 export default function MinSide() {
+  const { t, i18n } = useTranslation("minside");
+  const locale = i18n.resolvedLanguage === "en" ? "en-US" : "nb-NO";
   const { user: authUser, token } = useAuth();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<BrukerProfil | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>("oversikt");
+  const [opprettedeTurer, setOpprettedeTurer] = useState<OpprettetTur[]>([]);
 
   const isAnnonsor = authUser?.roller?.includes("annonsor") ?? false;
+  const isTurleder = authUser?.roller?.includes("turleder") ?? false;
   const [soknadStatus, setSoknadStatus] = useState<AnnonsorSoknadStatus>(null);
   const [soknadOpen, setSoknadOpen] = useState(false);
   const [soknadNavn, setSoknadNavn] = useState("");
   const [soknadTelefon, setSoknadTelefon] = useState("");
   const [soknadBusy, setSoknadBusy] = useState(false);
   const [soknadError, setSoknadError] = useState<string | null>(null);
+
+  const pameldingLabel = (status: PameldingStatus): string => {
+    return t(`minside.pamelding.${status}`);
+  };
+
+  const bookingStatusLabel = (status: BookingStatus): string => {
+    return t(`minside.bookingStatus.${status}`);
+  };
+
+  function formatBookingDate(iso: string): string {
+    try {
+      return new Date(iso).toLocaleDateString(locale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return iso;
+    }
+  }
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -130,10 +181,10 @@ export default function MinSide() {
       },
     })
       .then((res) => {
-        if (!res.ok) throw new Error("Kunne ikke hente profil");
+        if (!res.ok) throw new Error(t("minside.errors.fetchProfile"));
         return res.json();
       })
-      .then((data) => {
+      .then((data: BrukerProfil) => {
         setUser(data);
         setLoading(false);
       })
@@ -141,7 +192,28 @@ export default function MinSide() {
         console.error(err);
         setLoading(false);
       });
-  }, []);
+  }, [t]);
+
+  useEffect(() => {
+    if (!token) {
+      setOpprettedeTurer([]);
+      return;
+    }
+    let active = true;
+    fetch(`${import.meta.env.VITE_API_URL}/api/turer/mine-leder`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => (res.ok ? (res.json() as Promise<OpprettetTur[]>) : []))
+      .then((data) => {
+        if (active) setOpprettedeTurer(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (active) setOpprettedeTurer([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [token]);
 
   useEffect(() => {
     if (!token || isAnnonsor) {
@@ -169,7 +241,7 @@ export default function MinSide() {
       });
       if (!res.ok) {
         const data: { error?: string } = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Kunne ikke sende søknad");
+        throw new Error(data.error || t("minside.soknad.defaultError"));
       }
       const data: AnnonsorSoknadStatus = await res.json();
       setSoknadStatus(data);
@@ -177,26 +249,26 @@ export default function MinSide() {
       setSoknadNavn("");
       setSoknadTelefon("");
     } catch (err) {
-      setSoknadError(err instanceof Error ? err.message : "Noe gikk galt");
+      setSoknadError(err instanceof Error ? err.message : t("shared.somethingWentWrong"));
     } finally {
       setSoknadBusy(false);
     }
   }
 
   const fullforteTurer =
-    user?.tur_pamelding?.filter((t: any) => t.status === "Fullført").length || 0;
+    user?.tur_pamelding?.filter((x) => x.status === "Fullført").length || 0;
 
   const pameldteTurer =
-    user?.tur_pamelding?.filter((t: any) => t.status === "pending").length || 0;
+    user?.tur_pamelding?.filter((x) => x.status === "pending").length || 0;
 
   const antallFavoritter = user?.favoritt?.length || 0;
 
   const medlemSiden = user?.created_at
-    ? new Date(user.created_at).toLocaleDateString("no-NO", {
+    ? new Date(user.created_at).toLocaleDateString(locale, {
         month: "long",
         year: "numeric",
       })
-    : "Ukjent";
+    : t("minside.info.unknown");
 
   function handleLogout() {
     localStorage.removeItem("token");
@@ -207,7 +279,7 @@ export default function MinSide() {
     return (
       <div className="min-h-screen bg-slate-50 px-4 py-10">
         <div className="mx-auto max-w-7xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          <p className="text-slate-600">Laster din profil...</p>
+          <p className="text-slate-600">{t("shared.loading")}</p>
         </div>
       </div>
     );
@@ -217,23 +289,23 @@ export default function MinSide() {
     return (
       <div className="min-h-screen bg-slate-50 px-4 py-10">
         <div className="mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <h1 className="text-3xl font-bold text-slate-900">Min side</h1>
+          <h1 className="text-3xl font-bold text-slate-900">{t("minside.eyebrow")}</h1>
           <p className="mt-4 text-slate-600">
-            Du må være logget inn for å se dine turer og favoritter.
+            {t("shared.mustLogIn")}
           </p>
           <NavLink
             to="/logg-inn"
             className="mt-6 inline-flex rounded-xl bg-[#0f8f5b] px-6 py-3 font-medium text-white hover:bg-[#0d7a4e]"
           >
-            Logg inn
+            {t("shared.logIn")}
           </NavLink>
         </div>
       </div>
     );
   }
 
-  const favoriteItems = Array.isArray(user?.favoritt) ? user.favoritt : [];
-  const tripItems = Array.isArray(user?.tur_pamelding) ? user.tur_pamelding : [];
+  const favoriteItems: FavorittItem[] = Array.isArray(user?.favoritt) ? user.favoritt : [];
+  const tripItems: TurPameldingItem[] = Array.isArray(user?.tur_pamelding) ? user.tur_pamelding : [];
   const bookingItems: HytteBooking[] = Array.isArray(user?.hytte_booking)
     ? (user.hytte_booking as HytteBooking[])
     : [];
@@ -241,6 +313,15 @@ export default function MinSide() {
   const kommentarItems: MinKommentar[] = Array.isArray(user?.tur_kommentar)
     ? (user.tur_kommentar as MinKommentar[])
     : [];
+
+  const tabs: { key: TabKey; label: string }[] = [
+    { key: "oversikt", label: t("minside.tabs.oversikt") },
+    { key: "mineTurer", label: t("minside.tabs.mineTurer") },
+    { key: "opprettedeTurer", label: t("minside.tabs.opprettedeTurer") },
+    { key: "favoritter", label: t("minside.tabs.favoritter") },
+    { key: "bookinger", label: t("minside.tabs.bookinger") },
+    { key: "konto", label: t("minside.tabs.konto") },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -255,7 +336,7 @@ export default function MinSide() {
 
             <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#0f3d2e]">
-                Min profil
+                {t("minside.eyebrow")}
               </p>
 
               <div className="flex flex-wrap items-center gap-3">
@@ -263,7 +344,7 @@ export default function MinSide() {
                   {user.fornavn} {user.etternavn}
                 </h1>
                 <span className="rounded-full bg-[#eef5f1] px-3 py-1 text-sm font-medium text-[#0f3d2e]">
-                  Turmedlem
+                  {t("minside.memberBadge")}
                 </span>
               </div>
 
@@ -273,8 +354,7 @@ export default function MinSide() {
               </p>
 
               <p className="mt-2 max-w-2xl text-slate-600">
-                Her får du oversikt over turene dine, fellesturer, favoritter,
-                bookinger og kontoinformasjon.
+                {t("minside.intro")}
               </p>
             </div>
 
@@ -284,7 +364,7 @@ export default function MinSide() {
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 font-medium text-slate-800 hover:bg-slate-50"
               >
                 <Settings className="h-4 w-4" />
-                Rediger profil
+                {t("minside.editProfile")}
               </NavLink>
 
               <NavLink
@@ -292,16 +372,18 @@ export default function MinSide() {
                 className="inline-flex items-center gap-2 rounded-xl bg-[#0f8f5b] px-4 py-3 font-medium text-white hover:bg-[#0d7a4e]"
               >
                 <Plus className="h-4 w-4" />
-                Opprett tur
+                {t("minside.createTour")}
               </NavLink>
 
-              <NavLink
-                to="/mine-turer-leder"
-                className="inline-flex items-center gap-2 rounded-xl border border-[#dcebe4] bg-[#eef5f1] px-4 py-3 font-medium text-[#0f3d2e] hover:bg-[#e4efe9]"
-              >
-                <CalendarDays className="h-4 w-4" />
-                Mine turer som leder
-              </NavLink>
+              {isTurleder && (
+                <NavLink
+                  to="/mine-turer-leder"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[#dcebe4] bg-[#eef5f1] px-4 py-3 font-medium text-[#0f3d2e] hover:bg-[#e4efe9]"
+                >
+                  <CalendarDays className="h-4 w-4" />
+                  {t("minside.myToursAsLeader")}
+                </NavLink>
+              )}
 
               {!isAnnonsor && soknadStatus?.status !== "pending" && (
                 <button
@@ -314,13 +396,13 @@ export default function MinSide() {
                   className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 font-medium text-slate-800 hover:bg-slate-50"
                 >
                   <Megaphone className="h-4 w-4" />
-                  Bli annonsør
+                  {t("minside.becomeAdvertiser")}
                 </button>
               )}
               {!isAnnonsor && soknadStatus?.status === "pending" && (
                 <span className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 font-medium text-amber-800">
                   <Megaphone className="h-4 w-4" />
-                  Annonsør-søknad sendt
+                  {t("minside.advertiserApplicationSent")}
                 </span>
               )}
             </div>
@@ -330,20 +412,14 @@ export default function MinSide() {
 
       <section className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-6">
-          {[
-            { key: "oversikt", label: "Oversikt" },
-            { key: "mineTurer", label: "Mine turer" },
-            { key: "favoritter", label: "Favoritter" },
-            { key: "bookinger", label: "Bookinger" },
-            { key: "konto", label: "Konto" },
-          ].map((tab) => {
+          {tabs.map((tab) => {
             const isActive = activeTab === tab.key;
 
             return (
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => setActiveTab(tab.key as TabKey)}
+                onClick={() => setActiveTab(tab.key)}
                 className={`border-b-2 px-4 py-4 text-sm font-medium whitespace-nowrap transition ${
                   isActive
                     ? "border-[#0f8f5b] text-slate-900"
@@ -361,30 +437,30 @@ export default function MinSide() {
         <aside className="space-y-5">
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="border-b border-slate-200 pb-3 text-xl font-semibold text-slate-900">
-              Info
+              {t("minside.info.title")}
             </h2>
 
             <div className="mt-4 space-y-5 text-slate-700">
               <div>
-                <p className="text-sm font-medium text-slate-500">Navn</p>
+                <p className="text-sm font-medium text-slate-500">{t("minside.info.name")}</p>
                 <p className="mt-1 text-lg">
                   {user.fornavn} {user.etternavn}
                 </p>
               </div>
 
               <div>
-                <p className="text-sm font-medium text-slate-500">E-post</p>
+                <p className="text-sm font-medium text-slate-500">{t("minside.info.email")}</p>
                 <p className="mt-1 break-all text-lg">{user.epost}</p>
               </div>
 
               <div>
-                <p className="text-sm font-medium text-slate-500">Medlem siden</p>
+                <p className="text-sm font-medium text-slate-500">{t("minside.info.memberSince")}</p>
                 <p className="mt-1 text-lg">{medlemSiden}</p>
               </div>
 
               <div>
-                <p className="text-sm font-medium text-slate-500">Rolle</p>
-                <p className="mt-1 text-lg">Bruker</p>
+                <p className="text-sm font-medium text-slate-500">{t("minside.info.role")}</p>
+                <p className="mt-1 text-lg">{t("minside.info.roleUser")}</p>
               </div>
             </div>
 
@@ -394,7 +470,7 @@ export default function MinSide() {
                 className="flex items-center gap-3 text-sm font-medium text-[#0f8f5b] hover:text-[#0d7a4e]"
               >
                 <Settings className="h-4 w-4" />
-                Rediger profil
+                {t("minside.editProfile")}
               </NavLink>
 
               <button
@@ -403,19 +479,19 @@ export default function MinSide() {
                 className="flex items-center gap-3 text-sm font-medium text-slate-700 hover:text-slate-900"
               >
                 <LogOut className="h-4 w-4" />
-                Logg ut
+                {t("shared.logOut")}
               </button>
             </div>
           </section>
 
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-900">Aktivitet</h3>
+            <h3 className="text-lg font-semibold text-slate-900">{t("minside.activity.title")}</h3>
 
             <div className="mt-4 space-y-4">
               <div className="flex items-center gap-3">
                 <Footprints className="h-5 w-5 text-[#0f8f5b]" />
                 <div className="flex w-full items-center justify-between">
-                  <span className="text-slate-600">Fullførte turer</span>
+                  <span className="text-slate-600">{t("minside.activity.completedTours")}</span>
                   <span className="font-semibold text-slate-900">{fullforteTurer}</span>
                 </div>
               </div>
@@ -423,7 +499,7 @@ export default function MinSide() {
               <div className="flex items-center gap-3">
                 <CalendarDays className="h-5 w-5 text-[#0f8f5b]" />
                 <div className="flex w-full items-center justify-between">
-                  <span className="text-slate-600">Påmeldte turer</span>
+                  <span className="text-slate-600">{t("minside.activity.registeredTours")}</span>
                   <span className="font-semibold text-slate-900">{pameldteTurer}</span>
                 </div>
               </div>
@@ -431,7 +507,7 @@ export default function MinSide() {
               <div className="flex items-center gap-3">
                 <Heart className="h-5 w-5 text-[#0f8f5b]" />
                 <div className="flex w-full items-center justify-between">
-                  <span className="text-slate-600">Favoritter</span>
+                  <span className="text-slate-600">{t("minside.activity.favorites")}</span>
                   <span className="font-semibold text-slate-900">{antallFavoritter}</span>
                 </div>
               </div>
@@ -445,12 +521,12 @@ export default function MinSide() {
             <>
               <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                  <h2 className="text-2xl font-semibold text-slate-900">Mine turer</h2>
+                  <h2 className="text-2xl font-semibold text-slate-900">{t("minside.myTours.title")}</h2>
                 </div>
 
                 <div className="mt-5 space-y-3">
                   {tripItems.length > 0 ? (
-                    tripItems.slice(0, 2).map((pamelding: any) => (
+                    tripItems.slice(0, 2).map((pamelding) => (
                       <div
                         key={pamelding.id}
                         className="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300"
@@ -462,9 +538,9 @@ export default function MinSide() {
                             </h3>
                             <p className="mt-2 flex items-center gap-2 text-slate-500">
                               <CalendarDays className="h-4 w-4" />
-                              {new Date(pamelding.tur_dato.start_at).toLocaleDateString("no-NO")}
+                              {new Date(pamelding.tur_dato.start_at).toLocaleDateString(locale)}
                               {" – "}
-                              {new Date(pamelding.tur_dato.end_at).toLocaleDateString("no-NO")}
+                              {new Date(pamelding.tur_dato.end_at).toLocaleDateString(locale)}
                             </p>
                             {pamelding.tur_dato.tittel && (
                               <p className="mt-1 text-sm text-slate-400">
@@ -480,29 +556,28 @@ export default function MinSide() {
                                 "bg-slate-100 text-slate-700 ring-1 ring-slate-200"
                               }`}
                             >
-                              {PAMELDING_LABEL[pamelding.status as PameldingStatus] ??
-                                pamelding.status}
+                              {pameldingLabel(pamelding.status as PameldingStatus) ?? pamelding.status}
                             </span>
 
                             <NavLink
                               to={`/turer/${pamelding.tur_dato.tur_id}`}
                               className="rounded-xl bg-[#0f3d2e] px-4 py-2 text-sm font-medium text-white hover:bg-[#0c3125]"
                             >
-                              Detaljer
+                              {t("minside.myTours.details")}
                             </NavLink>
                           </div>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <p className="mt-5 text-slate-500">Du er ikke påmeldt noen turer.</p>
+                    <p className="mt-5 text-slate-500">{t("minside.myTours.empty")}</p>
                   )}
                 </div>
               </section>
 
               <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                  <h2 className="text-2xl font-semibold text-slate-900">Varsler</h2>
+                  <h2 className="text-2xl font-semibold text-slate-900">{t("minside.notifications.title")}</h2>
                 </div>
 
                 <div className="mt-5 grid gap-3 md:grid-cols-2">
@@ -510,7 +585,7 @@ export default function MinSide() {
                     <div className="flex items-start gap-3">
                       <Bell className="mt-0.5 h-4 w-4 text-[#0f8f5b]" />
                       <p className="text-slate-700">
-                        Du har {pameldteTurer} aktiv(e) turpåmelding(er).
+                        {t("minside.notifications.activeRegistrations", { count: pameldteTurer })}
                       </p>
                     </div>
                   </div>
@@ -520,8 +595,10 @@ export default function MinSide() {
                       <Bell className="mt-0.5 h-4 w-4 text-[#0f8f5b]" />
                       <p className="text-slate-700">
                         {aktiveBookinger > 0
-                          ? `Du har ${aktiveBookinger} aktiv${aktiveBookinger === 1 ? "" : "e"} hyttebooking${aktiveBookinger === 1 ? "" : "er"}.`
-                          : "Ingen aktive hyttebookinger akkurat nå."}
+                          ? aktiveBookinger === 1
+                            ? t("minside.notifications.activeBookingsSingular")
+                            : t("minside.notifications.activeBookingsPlural", { count: aktiveBookinger })
+                          : t("minside.notifications.noActiveBookings")}
                       </p>
                     </div>
                   </div>
@@ -530,14 +607,14 @@ export default function MinSide() {
 
               <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                  <h2 className="text-2xl font-semibold text-slate-900">Favoritter</h2>
+                  <h2 className="text-2xl font-semibold text-slate-900">{t("minside.favorites.title")}</h2>
                 </div>
 
                 <div className="mt-5 grid gap-4 md:grid-cols-2">
                   {favoriteItems.length > 0 ? (
-                    favoriteItems.slice(0, 4).map((fav: any) => {
-                      const navn = fav.tur?.tittel ?? fav.hytte?.navn ?? "Ukjent favoritt";
-                      const type = fav.tur ? "Tur" : "Hytte";
+                    favoriteItems.slice(0, 4).map((fav) => {
+                      const navn = fav.tur?.tittel ?? fav.hytte?.navn ?? t("minside.favorites.unknown");
+                      const type = fav.tur ? t("minside.favorites.typeTour") : t("minside.favorites.typeCabin");
 
                       return (
                         <div
@@ -555,16 +632,16 @@ export default function MinSide() {
                       );
                     })
                   ) : (
-                    <p className="mt-5 text-slate-500">Ingen favoritter ennå.</p>
+                    <p className="mt-5 text-slate-500">{t("minside.favorites.empty")}</p>
                   )}
                 </div>
               </section>
 
               <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                  <h2 className="text-2xl font-semibold text-slate-900">Mine kommentarer</h2>
+                  <h2 className="text-2xl font-semibold text-slate-900">{t("minside.comments.title")}</h2>
                   <span className="text-sm text-slate-500">
-                    {kommentarItems.length} totalt
+                    {t("minside.comments.totalCount", { count: kommentarItems.length })}
                   </span>
                 </div>
 
@@ -578,7 +655,7 @@ export default function MinSide() {
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
                             <p className="text-sm text-slate-500">
-                              På tur:{" "}
+                              {t("minside.comments.onTour")}{" "}
                               {k.tur ? (
                                 <NavLink
                                   to={`/turer/${k.tur.id}`}
@@ -587,12 +664,12 @@ export default function MinSide() {
                                   {k.tur.tittel}
                                 </NavLink>
                               ) : (
-                                <span className="text-slate-600">(slettet tur)</span>
+                                <span className="text-slate-600">{t("minside.comments.deletedTour")}</span>
                               )}
                             </p>
                             <p className="mt-2 text-slate-800">{k.body}</p>
                             <p className="mt-2 text-xs text-slate-400">
-                              {new Date(k.created_at).toLocaleDateString("no-NO", {
+                              {new Date(k.created_at).toLocaleDateString(locale, {
                                 year: "numeric",
                                 month: "short",
                                 day: "numeric",
@@ -604,7 +681,7 @@ export default function MinSide() {
                     ))
                   ) : (
                     <p className="mt-2 text-slate-500">
-                      Du har ikke skrevet kommentarer ennå.
+                      {t("minside.comments.empty")}
                     </p>
                   )}
                 </div>
@@ -615,12 +692,12 @@ export default function MinSide() {
           {activeTab === "mineTurer" && (
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                <h2 className="text-2xl font-semibold text-slate-900">Mine turer</h2>
+                <h2 className="text-2xl font-semibold text-slate-900">{t("minside.myTours.title")}</h2>
               </div>
 
               <div className="mt-5 space-y-3">
                 {tripItems.length > 0 ? (
-                  tripItems.map((pamelding: any) => (
+                  tripItems.map((pamelding) => (
                     <div
                       key={pamelding.id}
                       className="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300"
@@ -632,9 +709,9 @@ export default function MinSide() {
                           </h3>
                           <p className="mt-2 flex items-center gap-2 text-slate-500">
                             <CalendarDays className="h-4 w-4" />
-                            {new Date(pamelding.tur_dato.start_at).toLocaleDateString("no-NO")}
+                            {new Date(pamelding.tur_dato.start_at).toLocaleDateString(locale)}
                             {" – "}
-                            {new Date(pamelding.tur_dato.end_at).toLocaleDateString("no-NO")}
+                            {new Date(pamelding.tur_dato.end_at).toLocaleDateString(locale)}
                           </p>
                           {pamelding.tur_dato.tittel && (
                             <p className="mt-1 text-sm text-slate-400">
@@ -650,22 +727,112 @@ export default function MinSide() {
                               "bg-slate-100 text-slate-700 ring-1 ring-slate-200"
                             }`}
                           >
-                            {PAMELDING_LABEL[pamelding.status as PameldingStatus] ??
-                              pamelding.status}
+                            {pameldingLabel(pamelding.status as PameldingStatus) ?? pamelding.status}
                           </span>
 
                           <NavLink
                             to={`/turer/${pamelding.tur_dato.tur_id}`}
                             className="rounded-xl bg-[#0f3d2e] px-4 py-2 text-sm font-medium text-white hover:bg-[#0c3125]"
                           >
-                            Detaljer
+                            {t("minside.myTours.details")}
                           </NavLink>
                         </div>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <p className="mt-5 text-slate-500">Du er ikke påmeldt noen turer.</p>
+                  <p className="mt-5 text-slate-500">{t("minside.myTours.empty")}</p>
+                )}
+              </div>
+            </section>
+          )}
+
+          {activeTab === "opprettedeTurer" && (
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                <h2 className="text-2xl font-semibold text-slate-900">
+                  {t("minside.createdTours.title")}
+                </h2>
+                <NavLink
+                  to="/opprett-tur"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#0f3d2e] px-4 py-2 text-sm font-medium text-white hover:bg-[#0c3125]"
+                >
+                  <Plus className="h-4 w-4" />
+                  {t("minside.createdTours.create")}
+                </NavLink>
+              </div>
+
+              <div className="mt-5 space-y-3">
+                {opprettedeTurer.length > 0 ? (
+                  opprettedeTurer.map((tur) => {
+                    const erFellestur = (tur.tur_dato?.length ?? 0) > 0;
+                    const harAktivDato = erFellestur
+                      ? (tur.tur_dato ?? []).some(
+                          (d) =>
+                            d.status === "planned" &&
+                            !!d.end_at &&
+                            new Date(d.end_at).getTime() >= Date.now(),
+                        )
+                      : true;
+                    return (
+                      <div
+                        key={tur.id}
+                        className="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300"
+                      >
+                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className="text-xl font-semibold text-slate-900">
+                                {tur.tittel}
+                              </h3>
+                              {erFellestur && (
+                                <span
+                                  className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                                    harAktivDato
+                                      ? "bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200"
+                                      : "bg-slate-200 text-slate-700 ring-1 ring-slate-300"
+                                  }`}
+                                >
+                                  {harAktivDato
+                                    ? t("minside.createdTours.active")
+                                    : t("minside.createdTours.finished")}
+                                </span>
+                              )}
+                            </div>
+                            <p className="mt-1 text-sm text-slate-500">
+                              {[
+                                tur.omrade,
+                                tur.type,
+                                tur.vanskelighetsgrad,
+                                erFellestur
+                                  ? t("minside.createdTours.groupTour")
+                                  : t("minside.createdTours.regularTour"),
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2">
+                            <NavLink
+                              to={`/turer/${tur.id}`}
+                              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                            >
+                              {t("minside.createdTours.view")}
+                            </NavLink>
+                            <NavLink
+                              to={`/turer/${tur.id}/rediger`}
+                              className="rounded-xl bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-200"
+                            >
+                              {t("minside.createdTours.edit")}
+                            </NavLink>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="mt-5 text-slate-500">{t("minside.createdTours.empty")}</p>
                 )}
               </div>
             </section>
@@ -674,32 +841,42 @@ export default function MinSide() {
           {activeTab === "favoritter" && (
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                <h2 className="text-2xl font-semibold text-slate-900">Favoritter</h2>
+                <h2 className="text-2xl font-semibold text-slate-900">{t("minside.favorites.title")}</h2>
               </div>
 
               <div className="mt-5 grid gap-4 md:grid-cols-2">
                 {favoriteItems.length > 0 ? (
-                  favoriteItems.map((fav: any) => {
-                    const navn = fav.tur?.tittel ?? fav.hytte?.navn ?? "Ukjent favoritt";
-                    const type = fav.tur ? "Tur" : "Hytte";
+                  favoriteItems.map((fav) => {
+                    const navn = fav.tur?.tittel ?? fav.hytte?.navn ?? t("minside.favorites.unknown");
+                    const type = fav.tur ? t("minside.favorites.typeTour") : t("minside.favorites.typeCabin");
+                    const href = fav.tur
+                      ? `/turer/${fav.tur.id}`
+                      : fav.hytte
+                        ? `/hytter/${fav.hytte.id}`
+                        : null;
 
-                    return (
-                      <div
-                        key={fav.id}
-                        className="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300"
-                      >
+                    const card = (
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300 hover:bg-white">
                         <div className="flex items-start justify-between gap-3">
-                          <div>
+                          <div className="min-w-0">
                             <p className="text-xl font-semibold text-slate-900">{navn}</p>
                             <p className="mt-2 text-slate-500">{type}</p>
                           </div>
-                          <Heart className="h-5 w-5 fill-[#0f8f5b] text-[#0f8f5b]" />
+                          <Heart className="h-5 w-5 shrink-0 fill-[#0f8f5b] text-[#0f8f5b]" />
                         </div>
                       </div>
                     );
+
+                    return href ? (
+                      <NavLink key={fav.id} to={href} className="block">
+                        {card}
+                      </NavLink>
+                    ) : (
+                      <div key={fav.id}>{card}</div>
+                    );
                   })
                 ) : (
-                  <p className="mt-5 text-slate-500">Ingen favoritter ennå.</p>
+                  <p className="mt-5 text-slate-500">{t("minside.favorites.empty")}</p>
                 )}
               </div>
             </section>
@@ -708,9 +885,9 @@ export default function MinSide() {
           {activeTab === "bookinger" && (
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                <h2 className="text-2xl font-semibold text-slate-900">Bookinger</h2>
+                <h2 className="text-2xl font-semibold text-slate-900">{t("minside.bookings.title")}</h2>
                 <span className="text-sm text-slate-500">
-                  {bookingItems.length} totalt
+                  {t("minside.bookings.totalCount", { count: bookingItems.length })}
                 </span>
               </div>
 
@@ -724,7 +901,7 @@ export default function MinSide() {
                       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div>
                           <h3 className="text-xl font-semibold text-slate-900">
-                            {b.hytte?.navn ?? "Ukjent hytte"}
+                            {b.hytte?.navn ?? t("minside.bookings.unknownCabin")}
                           </h3>
                           {b.hytte?.omrade && (
                             <p className="mt-1 text-sm text-slate-500">{b.hytte.omrade}</p>
@@ -737,11 +914,13 @@ export default function MinSide() {
                             {b.antall_gjester !== null && (
                               <span>
                                 {b.antall_gjester}{" "}
-                                {b.antall_gjester === 1 ? "gjest" : "gjester"}
+                                {b.antall_gjester === 1
+                                  ? t("minside.bookings.guestSingular")
+                                  : t("minside.bookings.guestPlural")}
                               </span>
                             )}
                             {b.total_pris !== null && (
-                              <span>Total: {b.total_pris} kr</span>
+                              <span>{t("minside.bookings.total", { price: b.total_pris })}</span>
                             )}
                           </div>
                         </div>
@@ -750,7 +929,7 @@ export default function MinSide() {
                           <span
                             className={`rounded-full px-3 py-1 text-sm font-medium ${BOOKING_STATUS_STYLE[b.status]}`}
                           >
-                            {BOOKING_STATUS_LABEL[b.status]}
+                            {bookingStatusLabel(b.status)}
                           </span>
 
                           {b.hytte?.id && (
@@ -758,7 +937,7 @@ export default function MinSide() {
                               to={`/hytter/${b.hytte.id}`}
                               className="rounded-xl bg-[#0f3d2e] px-4 py-2 text-sm font-medium text-white hover:bg-[#0c3125]"
                             >
-                              Detaljer
+                              {t("minside.bookings.details")}
                             </NavLink>
                           )}
                         </div>
@@ -768,13 +947,13 @@ export default function MinSide() {
                 ) : (
                   <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5">
                     <p className="text-slate-600">
-                      Ingen hyttebookinger ennå.
+                      {t("minside.bookings.empty")}
                     </p>
                     <NavLink
                       to="/hytter"
                       className="mt-4 inline-flex rounded-xl bg-[#0f8f5b] px-4 py-2 text-sm font-medium text-white hover:bg-[#0d7a4e]"
                     >
-                      Finn hytter
+                      {t("minside.bookings.findCabins")}
                     </NavLink>
                   </div>
                 )}
@@ -785,30 +964,36 @@ export default function MinSide() {
           {activeTab === "konto" && (
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                <h2 className="text-2xl font-semibold text-slate-900">Konto</h2>
+                <h2 className="text-2xl font-semibold text-slate-900">{t("minside.account.title")}</h2>
               </div>
 
               <div className="mt-5 grid gap-4 md:grid-cols-2">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-medium text-slate-500">Navn</p>
+                  <p className="text-sm font-medium text-slate-500">{t("minside.info.name")}</p>
                   <p className="mt-2 text-xl text-slate-900">
                     {user.fornavn} {user.etternavn}
                   </p>
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-medium text-slate-500">E-post</p>
+                  <p className="text-sm font-medium text-slate-500">{t("minside.info.email")}</p>
                   <p className="mt-2 break-all text-xl text-slate-900">{user.epost}</p>
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-medium text-slate-500">Medlem siden</p>
+                  <p className="text-sm font-medium text-slate-500">{t("minside.info.memberSince")}</p>
                   <p className="mt-2 text-xl text-slate-900">{medlemSiden}</p>
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-medium text-slate-500">Rolle</p>
-                  <p className="mt-2 text-xl text-slate-900">Bruker</p>
+                  <p className="text-sm font-medium text-slate-500">{t("minside.info.role")}</p>
+                  <p className="mt-2 text-xl text-slate-900">
+                    {(authUser?.roller ?? []).length > 0
+                      ? (authUser?.roller ?? [])
+                          .map((rolle) => t(`minside.info.roles.${rolle}`, { defaultValue: rolle }))
+                          .join(", ")
+                      : t("minside.info.roleUser")}
+                  </p>
                 </div>
               </div>
 
@@ -818,7 +1003,7 @@ export default function MinSide() {
                   className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 font-medium text-slate-800 hover:bg-slate-50"
                 >
                   <Settings className="h-4 w-4" />
-                  Rediger profil
+                  {t("minside.editProfile")}
                 </NavLink>
 
                 <button
@@ -827,7 +1012,7 @@ export default function MinSide() {
                   className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 font-medium text-slate-800 hover:bg-slate-50"
                 >
                   <LogOut className="h-4 w-4" />
-                  Logg ut
+                  {t("shared.logOut")}
                 </button>
               </div>
             </section>
@@ -845,13 +1030,13 @@ export default function MinSide() {
           <div className="flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0f3d2e]">Søknad</p>
-                <h2 className="mt-1 text-xl font-semibold text-slate-900">Bli annonsør</h2>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0f3d2e]">{t("minside.soknad.eyebrow")}</p>
+                <h2 className="mt-1 text-xl font-semibold text-slate-900">{t("minside.soknad.title")}</h2>
               </div>
               <button
                 type="button"
                 onClick={() => setSoknadOpen(false)}
-                aria-label="Lukk"
+                aria-label={t("shared.close")}
                 className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
               >
                 <X className="h-5 w-5" />
@@ -860,7 +1045,7 @@ export default function MinSide() {
 
             <form onSubmit={handleSoknad} className="flex-1 overflow-y-auto px-6 py-6">
               <p className="text-sm text-slate-600">
-                Admin vil gjennomgå søknaden og gi deg annonsør-rollen ved godkjenning.
+                {t("minside.soknad.description")}
               </p>
 
               {soknadError && (
@@ -871,7 +1056,7 @@ export default function MinSide() {
 
               <div className="mt-5 space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-700">Navn / firma*</label>
+                  <label className="text-sm font-medium text-slate-700">{t("minside.soknad.nameLabel")}</label>
                   <input
                     type="text"
                     value={soknadNavn}
@@ -881,7 +1066,7 @@ export default function MinSide() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-700">Telefon</label>
+                  <label className="text-sm font-medium text-slate-700">{t("minside.soknad.phoneLabel")}</label>
                   <input
                     type="tel"
                     value={soknadTelefon}
@@ -897,14 +1082,14 @@ export default function MinSide() {
                   onClick={() => setSoknadOpen(false)}
                   className="rounded-xl border border-slate-200 bg-white px-4 py-2 font-medium text-slate-700 hover:bg-slate-50"
                 >
-                  Avbryt
+                  {t("shared.cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={soknadBusy}
                   className="rounded-xl bg-[#0f8f5b] px-4 py-2 font-medium text-white hover:bg-[#0d7a4e] disabled:opacity-50"
                 >
-                  {soknadBusy ? "Sender..." : "Send søknad"}
+                  {soknadBusy ? t("minside.soknad.submitting") : t("minside.soknad.submit")}
                 </button>
               </div>
             </form>
