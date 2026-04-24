@@ -510,7 +510,6 @@ async function handleDeleteAccount() {
                 <LogOut className="h-4 w-4" />
                 {t("shared.logOut")}
               </button>
-              // @Fredrik - Slett konto knapp med bekreftelse.
               <button
                type="button"
                onClick={handleDeleteAccount}
