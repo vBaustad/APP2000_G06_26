@@ -1,6 +1,6 @@
 /**
  * Fil: userRoutes.ts
- * Utvikler(e): Vebjørn Baustad & Parasto Jamshidi
+ * Utvikler(e): Vebjørn Baustad & Parasto Jamshidi & Fredrik Tharaldsen
  * Beskrivelse: API-ruter for innlogget brukers profil. Henter profil med favoritter (tur og hytte) og påmeldinger, 
  * og lar bruker oppdatere egne profilfelter
  *
@@ -70,3 +70,32 @@ userRouter.put('/me', requireAuth, async (req: AuthedRequest, res: Response) => 
     res.status(500).json({ error: "Kunne ikke oppdatere profil" });
   }
 });
+// @Fredrik - Sletter bruker 
+userRouter.delete(
+  "/me",
+  requireAuth,
+  async (req: AuthedRequest, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Ikke autorisert" });
+      }
+      //Bekreftelse på sletting
+      const { confirm } = req.body;
+
+      if (confirm !== true) {
+        return res.status(400).json({ error: "Må bekrefte sletting" });
+      }
+      const userId = req.user.id;
+
+      // Slett bruker
+      await prisma.bruker.delete({
+        where: { id: userId },
+      });
+
+      res.status(204).send();
+    } catch (error) {
+      console.error("Feil ved sletting av bruker:", error);
+      res.status(500).json({ error: "Kunne ikke slette bruker" });
+    }
+  }
+);
