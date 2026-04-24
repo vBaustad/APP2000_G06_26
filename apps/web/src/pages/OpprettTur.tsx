@@ -23,14 +23,17 @@ import type { LatLngExpression } from "leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import {
+  CalendarDays,
   CheckCircle2,
   House,
   PencilLine,
   Plus,
   Route,
   Search,
+  Trash2,
   Undo2,
   Upload,
+  Users,
   X,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -112,10 +115,20 @@ const VANSKELIGHETSGRADER = [
   { verdi: "Ekspert", tKey: "diffExpert" },
 ] as const;
 
+type DatoInput = {
+  tempId: number;
+  tittel: string;
+  start_at: string;
+  end_at: string;
+  tidlig_pamelding_frist: string;
+};
+
 export default function OpprettTur() {
   const { t } = useTranslation("opprettTur");
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const navigate = useNavigate();
+
+  const isTurleder = user?.roller?.includes("turleder") ?? false;
 
   const [tittel, setTittel] = useState("");
   const [beskrivelse, setBeskrivelse] = useState("");
@@ -123,6 +136,14 @@ export default function OpprettTur() {
   const [vanskelighetsgrad, setVanskelighetsgrad] = useState("");
   const [omrade, setOmrade] = useState("");
   const [antallNetter, setAntallNetter] = useState("");
+
+  // Kun turledere kan opprette fellesturer. For vanlige brukere låses
+  // valget til selvgående og UI-en for turtype/datoer vises ikke.
+  const [erSelvgaende, setErSelvgaende] = useState(!isTurleder);
+  const [minDeltakere, setMinDeltakere] = useState("");
+  const [maksDeltakere, setMaksDeltakere] = useState("");
+  const [datoer, setDatoer] = useState<DatoInput[]>([]);
+  const datoTempIdRef = useMemo(() => ({ current: 0 }), []);
 
   const [turstier, setTurstier] = useState<Tursti[]>([]);
   const [hytter, setHytter] = useState<Hytte[]>([]);
@@ -226,6 +247,30 @@ export default function OpprettTur() {
     setValgteHytter((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
+  }
+
+  function leggTilDato() {
+    datoTempIdRef.current += 1;
+    setDatoer((prev) => [
+      ...prev,
+      {
+        tempId: datoTempIdRef.current,
+        tittel: "",
+        start_at: "",
+        end_at: "",
+        tidlig_pamelding_frist: "",
+      },
+    ]);
+  }
+
+  function oppdaterDato(tempId: number, felt: keyof Omit<DatoInput, "tempId">, verdi: string) {
+    setDatoer((prev) =>
+      prev.map((d) => (d.tempId === tempId ? { ...d, [felt]: verdi } : d)),
+    );
+  }
+
+  function fjernDato(tempId: number) {
+    setDatoer((prev) => prev.filter((d) => d.tempId !== tempId));
   }
 
   const tegneLengdeKm = useMemo(() => {
@@ -354,6 +399,47 @@ export default function OpprettTur() {
       return;
     }
 
+    // Vanlige brukere kan ikke opprette fellestur. Rollen sjekkes også i
+    // backend; dette er bare for å gi rask tilbakemelding i UI.
+    const lagretSomSelvgaende = isTurleder ? erSelvgaende : true;
+
+    const datoerPayload: {
+      tittel: string | null;
+      start_at: string;
+      end_at: string;
+      tidlig_pamelding_frist: string | null;
+    }[] = [];
+
+    if (!lagretSomSelvgaende) {
+      for (const d of datoer) {
+        if (!d.start_at || !d.end_at) {
+          setError(t("page.errorDateRequired"));
+          return;
+        }
+        const start = new Date(d.start_at);
+        const slutt = new Date(d.end_at);
+        if (Number.isNaN(start.getTime()) || Number.isNaN(slutt.getTime()) || start >= slutt) {
+          setError(t("page.errorDateRange"));
+          return;
+        }
+        let fristIso: string | null = null;
+        if (d.tidlig_pamelding_frist) {
+          const frist = new Date(d.tidlig_pamelding_frist);
+          if (Number.isNaN(frist.getTime()) || frist >= start) {
+            setError(t("page.errorFrist"));
+            return;
+          }
+          fristIso = frist.toISOString();
+        }
+        datoerPayload.push({
+          tittel: d.tittel.trim() || null,
+          start_at: start.toISOString(),
+          end_at: slutt.toISOString(),
+          tidlig_pamelding_frist: fristIso,
+        });
+      }
+    }
+
     setError(null);
     setSubmitting(true);
     try {
@@ -370,9 +456,13 @@ export default function OpprettTur() {
           vanskelighetsgrad: vanskelighetsgrad || null,
           omrade: omrade.trim() || null,
           antall_netter: antallNetter || null,
+          min_deltakere: lagretSomSelvgaende ? null : minDeltakere || null,
+          max_deltakere: lagretSomSelvgaende ? null : maksDeltakere || null,
           status: "published",
+          er_selvgaende: lagretSomSelvgaende,
           tursti_ids: valgteTurstier,
           hytte_ids: valgteHytter,
+          datoer: lagretSomSelvgaende ? [] : datoerPayload,
         }),
       });
 
@@ -429,6 +519,66 @@ export default function OpprettTur() {
           onSubmit={handleSubmit}
           className="space-y-8 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8"
         >
+          {isTurleder && (
+            <div className="space-y-3 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-[#0f3d2e]" />
+                <h2 className="text-xl font-semibold text-slate-900">
+                  {t("page.typeHeading")}
+                </h2>
+              </div>
+              <p className="text-sm text-slate-600">{t("page.typeHelp")}</p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <label
+                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm transition ${
+                    !erSelvgaende
+                      ? "border-[#0f3d2e] bg-white shadow-sm"
+                      : "border-slate-200 bg-white/60 hover:bg-white"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="erSelvgaende"
+                    className="mt-1 h-4 w-4"
+                    checked={!erSelvgaende}
+                    onChange={() => setErSelvgaende(false)}
+                  />
+                  <span>
+                    <span className="block font-semibold text-slate-900">
+                      {t("page.typeFellestur")}
+                    </span>
+                    <span className="block text-xs text-slate-600">
+                      {t("page.typeFellesturHelp")}
+                    </span>
+                  </span>
+                </label>
+                <label
+                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm transition ${
+                    erSelvgaende
+                      ? "border-[#0f3d2e] bg-white shadow-sm"
+                      : "border-slate-200 bg-white/60 hover:bg-white"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="erSelvgaende"
+                    className="mt-1 h-4 w-4"
+                    checked={erSelvgaende}
+                    onChange={() => setErSelvgaende(true)}
+                  />
+                  <span>
+                    <span className="block font-semibold text-slate-900">
+                      {t("page.typeSelvgaende")}
+                    </span>
+                    <span className="block text-xs text-slate-600">
+                      {t("page.typeSelvgaendeHelp")}
+                    </span>
+                  </span>
+                </label>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-slate-900">{t("page.basicHeading")}</h2>
 
@@ -759,6 +909,147 @@ export default function OpprettTur() {
               </>
             )}
           </div>
+
+          {isTurleder && !erSelvgaende && (
+            <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+              <div className="flex items-center gap-2">
+                <CalendarDays className="h-5 w-5 text-[#0f3d2e]" />
+                <h2 className="text-xl font-semibold text-slate-900">
+                  {t("page.datesHeading")}
+                </h2>
+              </div>
+              <p className="text-sm text-slate-600">{t("page.datesHelp")}</p>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                    {t("page.minDeltakereLabel")}
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={minDeltakere}
+                    onChange={(e) => setMinDeltakere(e.target.value)}
+                    placeholder={t("page.minDeltakerePlaceholder")}
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#0f3d2e]"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                    {t("page.maxDeltakereLabel")}
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={maksDeltakere}
+                    onChange={(e) => setMaksDeltakere(e.target.value)}
+                    placeholder={t("page.maxDeltakerePlaceholder")}
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#0f3d2e]"
+                  />
+                </div>
+              </div>
+
+              {datoer.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-600">
+                  {t("page.datesNone")}
+                </p>
+              ) : (
+                <ul className="space-y-3">
+                  {datoer.map((d, i) => (
+                    <li
+                      key={d.tempId}
+                      className="rounded-xl border border-slate-200 bg-white p-4"
+                    >
+                      <div className="mb-3 flex items-center justify-between">
+                        <span className="text-sm font-semibold text-slate-900">
+                          {t("page.dateItemTitle", { n: i + 1 })}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => fjernDato(d.tempId)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          {t("page.dateRemove")}
+                        </button>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div className="md:col-span-2">
+                          <label className="mb-1 block text-sm font-medium text-slate-700">
+                            {t("page.dateTitleLabel")}
+                          </label>
+                          <input
+                            type="text"
+                            value={d.tittel}
+                            onChange={(e) =>
+                              oppdaterDato(d.tempId, "tittel", e.target.value)
+                            }
+                            placeholder={t("page.dateTitlePlaceholder")}
+                            className="w-full rounded-xl border border-slate-300 px-4 py-2.5 outline-none focus:border-[#0f3d2e]"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-slate-700">
+                            {t("page.dateStartLabel")}
+                          </label>
+                          <input
+                            type="datetime-local"
+                            value={d.start_at}
+                            onChange={(e) =>
+                              oppdaterDato(d.tempId, "start_at", e.target.value)
+                            }
+                            className="w-full rounded-xl border border-slate-300 px-4 py-2.5 outline-none focus:border-[#0f3d2e]"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-slate-700">
+                            {t("page.dateEndLabel")}
+                          </label>
+                          <input
+                            type="datetime-local"
+                            value={d.end_at}
+                            onChange={(e) =>
+                              oppdaterDato(d.tempId, "end_at", e.target.value)
+                            }
+                            className="w-full rounded-xl border border-slate-300 px-4 py-2.5 outline-none focus:border-[#0f3d2e]"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="mb-1 block text-sm font-medium text-slate-700">
+                            {t("page.dateFristLabel")}
+                          </label>
+                          <input
+                            type="datetime-local"
+                            value={d.tidlig_pamelding_frist}
+                            onChange={(e) =>
+                              oppdaterDato(
+                                d.tempId,
+                                "tidlig_pamelding_frist",
+                                e.target.value,
+                              )
+                            }
+                            className="w-full rounded-xl border border-slate-300 px-4 py-2.5 outline-none focus:border-[#0f3d2e]"
+                          />
+                          <p className="mt-1 text-xs text-slate-500">
+                            {t("page.dateFristHelp")}
+                          </p>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <button
+                type="button"
+                onClick={leggTilDato}
+                className="inline-flex items-center gap-2 rounded-xl border border-[#0f3d2e] bg-white px-4 py-2 text-sm font-semibold text-[#0f3d2e] hover:bg-[#eef5f1]"
+              >
+                <Plus className="h-4 w-4" />
+                {t("page.addDate")}
+              </button>
+            </div>
+          )}
 
           {error && (
             <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

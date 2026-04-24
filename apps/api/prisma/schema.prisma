@@ -1,3 +1,19 @@
+// ============================================================
+// Domenemodell – kort oppsummering
+// ------------------------------------------------------------
+// Tre hovedentiteter som eksisterer uavhengig av hverandre:
+//   - tur     : det brukeren melder seg på (kan være selvgående
+//               eller fellestur med leder og datoer)
+//   - tursti  : selve ruta i terrenget (punkter, GPX) – gjenbrukes
+//               på tvers av turer via koblingstabellen tur_tursti
+//   - hytte   : overnattingssted. Kan brukes "fritt" (hytte_booking)
+//               eller knyttes til en fellestur-dato (tur_dato_hytte)
+//
+// Navnekonvensjon: alt på norsk (snake_case) slik at skjemaet
+// leses greit i databasen og samsvarer med resten av applikasjonen.
+// Vi bruker wasm-engine for å støtte Vercel/serverless i produksjon.
+// ============================================================
+
 generator client {
   provider = "prisma-client-js"
   engineType = "wasm"
@@ -10,6 +26,9 @@ datasource db {
 
 // =====================
 // ENUMS
+// Statusene brukes til å styre flyt (pending → locked/confirmed)
+// framfor å slette rader – det lar oss vise historikk og gjøre
+// administrasjon/refusjon i ettertid.
 // =====================
 
 enum TurType {
@@ -24,24 +43,28 @@ enum TurStatus {
   archived
 }
 
+// Livssyklus for en konkret turdato (én gjennomføring av en tur)
 enum TurDatoStatus {
-  planned
-  locked
-  cancelled
-  freed
+  planned     // opprettet, åpen for påmelding
+  locked      // låst etter tidlig-påmeldingsfristen, ingen nye avmeldinger uten konsekvens
+  cancelled   // avlyst (f.eks. for få deltakere)
+  freed       // frigjort etter gjennomføring/avlysning
 }
 
+// Påmelding er "myk" i starten og blir bindende når fristen passerer
 enum TurPameldingStatus {
-  pending
-  binding
-  freed
-  locked
+  pending   // meldt på, ikke bindende enda
+  binding   // bindende etter tidlig-påmeldingsfristen
+  freed     // trukket seg før bindende
+  locked    // låst (f.eks. betalt/bekreftet)
 }
 
+// Kobling mellom turdato og hytte går gjennom denne statusen slik
+// at en fellestur kan reservere hytta før bookingen er bekreftet
 enum TurDatoHytteStatus {
-  pending
-  confirmed
-  released
+  pending     // hytta er foreslått, ikke booket enda
+  confirmed   // booking bekreftet (peker til hytte_booking)
+  released    // hytta er frigitt tilbake til vanlig bookingflyt
 }
 
 enum HytteBookingStatus {
@@ -88,6 +111,9 @@ enum ChatType {
 
 // =====================
 // BRUKER + ROLLER
+// En bruker kan ha flere roller (f.eks. "turgaaer" + "hytteeier"
+// + "annonsor") via koblingstabellen bruker_rolle. Dette gjør
+// at vi slipper egne brukertabeller per rolle.
 // =====================
 
 model bruker {
@@ -136,6 +162,10 @@ model bruker_rolle {
 
 // =====================
 // HYTTE
+// Eies av en bruker (eier_bruker_id). Kan bookes direkte av andre
+// brukere (hytte_booking), eller brukes av en fellestur via
+// tur_dato_hytte. Fasiliteter ligger som nøkkel/verdi i
+// hytte_fasilitet slik at vi kan legge til nye uten migrasjon.
 // =====================
 
 model hytte {
@@ -225,6 +255,10 @@ model hytte_kommentar {
 
 // =====================
 // TURSTI (intern byggekloss, ikke eksponert direkte til sluttbrukere)
+// En tursti er selve ruta i terrenget, lagret som et sett med
+// punkter i rekkefølge (tursti_punkt). Kilden er enten manuelt
+// tegnet i kartet eller importert fra en GPX-fil. Samme tursti
+// kan gjenbrukes på tvers av flere turer via tur_tursti.
 // =====================
 
 model tursti {
@@ -259,6 +293,12 @@ model tursti_punkt {
 
 // =====================
 // TUR (brukervendt: selvgående eller fellestur)
+// En tur kan være "selvgående" (er_selvgaende = true) – da finnes
+// ingen leder eller datoer, og brukere kan bare lese den som
+// inspirasjon. Fellesturer har en leder, én eller flere tur_dato
+// (konkrete gjennomføringer), og eventuelt kobling til hytter
+// og turstier. Påmeldinger skjer per tur_dato, ikke per tur,
+// slik at samme tur kan arrangeres flere ganger.
 // =====================
 
 model tur {
@@ -314,6 +354,10 @@ model tur_hytte {
   @@index([hytte_id], map: "fk_tur_hytte_hytte")
 }
 
+// Én konkret gjennomføring av en fellestur. Det er denne
+// brukerne melder seg på, ikke selve tur-raden. tidlig_pamelding_frist
+// styrer når status flyttes fra planned til locked og påmeldinger
+// går fra pending til binding.
 model tur_dato {
   id                     Int              @id @default(autoincrement())
   tur_id                 Int
@@ -330,6 +374,9 @@ model tur_dato {
   @@index([tur_id], map: "fk_tur_dato_tur")
 }
 
+// Binder en turdato til en hytte. booking_id fylles først når
+// hytta faktisk er booket via hytte_booking – inntil da er
+// koblingen "pending" og hytta kan fortsatt bookes av andre.
 model tur_dato_hytte {
   tur_dato_id   Int
   hytte_id      Int
@@ -385,6 +432,10 @@ model tur_kommentar {
 
 // =====================
 // FAVORITT (polymorf på tur eller hytte)
+// Én rad refererer enten til en tur ELLER en hytte – aldri begge.
+// Vi har separate unike constraints på (bruker, tur) og
+// (bruker, hytte) slik at en bruker ikke kan favorisere samme
+// tur/hytte to ganger.
 // =====================
 
 model favoritt {
@@ -405,6 +456,10 @@ model favoritt {
 
 // =====================
 // CHAT (1-1 og gruppe knyttet til tur)
+// En gruppe-chat kan være knyttet til en tur (tur_id), mens
+// direkte-chat står frittstående. melding_bilde har en egen
+// godkjenningsflyt (melding_bilde_godkjenning) slik at alle
+// deltakere må samtykke før et bilde publiseres.
 // =====================
 
 model chat {
@@ -469,6 +524,11 @@ model melding_bilde_godkjenning {
 
 // =====================
 // ANNONSER
+// Annonsør (annonsor) må godkjennes (status) før de kan
+// publisere annonser. Hver annonse har eget budsjett og
+// pris per visning/klikk, og hendelser logges i annonse_event
+// slik at vi kan rapportere statistikk og avslutte annonser
+// som har brukt opp budsjettet (budget_exhausted).
 // =====================
 
 model annonsor {
