@@ -1,6 +1,6 @@
 /**
  * Fil: Index.ts
- * Utvikler(e): Vebjørn Baustad & Parasto Jamshidi
+ * Utvikler(e): Vebjørn Baustad & Parasto Jamshidi & Fredrik Tharaldsen
  * Beskrivelse: Starter backend-serveren og definerer hovedrutene.
  *
  * KI-bruk: Claude (Anthropic) og GitHub Copilot er brukt som verktøy

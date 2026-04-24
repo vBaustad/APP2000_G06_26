@@ -20,5 +20,5 @@ function getJwtSecret(): string {
 }
 
 export function signToken(payload: { userId: number }) {
-  return jwt.sign(payload, getJwtSecret(), { expiresIn: "7d" });
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: "1h" }); // @Fredrik - endret fra 7d til 1h for bedre sikkerhet
 }

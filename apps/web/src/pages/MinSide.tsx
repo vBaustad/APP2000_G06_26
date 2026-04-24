@@ -1,6 +1,6 @@
 /**
  * Fil: MinSide.tsx
- * Utvikler(e): Parasto Jamshidi, Ramona Cretulescu, Vebjørn Baustad
+ * Utvikler(e): Parasto Jamshidi, Ramona Cretulescu, Vebjørn Baustad, Fredrik Tharaldsen
  * Beskrivelse:
  * Brukerportal med profilheader, faner, venstre informasjonskolonne og
  * høyre hovedinnhold for mine turer, favoritter, kommentarer, bookinger
@@ -274,7 +274,36 @@ export default function MinSide() {
     localStorage.removeItem("token");
     window.location.href = "/logg-inn";
   }
+// @Fredrik - Slett konto- med bekreftelse.
+async function handleDeleteAccount() {
+  const confirmDelete = window.confirm(
+    "Er du sikker på at du vil slette kontoen din? Dette kan ikke angres."
+  );
 
+  if (!confirmDelete) return;
+
+  const token = localStorage.getItem("token");
+
+  try {
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/api/bruker/me`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!res.ok) throw new Error("Kunne ikke slette konto");
+
+    localStorage.removeItem("token");
+    window.location.href = "/";
+  } catch (err) {
+    alert("Noe gikk galt ved sletting av konto");
+    console.error(err);
+  }
+}
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 px-4 py-10">
@@ -481,6 +510,15 @@ export default function MinSide() {
                 <LogOut className="h-4 w-4" />
                 {t("shared.logOut")}
               </button>
+              // @Fredrik - Slett konto knapp med bekreftelse.
+              <button
+               type="button"
+               onClick={handleDeleteAccount}
+               className="flex items-center gap-3 text-sm font-medium text-red-600 hover:text-red-800"
+              >
+             <X className="h-4 w-4" />
+             Slett konto
+             </button>
             </div>
           </section>
 
