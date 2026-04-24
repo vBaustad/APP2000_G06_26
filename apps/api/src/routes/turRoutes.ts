@@ -87,6 +87,14 @@ async function ensureTurDatoChat(
         select: {
           id: true,
           tittel: true,
+          leder_bruker_id: true,
+          bruker: {
+            select: {
+              id: true,
+              fornavn: true,
+              etternavn: true,
+            },
+          },
         },
       },
       tur_pamelding: {
@@ -119,7 +127,19 @@ async function ensureTurDatoChat(
     };
   }
 
-  const medlemIds = turDato.tur_pamelding.map((pamelding) => pamelding.bruker_id);
+  // Bygg medlemslisten av låste/bindende deltakere + turlederen, dedupe
+  // slik at en turleder som også er påmeldt ikke står to ganger.
+  const medlemmerMap = new Map<
+    number,
+    { id: number; fornavn: string | null; etternavn: string | null }
+  >();
+  for (const pamelding of turDato.tur_pamelding) {
+    medlemmerMap.set(pamelding.bruker_id, pamelding.bruker);
+  }
+  if (turDato.tur.leder_bruker_id !== null && turDato.tur.bruker) {
+    medlemmerMap.set(turDato.tur.leder_bruker_id, turDato.tur.bruker);
+  }
+  const medlemIds = Array.from(medlemmerMap.keys());
 
   if (!medlemIds.includes(brukerId)) {
     return {
@@ -194,7 +214,7 @@ async function ensureTurDatoChat(
       turDato.tittel?.trim() ||
       `${turDato.tur.tittel} · ${formatChatDateRange(turDato.start_at, turDato.end_at)}`,
     subtitle: `${turDato.tur.tittel} · ${formatChatDateRange(turDato.start_at, turDato.end_at)}`,
-    medlemmer: turDato.tur_pamelding.map((pamelding) => pamelding.bruker),
+    medlemmer: Array.from(medlemmerMap.values()),
     meldinger: meldinger.map((melding) => ({
       id: melding.id,
       body: melding.body,
@@ -712,15 +732,16 @@ turRouter.patch(
           where: { id: datoId },
           data: { status: "locked" },
         });
-        // Bindende påmeldinger på låst dato bekreftes.
+        // Alle som har meldt seg på denne datoen (både bindende og kun interesse)
+        // blir med når turen låses — turleder har bestemt at turen går på denne
+        // datoen, så de som har registrert seg er med. Hvis noen ikke vil være
+        // med må de melde seg av før låsing.
         await tx.tur_pamelding.updateMany({
-          where: { tur_dato_id: datoId, status: "binding" },
+          where: {
+            tur_dato_id: datoId,
+            status: { in: ["binding", "pending"] },
+          },
           data: { status: "locked" },
-        });
-        // Pending (kun interesse) på låst dato fristilles — de har ikke forpliktet seg.
-        await tx.tur_pamelding.updateMany({
-          where: { tur_dato_id: datoId, status: "pending" },
-          data: { status: "freed" },
         });
 
         // Alle andre tur_dato på samme tur fristilles.
@@ -744,7 +765,53 @@ turRouter.patch(
           });
         }
 
-        return { locked: true, fristilteDatoer: andreIds.length };
+        // Opprett gruppechatten eagerly slik at den dukker opp i "Mine
+        // chatter" for alle deltakere med en gang datoen låses, i stedet
+        // for å måtte vente til noen først åpner chatten via GET-endepunktet.
+        // Turlederen legges alltid til som medlem så de kan nå deltakere
+        // selv om ingen var bindende påmeldt ved låsetidspunktet.
+        const chatTittel = buildTurDatoChatKey(datoId);
+        const finnesChat = await tx.chat.findFirst({
+          where: {
+            tur_id: dato.tur_id,
+            type: "group",
+            tittel: chatTittel,
+          },
+          select: { id: true },
+        });
+
+        let chatOpprettet = false;
+        if (!finnesChat) {
+          const lasteMedlemmer = await tx.tur_pamelding.findMany({
+            where: { tur_dato_id: datoId, status: "locked" },
+            select: { bruker_id: true },
+          });
+          const medlemIds = new Set<number>(lasteMedlemmer.map((m) => m.bruker_id));
+          if (dato.tur.leder_bruker_id !== null) {
+            medlemIds.add(dato.tur.leder_bruker_id);
+          }
+          if (medlemIds.size > 0) {
+            await tx.chat.create({
+              data: {
+                tur_id: dato.tur_id,
+                type: "group",
+                tittel: chatTittel,
+                chat_medlem: {
+                  create: Array.from(medlemIds).map((bruker_id) => ({
+                    bruker_id,
+                  })),
+                },
+              },
+            });
+            chatOpprettet = true;
+          }
+        }
+
+        return {
+          locked: true,
+          fristilteDatoer: andreIds.length,
+          chatOpprettet,
+        };
       });
 
       res.json(resultat);
