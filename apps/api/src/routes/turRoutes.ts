@@ -1037,6 +1037,9 @@ turRouter.patch(
 );
 
 // AUTH: Opprett tur (med turstier og eventuelle hytter). Eier = innlogget bruker.
+// Fellestur (er_selvgaende=false) krever "turleder"-rolle; vanlige brukere
+// kan kun opprette selvgående turer. Datoer for fellestur kan opprettes i
+// samme kall via `datoer`-arrayet.
 turRouter.post(
   "/",
   requireAuth,
@@ -1056,8 +1059,10 @@ turRouter.post(
         min_deltakere,
         max_deltakere,
         status,
+        er_selvgaende,
         tursti_ids,
         hytte_ids,
+        datoer,
       } = req.body as {
         tittel?: string;
         beskrivelse?: string;
@@ -1068,8 +1073,15 @@ turRouter.post(
         min_deltakere?: number | string;
         max_deltakere?: number | string;
         status?: string;
+        er_selvgaende?: boolean;
         tursti_ids?: number[];
         hytte_ids?: number[];
+        datoer?: Array<{
+          tittel?: string | null;
+          start_at?: string;
+          end_at?: string;
+          tidlig_pamelding_frist?: string | null;
+        }>;
       };
 
       if (!tittel) {
@@ -1078,6 +1090,18 @@ turRouter.post(
       if (!Array.isArray(tursti_ids) || tursti_ids.length === 0) {
         return res.status(400).json({ error: "Minst én tursti må velges." });
       }
+
+      // Kun turledere (og admin) kan opprette fellesturer. Default = selvgående
+      // slik at eldre klienter uten feltet fortsatt oppfører seg som før.
+      const ønskerFellestur = er_selvgaende === false;
+      const harTurlederRolle = req.user?.roles.includes("turleder") ?? false;
+      const erAdmin = req.user?.roles.includes("admin") ?? false;
+      if (ønskerFellestur && !(harTurlederRolle || erAdmin)) {
+        return res.status(403).json({
+          error: "Kun turledere kan opprette fellesturer.",
+        });
+      }
+      const lagretSomSelvgaende = !ønskerFellestur;
 
       const tursti_ids_num = tursti_ids.map((v) => Number(v));
       const hytte_ids_num = Array.isArray(hytte_ids)
@@ -1092,6 +1116,51 @@ turRouter.post(
         status && (Object.values(TurStatus) as string[]).includes(status)
           ? (status as TurStatus)
           : TurStatus.draft;
+
+      // Valider datoer før transaksjonen slik at vi unngår å opprette en tur
+      // som umiddelbart må rulles tilbake på en ugyldig dato.
+      type ParsedDato = {
+        tittel: string | null;
+        start_at: Date;
+        end_at: Date;
+        tidlig_pamelding_frist: Date | null;
+      };
+      const parsedDatoer: ParsedDato[] = [];
+      if (!lagretSomSelvgaende && Array.isArray(datoer)) {
+        for (const d of datoer) {
+          if (!d?.start_at || !d?.end_at) {
+            return res
+              .status(400)
+              .json({ error: "Hver dato må ha start_at og end_at." });
+          }
+          const start = new Date(d.start_at);
+          const slutt = new Date(d.end_at);
+          if (Number.isNaN(start.getTime()) || Number.isNaN(slutt.getTime())) {
+            return res.status(400).json({ error: "Ugyldig datoformat." });
+          }
+          if (start >= slutt) {
+            return res
+              .status(400)
+              .json({ error: "Sluttdato må være etter startdato." });
+          }
+          let frist: Date | null = null;
+          if (d.tidlig_pamelding_frist) {
+            const f = new Date(d.tidlig_pamelding_frist);
+            if (Number.isNaN(f.getTime()) || f >= start) {
+              return res
+                .status(400)
+                .json({ error: "Tidlig påmeldings-frist må være før startdato." });
+            }
+            frist = f;
+          }
+          parsedDatoer.push({
+            tittel: d.tittel?.trim() || null,
+            start_at: start,
+            end_at: slutt,
+            tidlig_pamelding_frist: frist,
+          });
+        }
+      }
 
       const created = await prisma.$transaction(async (tx) => {
         const tur = await tx.tur.create({
@@ -1109,7 +1178,7 @@ turRouter.post(
             max_deltakere: max_deltakere ? Number(max_deltakere) : null,
             status: valgtStatus,
             leder_bruker_id: brukerId,
-            er_selvgaende: true,
+            er_selvgaende: lagretSomSelvgaende,
           },
         });
 
@@ -1127,6 +1196,18 @@ turRouter.post(
               tur_id: tur.id,
               hytte_id,
               rekkefolge: i + 1,
+            })),
+          });
+        }
+
+        if (parsedDatoer.length > 0) {
+          await tx.tur_dato.createMany({
+            data: parsedDatoer.map((d) => ({
+              tur_id: tur.id,
+              tittel: d.tittel,
+              start_at: d.start_at,
+              end_at: d.end_at,
+              tidlig_pamelding_frist: d.tidlig_pamelding_frist,
             })),
           });
         }

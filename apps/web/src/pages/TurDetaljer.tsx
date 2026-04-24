@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 import { getTourById } from "../services/toursApi";
 import type { Tour } from "../types/tour";
@@ -133,6 +133,7 @@ export default function TurDetaljer() {
   const { t, i18n } = useTranslation("turer");
   const { user } = useAuth();
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [tour, setTour] = useState<Tour | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1333,13 +1334,7 @@ export default function TurDetaljer() {
                 <button
                   type="button"
                   className="rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold hover:bg-gray-50"
-                  onClick={() => {
-                    const [lat, lng] = mapCenter;
-                    window.open(
-                      `https://www.openstreetmap.org/#map=13/${lat}/${lng}`,
-                      "_blank",
-                    );
-                  }}
+                  onClick={() => navigate(`/kart?tourId=${tour.id}`)}
                 >
                   {t("detail.bigMap")}
                 </button>
